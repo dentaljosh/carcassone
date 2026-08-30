@@ -248,11 +248,27 @@ def load_selfplay(limit=None):
 
 
 def load_e4(limit=None):
+    """The E4 archives, CHAMPION-opponent only.
+
+    ⚠️ Since 2026-08-30 this directory can also hold remote-Carcasum games (the
+    phone's remote-opponent mode); they are not the champion and must never pool
+    into an E4 statistic. `scripts/e4_archives` owns the gate, absent stamp
+    excludes, every rejection is printed."""
+    import sys as _sys
+
+    if str(REPO / "scripts") not in _sys.path:
+        _sys.path.insert(0, str(REPO / "scripts"))
+    import e4_archives                                  # noqa: PLC0415
+
     recs = []
     for p in sorted(E4_DIR.glob("*.json")):
         with open(p) as fh:
             d = json.load(fh)
         if not d.get("ok"):
+            continue
+        why = e4_archives.rejection_reason(d)
+        if why is not None:
+            _sys.stderr.write(f"[e1_pregate] EXCLUDED {p.name}: {why}\n")
             continue
         d["_file"] = p.name
         recs.append(d)

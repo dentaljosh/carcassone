@@ -18,6 +18,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -84,6 +85,13 @@ fun SettingsScreen(vm: GameViewModel, onBack: () -> Unit) {
         TieArbLevelCard(
             selected = ui.tieArbLevel,
             onSelect = vm::setTieArbLevel,
+        )
+
+        OpponentCard(
+            selected = ui.opponentMode,
+            url = ui.remoteUrl,
+            onSelect = vm::setOpponentMode,
+            onUrl = vm::setRemoteUrl,
         )
 
         Card(Modifier.fillMaxWidth()) {
@@ -283,6 +291,129 @@ private fun TieArbLevelCard(
             )
         }
     }
+}
+
+// --------------------------------------------------------------------------- //
+// Opponent                                                                     //
+// --------------------------------------------------------------------------- //
+
+/**
+ * WHO you play. Deliberately a two-button choice rather than another slider:
+ * this is not a strength axis, it is a different opponent on a different
+ * machine, and the archive is stamped differently for it.
+ *
+ * The warning line under "Remote Carcasum" is not decoration. The one way this
+ * feature could damage the program is a Carcasum game being read later as a
+ * champion game, so the screen says out loud what the archive will say.
+ */
+@Composable
+private fun OpponentCard(
+    selected: OpponentMode,
+    url: String,
+    onSelect: (OpponentMode) -> Unit,
+    onUrl: (String) -> Unit,
+) {
+    var editing by remember { mutableStateOf(false) }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Opponent", fontWeight = FontWeight.Bold)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                for (m in OpponentMode.entries) {
+                    TextButton(
+                        onClick = { if (m != selected) onSelect(m) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            m.label,
+                            fontSize = 12.sp,
+                            fontWeight = if (m == selected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (m == selected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            Text(selected.label, style = MaterialTheme.typography.titleMedium)
+            Text(selected.blurb, fontSize = 12.sp)
+
+            if (selected == OpponentMode.REMOTE_CARCASUM) {
+                Text(
+                    "Games against Carcasum are archived as " +
+                        "\"carcasum_remote_${OpponentMode.BUDGET_MS}ms\" and are " +
+                        "NEVER counted in the champion record.",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                Text(
+                    "Server: $url",
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                )
+                TextButton(onClick = { editing = true }) { Text("Change server…") }
+                Text(
+                    "The laptop must be running scripts/carcasum_remote/server.py " +
+                        "and both devices must be on the tailnet. The address is " +
+                        "checked when the game starts, not when you type it.",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Text(
+                    "A change applies to the NEXT game.",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+
+    if (editing) {
+        RemoteUrlDialog(
+            initial = url,
+            onDismiss = { editing = false },
+            onConfirm = { onUrl(it); editing = false },
+        )
+    }
+}
+
+@Composable
+private fun RemoteUrlDialog(
+    initial: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var text by remember { mutableStateOf(initial) }
+    val valid = OpponentMode.looksLikeUrl(text)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Remote opponent server") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    singleLine = true,
+                    label = { Text("http://host:port") },
+                    isError = !valid,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "Default: ${OpponentMode.DEFAULT_URL} (the laptop's tailnet " +
+                        "address). Plain HTTP with no auth — this is only safe " +
+                        "because the tailnet is private.",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(text.trim()) }, enabled = valid) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 // --------------------------------------------------------------------------- //

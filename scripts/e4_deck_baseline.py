@@ -82,11 +82,27 @@ def select_archives(archive_dir=DEFAULT_ARCHIVES, profile: str = DEFAULT_PROFILE
     ⚠️ Selection is by that stamp and nothing else.  An app build is NEVER
     identified from `(start_rule, grid_rule)` — the Aug-2 build also stamps
     `retail`/`centered18`; the discriminator is `rules_profile`/`cloister_rule`/
-    `farm_rule`, whose ABSENCE means a pre-fixed_v1 build."""
+    `farm_rule`, whose ABSENCE means a pre-fixed_v1 build.
+
+    ⚠️ SECOND stamp, added 2026-08-30: the archive's `opponent`. Since the app
+    gained the remote-Carcasum opponent, `measurement/e4_games/` can hold games
+    that are NOT against the champion, and pooling one into this selector would
+    move the owner-vs-champion anchor. `scripts/e4_archives` owns that gate
+    (absent stamp EXCLUDES, loudly); this function does not re-implement it."""
+    import sys as _sys
+
+    if str(REPO / "scripts") not in _sys.path:
+        _sys.path.insert(0, str(REPO / "scripts"))
+    import e4_archives                                  # noqa: PLC0415
+
     out = []
     for p in sorted(Path(archive_dir).glob("*.json")):
         a = json.loads(p.read_text())
         if a.get("rules_profile") != profile:
+            continue
+        why = e4_archives.rejection_reason(a)
+        if why is not None:
+            _sys.stderr.write(f"[e4_deck_baseline] EXCLUDED {p.name}: {why}\n")
             continue
         out.append({
             "path": str(p),

@@ -518,6 +518,198 @@ BACKEND_PYTHON = "python"
 BACKEND_RUST = "rust"
 BACKEND_DEFAULT = os.environ.get("CARC_ANDROID_BACKEND", BACKEND_RUST)
 
+# --------------------------------------------------------------------------- #
+# REMOTE OPPONENT (2026-08-30) — the owner plays Carcasum from this app          #
+#                                                                               #
+# `measurement/carcasum_owner_session_prep/` needs the owner to face the         #
+# CALIBRATED Carcasum (MCTS/Portion/Random/5000ms/Cp0.5, the PATCHED binary)     #
+# under his NORMAL PHONE CONDITIONS. Nothing is ported to Android: the phone     #
+# forwards each opponent move over the tailnet to                               #
+# `scripts/carcasum_remote/server.py` on the laptop, which wraps the existing    #
+# engine-vs-engine Carcasum bridge. This side is a ~60-line HTTP client and one  #
+# extra `opponent` kind; the champion path is untouched.                         #
+#                                                                               #
+# ⛔ THE LABEL IS LOAD-BEARING. A remote game is archived with                   #
+# `opponent: "carcasum_remote_5000ms"`, never "champion", so it can never pool   #
+# into the owner-vs-CHAMPION E4 anchor — which is the single number the whole    #
+# adaptation-share discriminator is chained through. `scripts/e4_archives.py` is #
+# the reader-side half of that (absent stamp EXCLUDES, loudly).                  #
+# --------------------------------------------------------------------------- #
+OPPONENT_CHAMPION = "champion"
+OPPONENT_TIER1 = "tier1"
+#: Canonical archive label prefix. `opponent_kind` for a remote game is the FULL
+#: label including the budget (`carcasum_remote_5000ms`), so the archive says
+#: which opponent config was played without a second field to forget.
+REMOTE_OPPONENT_PREFIX = "carcasum_remote"
+REMOTE_DEFAULT_BUDGET_MS = 5000
+#: Generous by design: Carcasum thinks 5 CPU-seconds and the phone may be on a
+#: sleepy radio. A timeout is never fatal (the protocol is idempotent), it just
+#: costs a retry — so the cost of setting this too LOW (a spurious retry storm)
+#: is higher than setting it too high (one slow move).
+REMOTE_DEFAULT_TIMEOUT_S = 180.0
+#: How many times one move request is retried before the UI is told. Each retry
+#: re-sends the IDENTICAL (deck_seed, actions) body, which the server answers
+#: from its committed log — so a retry can never produce a second search or a
+#: second move (see `scripts/carcasum_remote/server.py::_Session.next_action`).
+REMOTE_DEFAULT_RETRIES = 4
+
+
+def remote_opponent_label(budget_ms: int) -> str:
+    """The archive's `opponent` value for a remote game at this budget."""
+    return f"{REMOTE_OPPONENT_PREFIX}_{int(budget_ms)}ms"
+
+
+def is_remote_opponent(kind: str) -> bool:
+    """True for every remote-opponent spelling, labelled or bare.
+
+    Accepts the bare `"carcasum_remote"` (what the app's settings send) AND the
+    labelled `"carcasum_remote_5000ms"` (what the archive/save records), because
+    `restore_game` feeds the RECORDED value straight back in as the kind.
+    """
+    return str(kind).startswith(REMOTE_OPPONENT_PREFIX)
+
+
+class RemoteOpponent:
+    """Carcasum over the tailnet: one HTTP round-trip per opponent action.
+
+    Stateless per move by construction — every request carries the FULL
+    `(deck_seed, action_log)` root-replay pair, the same lossless representation
+    this app already archives. The server holds the live Carcasum process and
+    answers from its own committed log, so **a retry is idempotent**: a dropped
+    response costs one re-request and cannot produce a second search, a second
+    move, or a divergent board.
+
+    Shaped like every other agent here (`choose_action(board) -> int`), with no
+    `start_game`/`advance`, so the mirror protocol correctly ignores it.
+    """
+
+    def __init__(self, *, url: str, session, budget_ms: int = REMOTE_DEFAULT_BUDGET_MS,
+                 timeout_s: float = REMOTE_DEFAULT_TIMEOUT_S,
+                 retries: int = REMOTE_DEFAULT_RETRIES):
+        self.url = str(url).rstrip("/")
+        self.budget_ms = int(budget_ms)
+        self.timeout_s = float(timeout_s)
+        self.retries = int(retries)
+        self._session = session
+        self.last_response: dict | None = None
+        self.finish_response: dict | None = None
+        self.health: dict | None = None
+        self.n_calls = 0
+        self.n_retries = 0
+
+    # -- transport ---------------------------------------------------------- #
+    def _post(self, path: str, body: dict) -> tuple[int, dict]:
+        import urllib.error
+        import urllib.request
+
+        req = urllib.request.Request(
+            self.url + path, data=json.dumps(body).encode(),
+            headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout_s) as fh:
+                return int(fh.status), json.loads(fh.read().decode())
+        except urllib.error.HTTPError as e:
+            try:
+                return int(e.code), json.loads(e.read().decode() or "{}")
+            except Exception:                             # noqa: BLE001
+                return int(e.code), {}
+
+    def check_health(self) -> dict:
+        """Ping `/health` once at game start so a mistyped address or a dead
+        daemon fails BEFORE the first move rather than three plies in."""
+        import urllib.request
+
+        with urllib.request.urlopen(self.url + "/health", timeout=20) as fh:
+            self.health = json.loads(fh.read().decode())
+        gate = (self.health or {}).get("gate") or {}
+        if gate.get("state") not in ("ANCHOR", "OVERRIDDEN", "UNCHECKED"):
+            raise RuntimeError(f"remote opponent reports no binary gate: {gate!r}")
+        return self.health
+
+    # -- the agent face ----------------------------------------------------- #
+    def choose_action(self, board) -> int:                        # noqa: ARG002
+        s = self._session
+        body = {"game_id": self.game_id, "deck_seed": int(s.seed),
+                "human_seat": int(s.human_player),
+                "actions": [int(a) for a in s.action_log],
+                "opponent": {"budget_ms": self.budget_ms}}
+        last: dict = {}
+        for attempt in range(max(1, self.retries)):
+            if attempt:
+                self.n_retries += 1
+                time.sleep(min(2.0 * attempt, 8.0))
+            try:
+                code, resp = self._post("/move", body)
+            except Exception as exc:                      # noqa: BLE001 — retry
+                last = {"error": "transport", "message": f"{type(exc).__name__}: {exc}"}
+                continue
+            if code == 200:
+                self.last_response = resp
+                self.n_calls += 1
+                if resp.get("action") is None:
+                    raise RuntimeError(
+                        "the remote opponent says the game is over but our board "
+                        f"is not: {json.dumps(resp)[:400]}")
+                return int(resp["action"])
+            last = dict(resp, http_status=code)
+            if code == 409:
+                # A real disagreement about the game (divergence / lost session).
+                # Retrying cannot help and would only paper over it.
+                break
+        raise RuntimeError(
+            "the remote Carcasum opponent could not be reached or refused the "
+            f"position after {max(1, self.retries)} attempts: {json.dumps(last)[:600]}")
+
+    def finish(self) -> dict | None:
+        """Tell the server the game is over, and hand it the final log.
+
+        ⚠️ Not optional, and not merely tidy. When the HUMAN plays the
+        terminating ply there is no further move request, so without this the
+        server has never been told about that last action: its Carcasum session
+        sits in the loop waiting for it, the endgame farm/terrain audit never
+        runs, and a full core leaks for the session TTL. Best-effort — a failure
+        here must never stop the phone from writing ITS archive, which is the
+        record that actually matters.
+        """
+        try:
+            code, resp = self._post("/end", {
+                "game_id": self.game_id,
+                "actions": [int(a) for a in self._session.action_log]})
+            self.finish_response = resp if code == 200 else {"http_status": code, **resp}
+        except Exception as exc:                          # noqa: BLE001
+            self.finish_response = {"error": f"{type(exc).__name__}: {exc}"}
+        return self.finish_response
+
+    @property
+    def game_id(self) -> str:
+        """One id per (deck_seed, seat) game — stable across retries and across
+        an app restart, so a resumed request finds the same live session."""
+        return f"phone-{int(self._session.seed)}-{int(self._session.human_player)}"
+
+    def manifest_block(self) -> dict:
+        """What the archive records about WHICH opponent actually played."""
+        gate = (self.health or {}).get("gate") or {}
+        return {
+            "url": self.url,
+            "budget_ms": self.budget_ms,
+            "opponent": (self.health or {}).get("opponent"),
+            "binary_sha256": gate.get("sha256"),
+            "binary_gate": gate.get("state"),
+            "tiny_city_probe": (gate.get("probe") or {}).get("tiny_city_score"),
+            "server_profile": (self.health or {}).get("profile"),
+            "calls": self.n_calls, "retries": self.n_retries,
+            # What the server said when the game ended: its own final scores and
+            # its divergence audit. A DISAGREEMENT here is the loudest signal we
+            # have that a remote game is not what it looks like, so it is stamped
+            # rather than logged.
+            "server_final": {
+                k: (self.finish_response or {}).get("record", {}).get(k)
+                for k in ("scores", "carcasum_reported_scores", "final_agree",
+                          "void", "real", "replay_ok",
+                          "opp_driver_playouts_per_turn", "opp_driver_ms_per_turn")
+            } if (self.finish_response or {}).get("record") else self.finish_response,
+        }
+
 # The reason the last `rust_available()` said no — folded into the session's
 # `backend_note` so a degraded game can say WHY on screen, not just that it did.
 _RUST_IMPORT_ERROR: str | None = None
@@ -1124,7 +1316,17 @@ class _Session:
                  played_backend: str | None = None,
                  played_sims: int | None = None,
                  played_k_dets: int | None = None,
-                 tiearb_level: str = TIEARB_LEVEL_DEFAULT):
+                 tiearb_level: str = TIEARB_LEVEL_DEFAULT,
+                 remote_url: str | None = None,
+                 remote_budget_ms: int = REMOTE_DEFAULT_BUDGET_MS,
+                 remote_timeout_s: float = REMOTE_DEFAULT_TIMEOUT_S):
+        # Remote-opponent wiring (see `RemoteOpponent`). Inert unless `opponent`
+        # names the remote kind, so a champion game is unaffected by their
+        # presence — the golden-gate property the app's JVM test pins.
+        self.remote_url = (str(remote_url) if remote_url else None)
+        self.remote_budget_ms = int(remote_budget_ms)
+        self.remote_timeout_s = float(remote_timeout_s)
+        self.remote: RemoteOpponent | None = None
         self.seed = int(seed)
         # Which start-tile convention this session plays under. New games use the
         # app default (retail); a RESTORE passes whatever the save recorded, so a
@@ -1361,8 +1563,40 @@ class _Session:
             self.eff_k_dets = 0
             return
 
+        if is_remote_opponent(self.opponent_kind):
+            # REMOTE CARCASUM. No search happens on this device: `pick` is one
+            # HTTP round-trip to `scripts/carcasum_remote/server.py`, which owns
+            # the live Carcasum process and the whole coordinate/meeple/inversion
+            # correspondence (reused from `scripts/carcasum_match/match.py`).
+            #
+            # `opponent_kind` is NORMALISED to the labelled form here so the save
+            # and the archive both record WHICH budget played — and so that a
+            # reader conditioning on `opponent == "champion"` can never mistake
+            # this game for an anchor game.
+            if not self.remote_url:
+                raise ValueError(
+                    "the remote opponent needs `remote_url` in new_game's config "
+                    "(the tailnet address of the laptop running "
+                    "scripts/carcasum_remote/server.py)")
+            self.opponent_kind = remote_opponent_label(self.remote_budget_ms)
+            remote = RemoteOpponent(url=self.remote_url, session=self,
+                                    budget_ms=self.remote_budget_ms,
+                                    timeout_s=self.remote_timeout_s)
+            # Fail at game start, not three plies in, if the daemon is not there.
+            remote.check_health()
+            self.remote = remote
+            self.agent = remote
+            self.pick = lambda board: int(remote.choose_action(board))
+            self.manifest = None
+            self.opponent_name = f"Carcasum {self.remote_budget_ms // 1000}s"
+            self.budget_note = None
+            self.eff_sims = 0
+            self.eff_k_dets = 0
+            return
+
         if self.opponent_kind != "champion":
-            raise ValueError(f"opponent must be 'champion'|'tier1'; got "
+            raise ValueError(f"opponent must be 'champion'|'tier1'|"
+                             f"'{REMOTE_OPPONENT_PREFIX}...'; got "
                              f"{self.opponent_kind!r}")
 
         spec = champion_factory.load_production_spec()
@@ -1959,6 +2193,15 @@ class _Session:
         self.last_events = scoring_events(
             before.state, self.board.state, self.human_player, self.opponent_name,
             claims=[claim] if claim is not None else None)
+        # END OF A REMOTE GAME. Told exactly once, from the one place a REAL
+        # decision lands (a replayed restore goes through `apply`, not here, so a
+        # restore cannot re-fire it). The server needs the final log because the
+        # terminating ply is often the HUMAN's, in which case no move request
+        # ever carries it — see `RemoteOpponent.finish`. Best-effort by
+        # construction: this must never stop the phone writing its own archive.
+        if (self.remote is not None and self.remote.finish_response is None
+                and self.board.state.is_terminated()):
+            self.remote.finish()
 
     def auto_pass_forced(self) -> int:
         """Auto-apply a forced pass on the HUMAN seat so the UI never renders a phase
@@ -2300,7 +2543,19 @@ def new_game(config_json: str = "{}") -> str:
 
         seed          int, default 0     — deck seed AND agent seed
         human_player  0|1, default 0     — which seat the human plays
-        opponent      "champion"|"tier1", default "champion"
+        opponent      "champion"|"tier1"|"carcasum_remote", default "champion"
+        remote_url    str, required for "carcasum_remote" — e.g.
+                      "http://100.109.88.103:8971", the tailnet address of the
+                      laptop running scripts/carcasum_remote/server.py. ⛔ A
+                      remote game archives `opponent: "carcasum_remote_<ms>ms"`
+                      and is therefore EXCLUDED from the owner-vs-champion E4
+                      anchor by scripts/e4_archives.py — that exclusion is the
+                      whole point of the mode being a separate opponent kind
+                      rather than a champion variant.
+        remote_budget_ms  int, default 5000 — Carcasum's per-turn CPU budget (the
+                      CALIBRATED value; changing it changes the opponent and
+                      voids the session's `B` anchor)
+        remote_timeout_s  float, default 180 — per-request HTTP timeout
         sims          int|null           — per-determinization sims (null = YAML budget)
         k_dets        int|null           — determinizations   (null = YAML budget)
         verify        bool, default true — champion_factory's runtime leaf proof
@@ -2363,6 +2618,10 @@ def new_game(config_json: str = "{}") -> str:
             farm_rule=str(cfg.get("farm_rule", FARM_RULE_LATCHED)),
             backend=str(cfg.get("backend", BACKEND_DEFAULT)),
             tiearb_level=str(cfg.get("tiearb_level", TIEARB_LEVEL_DEFAULT)),
+            # Inert for every champion/tier1 game — see `_Session.__init__`.
+            remote_url=cfg.get("remote_url"),
+            remote_budget_ms=int(cfg.get("remote_budget_ms", REMOTE_DEFAULT_BUDGET_MS)),
+            remote_timeout_s=float(cfg.get("remote_timeout_s", REMOTE_DEFAULT_TIMEOUT_S)),
         )
         _S = s
         _agent_ref = s.agent
@@ -2539,7 +2798,18 @@ def _save_payload(s: _Session) -> dict:
         "deck_seed": s.seed,
         "actions": list(s.action_log),
         "human_player": s.human_player,
+        # ⛔ THE OPPONENT LABEL. "champion" | "tier1" | "carcasum_remote_<ms>ms".
+        # For a remote game this is the LABELLED form (`_build_opponent`
+        # normalises it), so the record names the budget that played and
+        # `scripts/e4_archives.py` can keep it out of the champion anchor.
         "opponent": s.opponent_kind,
+        # Where the remote opponent lived, so a RESTORE can reconnect to the same
+        # live session (`game_id` is derived from (deck_seed, seat), so an app
+        # restart mid-game resumes as long as the daemon is still up). None for
+        # every champion/tier1 game.
+        "remote_url": s.remote_url if is_remote_opponent(s.opponent_kind) else None,
+        "remote_budget_ms": (s.remote_budget_ms
+                             if is_remote_opponent(s.opponent_kind) else None),
         "sims": s.req_sims,
         "k_dets": s.req_k_dets,
         "verify": s.verify,
@@ -2658,6 +2928,14 @@ def archive_record() -> str:
             "backend": s.backend,
             "backend_note": s.rs_note,
             "rust_threads": (s.rust_threads if s.backend == BACKEND_RUST else None),
+            # WHICH REMOTE OPPONENT ACTUALLY PLAYED (2026-08-30). Present only on
+            # a remote game, absent on every champion/tier1 archive — so no
+            # existing archive's schema changes. It carries the server's own
+            # binary sha256, its `G-BINARY` gate state and the live tiny-city
+            # scoring probe, which is what makes a remote game auditable against
+            # `measurement/carcasum_owner_session_prep/RULES_DELTA.md` §2.1
+            # without trusting a note somebody typed.
+            "remote": (s.remote.manifest_block() if s.remote is not None else None),
             # THE TIE ARBITER, AS RESOLVED at game start (mandatory E4 archive
             # discipline — CLAUDE.md "manifest stamping"). `s.tiearb` is the FINAL
             # answer after every fail-closed gate (missing YAML block, unsupported
@@ -2907,6 +3185,16 @@ def restore_game(json_str: str) -> str:
             seed=int(blob.get("deck_seed", 0)),
             human_player=human_player,
             opponent=str(blob.get("opponent", "champion")),
+            # A remote game resumes against the SAME daemon: `game_id` is derived
+            # from (deck_seed, seat), so if the laptop session is still alive the
+            # opponent picks up exactly where it left off. If it is not, the first
+            # move request returns `session_lost` and the UI says so — Carcasum
+            # cannot be replayed into a position (compile-time RNG, no history
+            # load), so silently starting a SECOND opponent inside one game is the
+            # one thing that must not happen. Absent for every non-remote save.
+            remote_url=blob.get("remote_url"),
+            remote_budget_ms=int(blob.get("remote_budget_ms")
+                                 or REMOTE_DEFAULT_BUDGET_MS),
             sims=blob.get("sims"),
             k_dets=blob.get("k_dets"),
             verify=bool(blob.get("verify", True)),

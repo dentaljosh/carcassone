@@ -123,15 +123,28 @@ enum class Difficulty(
         humanPlayer: Int,
         verify: Boolean = true,
         tieArbLevel: TieArbLevel = TieArbLevel.DEFAULT,
+        opponentMode: OpponentMode = OpponentMode.DEFAULT,
+        remoteUrl: String = OpponentMode.DEFAULT_URL,
     ): String =
         JSONObject().apply {
             put("seed", seed)
             put("human_player", humanPlayer)
-            put("opponent", opponent)
+            put("opponent", opponentMode.bridgeOpponent ?: opponent)
             put("verify", verify)
             kDets?.let { put("k_dets", it) }
             sims?.let { put("sims", it) }
             put("tiearb_level", tieArbLevel.id)
+            // ⛔ GOLDEN GATE. Everything above this line is EXACTLY what it was
+            // before the remote opponent existed, and `opponentMode` defaults to
+            // CHAMPION whose `bridgeOpponent` is null — so a champion game emits
+            // the byte-identical JSON it always did, and the E4 stream stays one
+            // continuous measurement across this build. `OpponentModeTest` pins
+            // that against literal strings; do not "tidy" the two keys below into
+            // the unconditional block.
+            if (opponentMode == OpponentMode.REMOTE_CARCASUM) {
+                put("remote_url", remoteUrl)
+                put("remote_budget_ms", OpponentMode.BUDGET_MS)
+            }
         }.toString()
 
     companion object {
@@ -174,8 +187,35 @@ class SettingsStore(context: Context) {
         store.edit { it[KEY_TIE_ARB_LEVEL] = level.id }
     }
 
+    /**
+     * WHO to play (see [OpponentMode]). A missing or unknown record reads as
+     * [OpponentMode.CHAMPION] — the safe default in the strongest sense: an
+     * upgraded install, a corrupt preferences file and a rolled-back build all
+     * land on the champion, which is the opponent every E4 archive is about.
+     */
+    val opponentMode: Flow<OpponentMode> = store.data
+        .catch { t -> if (t is IOException) emit(emptyPreferences()) else throw t }
+        .map { prefs -> OpponentMode.fromId(prefs[KEY_OPPONENT_MODE]) }
+
+    suspend fun setOpponentMode(mode: OpponentMode) {
+        store.edit { it[KEY_OPPONENT_MODE] = mode.id }
+    }
+
+    /** The remote-opponent server address; blank/absent falls back to the default. */
+    val remoteUrl: Flow<String> = store.data
+        .catch { t -> if (t is IOException) emit(emptyPreferences()) else throw t }
+        .map { prefs ->
+            prefs[KEY_REMOTE_URL]?.takeIf { it.isNotBlank() } ?: OpponentMode.DEFAULT_URL
+        }
+
+    suspend fun setRemoteUrl(url: String) {
+        store.edit { it[KEY_REMOTE_URL] = url.trim() }
+    }
+
     private companion object {
         val KEY_DIFFICULTY = stringPreferencesKey("difficulty")
         val KEY_TIE_ARB_LEVEL = stringPreferencesKey("tie_arb_level")
+        val KEY_OPPONENT_MODE = stringPreferencesKey("opponent_mode")
+        val KEY_REMOTE_URL = stringPreferencesKey("remote_url")
     }
 }

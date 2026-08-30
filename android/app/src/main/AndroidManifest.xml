@@ -1,8 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      REMOTE OPPONENT (2026-08-30). The app is otherwise fully offline and makes
+      no network call of any kind; this permission exists solely so the optional
+      "Remote Carcasum" opponent can reach
+      scripts/carcasum_remote/server.py on the laptop, over the tailnet.
+
+      usesCleartextTraffic: the server speaks plain HTTP on a private tailnet
+      between two of the owner's own devices, and its address is a user-editable
+      setting — so a network-security-config pinned to one IP would break the
+      moment the address changed. The app sends nothing but (deck_seed, actions)
+      and receives an integer. Documented rather than silently switched on:
+      scripts/carcasum_remote/README.md carries the same note.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".CarcApplication"
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
