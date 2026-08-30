@@ -109,6 +109,10 @@ data class GameUiState(
     val difficulty: Difficulty = Difficulty.DEFAULT,
     /** The persisted tie-arbiter level; the next [GameViewModel.newGame] uses it. */
     val tieArbLevel: TieArbLevel = TieArbLevel.DEFAULT,
+    /** The persisted opponent (champion / remote Carcasum); next game uses it. */
+    val opponentMode: OpponentMode = OpponentMode.DEFAULT,
+    /** The persisted remote-opponent server address. */
+    val remoteUrl: String = OpponentMode.DEFAULT_URL,
     /**
      * Rolling mean of the last [GameViewModel.ETA_WINDOW] AI move durations **for
      * the decision now in flight**, in seconds — `null` until there is a usable
@@ -286,6 +290,28 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             settings.tieArbLevel.collect { l -> _ui.update { it.copy(tieArbLevel = l) } }
         }
+        viewModelScope.launch {
+            settings.opponentMode.collect { m -> _ui.update { it.copy(opponentMode = m) } }
+        }
+        viewModelScope.launch {
+            settings.remoteUrl.collect { u -> _ui.update { it.copy(remoteUrl = u) } }
+        }
+    }
+
+    /** Persist the opponent. The change applies to the NEXT game, not this one. */
+    fun setOpponentMode(mode: OpponentMode) {
+        viewModelScope.launch {
+            runCatching { settings.setOpponentMode(mode) }
+                .onFailure { Log.w(TAG, "opponent mode write failed", it) }
+        }
+    }
+
+    /** Persist the remote-opponent server address. */
+    fun setRemoteUrl(url: String) {
+        viewModelScope.launch {
+            runCatching { settings.setRemoteUrl(url) }
+                .onFailure { Log.w(TAG, "remote url write failed", it) }
+        }
     }
 
     /** Persist a new difficulty. The change applies to the NEXT game, not this one. */
@@ -377,19 +403,30 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             .getOrElse { _ui.value.difficulty }
         val tieArbLevel = runCatching { settings.tieArbLevel.first() }
             .getOrElse { _ui.value.tieArbLevel }
+        val opponentMode = runCatching { settings.opponentMode.first() }
+            .getOrElse { _ui.value.opponentMode }
+        val remoteUrl = runCatching { settings.remoteUrl.first() }
+            .getOrElse { _ui.value.remoteUrl }
         previewFor = null
         _ui.update {
             GameUiState(
                 budget = it.budget, busy = true, hasSave = false,
                 difficulty = difficulty, tieArbLevel = tieArbLevel, archiveCount = it.archiveCount,
+                opponentMode = opponentMode, remoteUrl = remoteUrl,
             )
         }
         // The preset owns the whole opponent/budget decision, including the choice
         // to OMIT sims/k_dets at Champion so the bridge falls through to
         // governance/PRODUCTION.yaml — the only place a strength knob is allowed
         // to live. `budget` is read separately and used for DISPLAY only.
+        // `opponentMode` is a SECOND axis on top of the preset: at CHAMPION this
+        // call is byte-identical to what it was before the remote opponent
+        // existed (see `Difficulty.newGameConfig`'s golden-gate note), and at
+        // REMOTE_CARCASUM the preset's budget knobs simply stop mattering
+        // because no search runs on this device.
         val cfg = difficulty.newGameConfig(
             seed = seed, humanPlayer = seat.humanPlayer(), tieArbLevel = tieArbLevel,
+            opponentMode = opponentMode, remoteUrl = remoteUrl,
         )
         runBridge(e) { PythonBridge.newGame(cfg) }
     }
@@ -689,6 +726,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             GameUiState(
                 budget = it.budget, hasSave = it.hasSave,
                 difficulty = it.difficulty, tieArbLevel = it.tieArbLevel,
+                opponentMode = it.opponentMode, remoteUrl = it.remoteUrl,
                 archiveCount = it.archiveCount,
             )
         }

@@ -1236,8 +1236,30 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
                    audit_mode: str | None = None, read_timeout_s: float | None = None,
                    node_labels_by_type: dict | None = None,
                    tile_periods: dict | None = None,
-                   tiearb: dict | None = None) -> dict:
+                   tiearb: dict | None = None,
+                   agent=None, on_apply=None) -> dict:
     """Play ONE champion-vs-Carcasum game. Returns the archive record.
+
+    ⚠️ `agent` / `on_apply` are ADDITIVE injection points, both default-None, and
+    when both are None this function is byte-identical to what it was before they
+    existed. They exist for ONE caller —
+    `scripts/carcasum_remote/server.py`, the phone remote-opponent server — so
+    that the coordinate/rotation/meeple maps, the inversion discipline, the void
+    taxonomy and the score diffing in this file are REUSED WHOLESALE rather than
+    re-implemented against the same binary a second time (a second inverter is a
+    second thing that can silently disagree with our engine).
+
+    * `agent` replaces `_make_champion(...)`: any object with
+      `choose_action(board) -> int`. `sims`/`k_dets`/`execution`/`audit_mode`/
+      `tiearb` are then not used to BUILD anything (they still land in the
+      manifest verbatim, which is what a reader of the record wants).
+    * `on_apply(action, seat, kind)` is called from `_apply` AFTER the action has
+      landed on our board, in ply order, for BOTH seats — including the actions
+      this file synthesises itself (the implicit meeple pass, the redraw pass).
+      That is the whole authoritative action sequence, which is exactly what a
+      remote client needs to stay in lockstep. It must not raise; if it does, the
+      game faults like any other harness error.
+    """
 
     Carcasum's `Game::step()` owns the turn loop, so this is "read a driver
     line, react", not a loop we drive — see the module docstring's Protocol
@@ -1298,8 +1320,11 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
         from carcassonne_ai.mirror_protocol import resolve_execution
 
         execution = resolve_execution("rust", rust_threads=1)
-    champ = _make_champion(game, seed, sims=sims, k_dets=k_dets, execution=execution,
-                           audit_mode=audit_mode, tiearb=tiearb)
+    if agent is not None:
+        champ = agent
+    else:
+        champ = _make_champion(game, seed, sims=sims, k_dets=k_dets, execution=execution,
+                               audit_mode=audit_mode, tiearb=tiearb)
     agents = {champ_seat: champ}
     MP.seat(agents, board)                        # mirror: seated once, on the INITIAL board
 
@@ -1345,6 +1370,8 @@ def play_one_match(deck_seed: int, champ_seat: int, *, replicate: int = 0,
         MP.advance(agents, int(a))
         if term_prev_board is None and game.get_game_ended(board, 0) != 0:
             term_prev_board, term_action = candidate_prev, int(a)
+        if on_apply is not None:
+            on_apply(int(a), int(seat), str(what))
 
     def _void(cls: str, detail: dict) -> None:
         nonlocal void, void_detail

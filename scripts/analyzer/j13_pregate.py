@@ -1112,11 +1112,25 @@ def resolve_corpus(games_dir):
     """[(path, profile_name, archive_dict)] — profile resolved FROM the archive.
 
     Imports only `carcassonne_ai.rules_profile` (cheap, no engine, no R9 latch),
-    so it is safe to call before `prepare_env`."""
+    so it is safe to call before `prepare_env`.
+
+    ⚠️ Archives NOT played against the champion are excluded, loudly: since the
+    app gained the remote-Carcasum opponent (2026-08-30) this directory can hold
+    games the champion never played. `scripts/e4_archives` owns that gate."""
+    import sys as _sys
+
+    if str(REPO / "scripts") not in _sys.path:
+        _sys.path.insert(0, str(REPO / "scripts"))
+    import e4_archives                                  # noqa: PLC0415
+
     from ev_loss import load_archive, resolve_profile_name
     rows = []
     for p in sorted(Path(games_dir).glob("*.json")):
         arch = load_archive(p)
+        why = e4_archives.rejection_reason(arch["provenance"])
+        if why is not None:
+            _sys.stderr.write(f"[j13_pregate] EXCLUDED {p.name}: {why}\n")
+            continue
         prof = resolve_profile_name(arch["provenance"])
         rows.append((str(p), prof, arch))
     return rows

@@ -294,6 +294,19 @@ def price_game(stem, profile, targets, cut, args, fh, log):
     from carcassonne_ai.mirror_protocol import advance, resolve_execution, seat
 
     arc = json.loads((ARCHIVES / stem).read_text())
+    # ⚠️ CHAMPION-ONLY. Since 2026-08-30 `measurement/e4_games/` can also hold
+    # remote-Carcasum games (the phone's remote-opponent mode); pricing one here
+    # would put a non-champion ply into an owner-vs-champion price. Gate owned by
+    # `scripts/e4_archives` — absent stamp refuses.
+    import sys as _sys
+
+    if str(REPO / "scripts") not in _sys.path:
+        _sys.path.insert(0, str(REPO / "scripts"))
+    import e4_archives                                  # noqa: PLC0415
+
+    _why = e4_archives.rejection_reason(arc)
+    if _why is not None:
+        raise RuntimeError(f"{stem} is not an owner-vs-champion archive: {_why}")
     seed = int(arc["deck_seed"])
     actions = [int(x) for x in arc["actions"]]
     final_scores = [int(x) for x in arc["scores"]]
