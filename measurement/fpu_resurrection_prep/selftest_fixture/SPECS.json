@@ -1,0 +1,29 @@
+[
+ {
+  "name": "CELL_FPU02",
+  "role": "local",
+  "knob": "fpu_reduction",
+  "value": 0.2,
+  "seed_start": 157999999000,
+  "n_decks": 12,
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a cell"
+ },
+ {
+  "name": "CELL_FPU04",
+  "role": "local",
+  "knob": "fpu_reduction",
+  "value": 0.4,
+  "seed_start": 157999999100,
+  "n_decks": 10,
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a cell"
+ },
+ {
+  "name": "CELL_CPUCT10",
+  "role": "laptop",
+  "knob": "c_puct",
+  "value": 1.0,
+  "seed_start": 157999999200,
+  "n_decks": 10,
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a cell"
+ }
+]

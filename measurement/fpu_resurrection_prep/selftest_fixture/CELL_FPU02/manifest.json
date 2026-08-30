@@ -1,0 +1,88 @@
+{
+ "kind": "eval_fair_puct",
+ "host": "Doctor",
+ "code_rev": "aaaaaaaaa",
+ "BLIND_COMMIT": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+ "carc_rs_build": "carc_rs-0.1.0+aaaaaaaaaaaa+rustc1.96.0",
+ "carc_rs_version": "0.1.0",
+ "carc_rs_binary_sha": "1111111111111111",
+ "mixed_builds": false,
+ "n_failed": 0,
+ "rules_profile": {
+  "name": "fixed_v1",
+  "r9_env_ok": true,
+  "r9_env_observed": true
+ },
+ "config": {
+  "cand_search": {
+   "fpu_reduction": 0.2,
+   "c_puct": null,
+   "shared_c_puct": 1.5
+  },
+  "cand_tiearb": {
+   "enabled": false,
+   "B": 16,
+   "J": 4,
+   "mode": "argmax",
+   "salt": "tiearb2-deploy-v1",
+   "eps": 0.0,
+   "phase_gate": "all"
+  },
+  "cand_leaf_hash": "a36d2e15a3b3d71d",
+  "opp_leaf_hash": "a36d2e15a3b3d71d",
+  "cand_leaf_cfg": {
+   "v29_meeple_curve": [
+    -10.0,
+    -5.0,
+    -1.25,
+    0.0,
+    2.5,
+    3.75,
+    5.0,
+    6.25
+   ]
+  },
+  "band_seed_start": 157999999000,
+  "n_decks": 12,
+  "seatings_per_deck": 2,
+  "champion": {
+   "k_dets": 16,
+   "sims_per_det": 1376,
+   "total_sims": 22016,
+   "c_puct": 1.5,
+   "tau_p": 5.0,
+   "value_norm": 15.0,
+   "leaf_quantize": "float",
+   "final_select": "visits",
+   "fpu_reduction": 0.2
+  },
+  "opponent": {
+   "champ_cfg": {
+    "k_dets": 16,
+    "sims_per_det": 1376,
+    "total_sims": 22016,
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "value_norm": 15.0,
+    "leaf_quantize": "float",
+    "final_select": "visits",
+    "fpu_reduction": null
+   },
+   "tiearb_enabled": false,
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  "endgame": {
+   "exact_k": 2,
+   "mode": "marginalized"
+  },
+  "backend": {
+   "name": "rust",
+   "requested": "rust",
+   "mixed_builds": false,
+   "converted_sides": [
+    "candidate",
+    "opponent"
+   ]
+  }
+ }
+}

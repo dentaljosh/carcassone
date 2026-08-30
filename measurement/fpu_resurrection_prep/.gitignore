@@ -1,0 +1,10 @@
+# Executor-owed, BOX-LOCAL artefacts. ⛔ Never committed: PINNED_SRC_REV is the
+# pin THIS BOX made after ITS bundle sync, and SRC_CLEAN.jsonl / SELFTEST_*.json
+# / SMOKE_*.json are that box's own launch ledger. A committed pin would let one
+# box's rev masquerade as the other's — the exact IS-A1 confusion
+# `cross_box_rev_gate` exists to refuse.
+PINNED_SRC_REV
+SRC_CLEAN.jsonl
+SELFTEST_*.json
+SMOKE_*.json
+logs/

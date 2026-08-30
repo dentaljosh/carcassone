@@ -1,0 +1,107 @@
+{
+  "gate": "FPU GOLDEN GATE (bit-exact-when-None + positive control)",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "check": "ONE-WHEEL",
+      "ok": true,
+      "detail": {
+        "OLD": "f6316d42838574de",
+        "NEW": "f6316d42838574de",
+        "CTRL": "f6316d42838574de"
+      },
+      "why": "all three legs ran against ONE installed carc_rs binary \u2014 the change is python-only and the binary is a CONSTANT of this comparison"
+    },
+    {
+      "check": "TWO-TREES",
+      "ok": true,
+      "detail": {
+        "OLD": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/oldtree",
+        "NEW": "/home/doctor/projects/carcassone/.claude/worktrees/agent-af5a26baa855ac48e",
+        "CTRL": "/home/doctor/projects/carcassone/.claude/worktrees/agent-af5a26baa855ac48e"
+      },
+      "why": "OLD and NEW resolved DIFFERENT source trees, and the positive control ran on the NEW one"
+    },
+    {
+      "check": "SAME-SEEDS",
+      "ok": true,
+      "detail": {
+        "n": 20,
+        "identical": true
+      },
+      "why": "all three legs played the same frozen deck set"
+    },
+    {
+      "check": "SAME-BUDGET",
+      "ok": true,
+      "detail": {
+        "k_dets": 2,
+        "sims_per_det": 96,
+        "exact_k": 2,
+        "note": "\u26d4 NOT the champion's k8x1376 \u2014 this is a CODE-PATH identity fixture, never a strength measurement."
+      },
+      "why": "identical search shape on all three legs"
+    },
+    {
+      "check": "IDENTITY",
+      "ok": true,
+      "detail": {
+        "old": "623d02eeae4667ff22dfd6939ffbfa75aaf4c079218f8636c6eec94a3fc2cacc",
+        "new": "623d02eeae4667ff22dfd6939ffbfa75aaf4c079218f8636c6eec94a3fc2cacc",
+        "per_game_mismatches": []
+      },
+      "why": "\u2b50 BIT-IDENTICAL at fpu_reduction=None: the plumbing did not move the champion's play by one action"
+    },
+    {
+      "check": "POSITIVE",
+      "ok": true,
+      "detail": {
+        "new": "623d02eeae4667ff22dfd6939ffbfa75aaf4c079218f8636c6eec94a3fc2cacc",
+        "ctrl": "26134a93b0392575100c7c7181573564ad1339fe6bcd10e349539af8f9ec79b5",
+        "requested_fpu": 0.2,
+        "resolved_fpu_leg0": 0.2,
+        "games_that_differ": 20,
+        "games_total": 20
+      },
+      "why": "\u2b50 the knob BINDS: 20/20 games diverge at fpu=0.2. A knob that changed nothing would be indistinguishable from the hard-coded None this round removes."
+    },
+    {
+      "check": "AUDIT-ADJUDICATED",
+      "ok": true,
+      "detail": {
+        "old_tree_expressible": false,
+        "new_tree_expressible": true
+      },
+      "why": "\u2b50\u2b50 the audit's finding is ADJUDICATED: HeuristicPriorConfig had no fpu_reduction field on the OLD tree (so no caller could express the knob, and rust_agent.search_config_rs passed a hard-coded None into the SearchConfigRs slot regardless), and has one on the NEW tree where POSITIVE shows it reaching play."
+    }
+  ],
+  "failed": [],
+  "legs": {
+    "OLD": {
+      "src_tree": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/oldtree",
+      "leg_sha256": "623d02eeae4667ff22dfd6939ffbfa75aaf4c079218f8636c6eec94a3fc2cacc",
+      "requested_fpu": null,
+      "knob_expressible_on_this_tree": false,
+      "host": "Doctor"
+    },
+    "NEW": {
+      "src_tree": "/home/doctor/projects/carcassone/.claude/worktrees/agent-af5a26baa855ac48e",
+      "leg_sha256": "623d02eeae4667ff22dfd6939ffbfa75aaf4c079218f8636c6eec94a3fc2cacc",
+      "requested_fpu": null,
+      "knob_expressible_on_this_tree": true,
+      "host": "Doctor"
+    },
+    "CTRL": {
+      "src_tree": "/home/doctor/projects/carcassone/.claude/worktrees/agent-af5a26baa855ac48e",
+      "leg_sha256": "26134a93b0392575100c7c7181573564ad1339fe6bcd10e349539af8f9ec79b5",
+      "requested_fpu": 0.2,
+      "knob_expressible_on_this_tree": true,
+      "host": "Doctor"
+    }
+  },
+  "riders": [
+    "\u26d4 This is a CODE-PATH gate at a tiny budget (k2 x 96), NEVER a strength measurement. No number in the legs may be quoted as one.",
+    "\u26d4 It proves the DEFAULT path is unmoved and the knob BINDS. It says NOTHING about whether the knob HELPS \u2014 that is what the three cells of measurement/fpu_resurrection_prep are for.",
+    "\u2b50 It is also why this round carries no IDENT preflight CELL: the phasegate precedent needed one because ITS wheel moved (a stale wheel would have served a gate-blind arbiter). No rust change was made here, ONE-WHEEL asserts the binary is a constant, and this gate covers the only thing that did move."
+  ]
+}

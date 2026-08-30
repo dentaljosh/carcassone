@@ -1,0 +1,465 @@
+{
+  "fixture": "fpu_resurrection golden gate",
+  "requested_fpu": null,
+  "knob_expressible_on_this_tree": true,
+  "requested_but_unreachable": false,
+  "backend": "rust",
+  "src_tree": "/home/doctor/projects/carcassone/.claude/worktrees/agent-af5a26baa855ac48e",
+  "carc_rs_binary_sha": "f6316d42838574de",
+  "search_config_rs_repr_at_champion": "SearchConfigRs(sims=8, c_puct=1.5, tau_p=5, value_norm=15, leaf_quantize=Float, final_select=Visits, fpu=None, exp_fma=true, tanh=GlibcFma)",
+  "budget": {
+    "k_dets": 2,
+    "sims_per_det": 96,
+    "exact_k": 2,
+    "note": "\u26d4 NOT the champion's k8x1376 \u2014 this is a CODE-PATH identity fixture, never a strength measurement."
+  },
+  "seeds": [
+    9100000000,
+    9100000001,
+    9100000002,
+    9100000003,
+    9100000004,
+    9100000005,
+    9100000006,
+    9100000007,
+    9100000008,
+    9100000009,
+    9100000010,
+    9100000011,
+    9100000012,
+    9100000013,
+    9100000014,
+    9100000015,
+    9100000016,
+    9100000017,
+    9100000018,
+    9100000019
+  ],
+  "host": "Doctor",
+  "python": "3.12.3",
+  "env_flat_leaf": "1",
+  "wall_secs": 82.00252092594747,
+  "games": [
+    {
+      "seed": 9100000000,
+      "n_actions": 144,
+      "actions_sha256": "b277eb4af54f4ab803b9d68df9595124b37883b3b81211c6808e3c21b127eb45",
+      "first_8_actions": [
+        1248,
+        2501,
+        1253,
+        2503,
+        1145,
+        2501,
+        1352,
+        2506
+      ],
+      "final_scores": [
+        77,
+        62
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000001,
+      "n_actions": 144,
+      "actions_sha256": "31a7e8c81b792a99a19e1be7ffe453eaba6465260da206d8467a380c8c15566e",
+      "first_8_actions": [
+        1248,
+        2501,
+        1245,
+        2501,
+        1352,
+        2506,
+        1147,
+        2510
+      ],
+      "final_scores": [
+        84,
+        95
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000002,
+      "n_actions": 143,
+      "actions_sha256": "9ef6728dfd0c1fc46ebe65f918df8bf13d7daac97280efee4b437f36ebdff961",
+      "first_8_actions": [
+        1248,
+        2502,
+        1148,
+        2506,
+        1253,
+        2502,
+        1244,
+        2502
+      ],
+      "final_scores": [
+        98,
+        80
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000003,
+      "n_actions": 144,
+      "actions_sha256": "cee13b3819d749ab8b1a9a2e9f1d09323ee6c6da60bfc1632a2253fc182e7ea3",
+      "first_8_actions": [
+        1248,
+        2506,
+        1244,
+        2501,
+        1258,
+        2510,
+        1149,
+        2502
+      ],
+      "final_scores": [
+        74,
+        55
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000004,
+      "n_actions": 144,
+      "actions_sha256": "ee18f37c76630326ab4cb3a9448db5d179e2c9a68e828d89d08dd8c08ea47082",
+      "first_8_actions": [
+        1248,
+        2506,
+        1149,
+        2501,
+        1252,
+        2501,
+        1244,
+        2505
+      ],
+      "final_scores": [
+        113,
+        106
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000005,
+      "n_actions": 144,
+      "actions_sha256": "94d9e215926c91463e1ab4d825c7134816bbc420b7d15945a30e153e65610c6b",
+      "first_8_actions": [
+        1248,
+        2501,
+        1246,
+        2509,
+        1257,
+        2501,
+        1145,
+        2501
+      ],
+      "final_scores": [
+        83,
+        104
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000006,
+      "n_actions": 144,
+      "actions_sha256": "4b0c7c0a00e84b973b63b00013e2ddbf50bbcfa8d6d56756efcc0f00c5e3326c",
+      "first_8_actions": [
+        1248,
+        2503,
+        1148,
+        2505,
+        1146,
+        2510,
+        1344,
+        2501
+      ],
+      "final_scores": [
+        111,
+        76
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000007,
+      "n_actions": 144,
+      "actions_sha256": "3cc6556350e2f0197deceb3dabd85b9986c37fe467268db2e0480d499f07f603",
+      "first_8_actions": [
+        1248,
+        2504,
+        1252,
+        2504,
+        1150,
+        2510,
+        1345,
+        2507
+      ],
+      "final_scores": [
+        123,
+        111
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000008,
+      "n_actions": 144,
+      "actions_sha256": "8ab770b86b44a168497f59611a93322ab1053c5c04ff06d0be2a92f7e62b3d65",
+      "first_8_actions": [
+        1248,
+        2503,
+        1148,
+        2501,
+        1144,
+        2506,
+        1150,
+        2509
+      ],
+      "final_scores": [
+        84,
+        107
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000009,
+      "n_actions": 144,
+      "actions_sha256": "0dfb8afbb6dfa6ffaf4ff03721111076847d41d4d37d4bb2a8077b56d6149ec8",
+      "first_8_actions": [
+        1248,
+        2503,
+        1148,
+        2501,
+        1247,
+        2510,
+        1240,
+        2510
+      ],
+      "final_scores": [
+        88,
+        109
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000010,
+      "n_actions": 144,
+      "actions_sha256": "8ce67a556e472d6781e4b8f3fe3a21262260699715b36be69c7089fdf2477afc",
+      "first_8_actions": [
+        1248,
+        2506,
+        1148,
+        2502,
+        1252,
+        2501,
+        1350,
+        2501
+      ],
+      "final_scores": [
+        83,
+        92
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000011,
+      "n_actions": 144,
+      "actions_sha256": "793f3b27e57338a5cbd8a43156e9bab3aeaac644ee0233cf2306e589175877b8",
+      "first_8_actions": [
+        1248,
+        2501,
+        1148,
+        2501,
+        1244,
+        2505,
+        1050,
+        2510
+      ],
+      "final_scores": [
+        71,
+        98
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000012,
+      "n_actions": 144,
+      "actions_sha256": "a1799cb2625d182989a1fffa5650ea8c59fc86b9f4abaaa4956fb79fa6a381a7",
+      "first_8_actions": [
+        1248,
+        2502,
+        1149,
+        2501,
+        1253,
+        2507,
+        1152,
+        2510
+      ],
+      "final_scores": [
+        107,
+        101
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000013,
+      "n_actions": 144,
+      "actions_sha256": "d63b9edbae4a6f56e5b3843945b1515d894ef59652d32d57d539ff23bc90418d",
+      "first_8_actions": [
+        1248,
+        2503,
+        1252,
+        2501,
+        1344,
+        2510,
+        1153,
+        2510
+      ],
+      "final_scores": [
+        82,
+        91
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000014,
+      "n_actions": 144,
+      "actions_sha256": "19b066316e908be1fc2c6b914d783a5a12b88494f0d58cde4f21094b4c12986d",
+      "first_8_actions": [
+        1248,
+        2503,
+        1349,
+        2510,
+        1346,
+        2509,
+        1240,
+        2502
+      ],
+      "final_scores": [
+        110,
+        136
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000015,
+      "n_actions": 144,
+      "actions_sha256": "b817b7ee657d2657f8b62fa23cc4027d1736154a2503e20874d09d8f63b6cd41",
+      "first_8_actions": [
+        1248,
+        2505,
+        1350,
+        2509,
+        1448,
+        2501,
+        1253,
+        2502
+      ],
+      "final_scores": [
+        101,
+        121
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000016,
+      "n_actions": 144,
+      "actions_sha256": "970da14dbb22e596608dc2d85d317272dd6a680dfae12d8e33bff540d557ca3a",
+      "first_8_actions": [
+        1248,
+        2506,
+        1150,
+        2503,
+        1153,
+        2501,
+        1353,
+        2510
+      ],
+      "final_scores": [
+        67,
+        94
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000017,
+      "n_actions": 144,
+      "actions_sha256": "45aca9bd733017abccebaad71ca868ba2d19d01ab20fc3bed59df29f2710c51a",
+      "first_8_actions": [
+        1248,
+        2506,
+        1348,
+        2510,
+        1346,
+        2501,
+        1152,
+        2501
+      ],
+      "final_scores": [
+        86,
+        95
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000018,
+      "n_actions": 144,
+      "actions_sha256": "481527697ca0b11b3bd274a3687ed978c68d0e5ac3ba2d3087506bc27506579d",
+      "first_8_actions": [
+        1248,
+        2506,
+        1245,
+        2510,
+        1148,
+        2503,
+        1153,
+        2502
+      ],
+      "final_scores": [
+        90,
+        90
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 9100000019,
+      "n_actions": 144,
+      "actions_sha256": "c83c029d57c5a38140f1301d989d4294e39752e5deabf418a8b2fa09733e0b57",
+      "first_8_actions": [
+        1248,
+        2502,
+        1252,
+        2506,
+        1145,
+        2501,
+        1257,
+        2501
+      ],
+      "final_scores": [
+        110,
+        98
+      ],
+      "resolved_fpu": null,
+      "resolved_c_puct": 1.5
+    }
+  ],
+  "leg_sha256": "623d02eeae4667ff22dfd6939ffbfa75aaf4c079218f8636c6eec94a3fc2cacc"
+}

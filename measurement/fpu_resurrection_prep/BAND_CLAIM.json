@@ -1,0 +1,48 @@
+{
+  "_status": "⛔ PROPOSED, NOT CLAIMED. 0 rows have been appended to governance/BAND_REGISTRY.csv at this commit, and the sibling BAND_CLAIMED file does not exist. run_cells.sh refuses a real cell without it.",
+  "_order_of_operations": [
+    "1. RE-RUN THE TREE SWEEP immediately before the append (not the sweep recorded here — a fresh one).",
+    "2. Append the three rows in `_csv_rows` to governance/BAND_REGISTRY.csv.",
+    "3. THEN drop the sibling file BAND_CLAIMED.",
+    "⚠️⚠️ IN THAT ORDER. 146000000000 is the trap it exists for: absent from the registry but carrying references in the tree. The registry is NECESSARY AND NOT SUFFICIENT; the TREE SWEEP is the binding check."
+  ],
+  "bands": {
+    "155000000000": "CELL_FPU02 — candidate fpu_reduction 0.2. 400 decks: 155000000000..155000000399",
+    "156000000000": "CELL_FPU04 — candidate fpu_reduction 0.4. 400 decks: 156000000000..156000000399",
+    "157000000000": "CELL_CPUCT10 — candidate c_puct 1.0. 400 decks: 157000000000..157000000399"
+  },
+  "throwaway": {
+    "base": 157999999000,
+    "span": 1000,
+    "note": "⛔ NEVER IN THE CLAIM. The §9 smoke plays 157999999500+ only. It buys no decks of the round and its archives are excluded from adjudication by the SMOKE_ prefix."
+  },
+  "sweep_2026_08_29": {
+    "highest_registered_id": 154000000000,
+    "highest_registered_owner": "phasegate (PHASE-GATED TIE ARBITRATION, 2026-08-28)",
+    "tree_references": {
+      "155000000000": 0,
+      "156000000000": 0,
+      "157000000000": 0,
+      "158000000000": 1,
+      "159000000000": 0,
+      "160000000000": 3
+    },
+    "dropped_from_consideration": {
+      "158000000000": [
+        "measurement/probe_b_fair_targets/fair_targets_n200_K12_s800.jsonl"
+      ],
+      "160000000000": [
+        "measurement/probe_b_fair_targets/fair_targets_n200_K12_s800.jsonl",
+        "measurement/e4_exploit_grading_20260825/composition.json",
+        "measurement/leaf_residual_mining_20260721/ANALYSIS_688_pooled.json"
+      ],
+      "_why": "⭐ ZERO registry rows but LIVE tree hits — exactly the 146e9 shape. Recorded here so the next reader does not rediscover them as 'free'. ⚠️ The hits may well be incidental substrings inside larger numbers in those .jsonl/.json files; that does not matter. The sweep is a REFUSAL rule, not a diagnosis: a band with any tree reference is not taken."
+    }
+  },
+  "_why_three_bands": "Nothing in this round is pooled or deck-matched ACROSS cells: three independent questions, three independent verdicts, no anchor and no hard ordering. One shared band would buy no deck-matching that any gate reads, and would spend ONE band's decision_influenced retirement on THREE verdicts. Three bands keep every contrast within-band (the only robust class under CL-068) and retire cleanly.",
+  "_csv_rows": [
+    "155000000000,\"FPU RESURRECTION, CELL_FPU02: one deck-paired cell, n=800 games (400 seat-balanced decks x 2 seatings), seeds 155000000000..155000000399. CANDIDATE = the production champion with fpu_reduction=0.2 on the CANDIDATE SIDE ONLY (--cand-fpu-reduction; a SEARCH knob that moves NO leaf hash). OPPONENT = the UNMODIFIED production champion, leaf a36d2e15a3b3d71d BOTH SIDES. Both arms FAIR PIMC k16x1376=22016 (the 2026-08-30 promoted desktop champion), rust backend, rules_profile fixed_v1 + CARCASSONNE_FIX_R9=1, exact_k 2 marginalized, TIE-ARBITER OFF BOTH SIDES (a deviation from the deployed B=64; DESIGN 2.3). ⛔ THE KNOB WAS STRUCTURALLY UNREACHABLE ON THE CHAMPION'S BACKEND UNTIL 2026-08-29 (rust_agent.search_config_rs passed a hard-coded None) — this is the first measurement of it on the classical champion. Pair: measurement/fpu_resurrection_prep/{DESIGN,READ_RULE}.md\",claim",
+    "156000000000,\"FPU RESURRECTION, CELL_FPU04: identical protocol to 155000000000 at fpu_reduction=0.4. Seeds 156000000000..156000000399. ⛔ NOT A BRACKET with the 0.2 cell — two doses give a DIRECTION, never an optimum, and the two cells are on DIFFERENT BANDS so CL-068 over-dispersion applies to any contrast between them. Pair: measurement/fpu_resurrection_prep/{DESIGN,READ_RULE}.md\",claim",
+    "157000000000,\"FPU RESURRECTION, CELL_CPUCT10: identical protocol at candidate c_puct=1.0 (champion 1.5) via --cand-c-puct. Seeds 157000000000..157000000399. ⚠️ --c-puct CANNOT express this: it builds champ_cfg_dict, which _make_opponent feeds through the SAME _cfg_from_dict, so it moves BOTH SIDES (DEVIATIONS D1). ⛔⛔ THIS CELL IS ALSO THE TRIGGER for the conditional tau pair {8,12}: |z_M| >= 2.0 triggers it, anything less RE-KILLS it (READ_RULE 6). ⚠️ 157999999000..157999999999 inside this band is the THROWAWAY smoke range and is NOT part of the claim. Pair: measurement/fpu_resurrection_prep/{DESIGN,READ_RULE}.md\",claim"
+  ]
+}
