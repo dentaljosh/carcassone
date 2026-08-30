@@ -215,6 +215,22 @@ def main(argv=None):
                 sum(1 for r in rows if r[f"d_{lo}_{hi}"] != 0) / len(rows)),
         }
 
+    # ---- cumulative SPAN contrasts (more stable than a single rung step) ---- #
+    spans = [(lo, hi) for lo, hi in ((16, 64), (32, 128), (64, 256), (16, 256))
+             if lo in b_ladder and hi in b_ladder]
+    for r in rows:
+        for lo, hi in spans:
+            r[f"s_{lo}_{hi}"] = r[f"arb_j4_E64_B{hi}"] - r[f"arb_j4_E64_B{lo}"]
+    boot_s = RootBoot(rows)
+    out["span_contrasts"] = {
+        f"B{lo}->B{hi}": {n: boot_s.stat(f"s_{lo}_{hi}", mk)
+                          for n, mk in masks.items()}
+        for lo, hi in spans}
+    out["span_note"] = ("cumulative spans across several doublings. A single rung "
+                        "step is the noisiest possible read of a ladder; the span "
+                        "is the same quantity accumulated. NOT pre-registered as a "
+                        "branch input -- reported as trend context only.")
+
     # ---- G-ID-6: published B=64 LEVELS reproduce to 4 dp -------------------- #
     pub = json.load(open(os.path.join(
         L.WT, "measurement/arb_costopt_prep/PHASE_B_CAPTURE.json")))["corpus_A"]["ladder"]
