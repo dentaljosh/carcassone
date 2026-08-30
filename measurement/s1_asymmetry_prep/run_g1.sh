@@ -56,8 +56,20 @@ echo "[g1] repo=$REPO out=$OUT workers=$W smoke=${SMOKE:-0}"
 echo "[g1] read rule: measurement/s1_asymmetry_prep/READ_RULE_G1.md"
 mkdir -p "$OUT"
 
+# FREEZE LATCH. Each archive is graded in its own SUBPROCESS that re-imports
+# `carcassonne_ai` and `carc_rs` FROM DISK, so a source edit or a wheel
+# reinstall mid-run silently produces MIXED-REV archives inside one out-dir.
+# The sentinel makes main-tree commits refuse while this is live; the trap
+# clears it on any exit path, including SIGINT/SIGTERM.
+LATCH="$OUT/RUN_LIVE.json"
+cleanup() { rm -f "$LATCH"; }
+trap cleanup EXIT INT TERM
+printf '{"run":"s1_g1","out":"%s","pid":%d,"started":"%s","workers":%s}\n' \
+  "$OUT" "$$" "$(date -Is)" "$W" > "$LATCH"
+
 # nice 19: yields to interactive use, per the house default for long workers.
-exec nice -n 19 "$PY" -u "$REPO/scripts/classical_search/jrules_priors_e4_replay.py" \
+# NOT `exec` — exec would replace this shell and the trap would never fire.
+nice -n 19 "$PY" -u "$REPO/scripts/classical_search/jrules_priors_e4_replay.py" \
   --archive-dir "$REPO/measurement/e4_games" \
   -o "$OUT" \
   "${ARMS[@]}" \
@@ -65,3 +77,6 @@ exec nice -n 19 "$PY" -u "$REPO/scripts/classical_search/jrules_priors_e4_replay
   --seed 12345 \
   --workers "$W" \
   "${EXTRA[@]}"
+rc=$?
+echo "[g1] instrument exited rc=$rc; RUN_LIVE cleared"
+exit "$rc"
