@@ -206,7 +206,7 @@ CELLS: tuple[CellSpec, ...] = (
              "distinguish 'no asymmetry effect' from 'both components ≈ 0'. It "
              "is also §5.4's ruler probe — if its G-DENY rises, the control arm "
              "has produced the exploit-expressing opponent CL-083 needs."),
-    CellSpec("CELL_G3_ALL", "local", "all", BAND, 400,
+    CellSpec("CELL_G3_ALL", "laptop", "all", BAND, 400,  # local->laptop 2026-08-30: pre-launch W-rebalance amendment (W_LOCAL 30->14 owner ruling made local the ~22h long pole at the frozen split; moving ONLY the box-agnostic control arm rebalances to ~14h wall; the P2 cross-box pair OPP@local vs OWN@laptop is UNCHANGED from the freeze). Statistics-blind: 0 games existed.
              "⭐ THE IN-BAND SYMMETRIC CONTROL — the 'is this just another "
              "dose?' arm the design owes. The banked surface-B `all` null sits "
              "on a RETIRED band at the SUPERSEDED 11008 budget, and CL-068 "

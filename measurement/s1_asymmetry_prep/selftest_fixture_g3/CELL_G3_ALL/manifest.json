@@ -1,7 +1,7 @@
 {
  "kind": "eval_fair_puct",
  "game": "carcassonne-base-farmers",
- "host": "Doctor",
+ "host": "laptop-wsl",
  "code_rev": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
  "rust_toolchain": "1.83.0-x86_64-unknown-linux-gnu",
  "carc_rs_build": "c0ffee1234567890",

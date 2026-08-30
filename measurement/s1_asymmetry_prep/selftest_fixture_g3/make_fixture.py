@@ -52,7 +52,7 @@ ARMS = [
     # name, role, scope, n_decks, true per-deck mean
     ("CELL_G3_OPP", "local", "opp", 30, +2.6),
     ("CELL_G3_OWN", "laptop", "own", 30, -1.4),
-    ("CELL_G3_ALL", "local", "all", 20, +0.2),
+    ("CELL_G3_ALL", "laptop", "all", 20, +0.2),  # local->laptop with the 2026-08-30 W-rebalance amendment (fixture mirrors the frozen spec — the emitted-truth rule)
 ]
 
 CHAMP_CFG = {

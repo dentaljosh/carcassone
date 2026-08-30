@@ -17,7 +17,7 @@
  },
  {
   "name": "CELL_G3_ALL",
-  "role": "local",
+  "role": "laptop",
   "scope": "all",
   "seed_start": 161000000000,
   "n_decks": 20,
