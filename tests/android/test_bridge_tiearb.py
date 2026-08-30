@@ -72,11 +72,27 @@ def _spec_with_mobile_tiearb(tiearb: dict | None, *, b_options=(32, 16, 8)) -> o
 # --------------------------------------------------------------------------- #
 # 1. mobile_tiearb() — pure config resolution, no session                     #
 # --------------------------------------------------------------------------- #
-def test_default_level_is_b32():
-    assert B.TIEARB_LEVEL_DEFAULT == B.TIEARB_LEVEL_B32
+def test_default_level_is_b64():
+    assert B.TIEARB_LEVEL_DEFAULT == B.TIEARB_LEVEL_B64
 
 
-def test_b32_resolves_armed_from_the_bundled_yaml():
+def test_b64_resolves_armed_from_the_bundled_yaml():
+    r = B.mobile_tiearb(B.TIEARB_LEVEL_B64)
+    assert r["enabled"] is True
+    assert r["B"] == 64
+    assert r["J"] == 4
+    assert r["threads"] == 2
+    assert r["from_yaml"] is True
+    assert r["reason"] is None
+
+
+def test_b32_still_resolves_for_saves_written_before_the_menu_retired_it():
+    """The Settings MENU dropped B32 on 2026-08-29; the RESOLVER did not.
+
+    A save or archive from the B32 epoch carries ``tiearb_level: "b32"``, and it
+    must still restore at B=32 rather than degrading to an unarmed game — which
+    is why 32 stays in the bundled YAML's ``B_options``.
+    """
     r = B.mobile_tiearb(B.TIEARB_LEVEL_B32)
     assert r["enabled"] is True
     assert r["B"] == 32
@@ -109,9 +125,13 @@ def test_off_is_disabled_and_never_touches_the_yaml():
 
 
 def test_unknown_level_fails_closed_with_a_reason():
-    r = B.mobile_tiearb("b64")
+    # "b128" is the stand-in for a level this build does not know. It used to be
+    # "b64" — until the 2026-08-29 owner ruling made b64 a real level, at which
+    # point this test was asserting fail-closed behaviour on a level that
+    # resolves. Keep this id AHEAD of the ladder, never on it.
+    r = B.mobile_tiearb("b128")
     assert r["enabled"] is False
-    assert "b64" in r["reason"]
+    assert "b128" in r["reason"]
     assert r["from_yaml"] is False
 
 
@@ -151,24 +171,28 @@ def test_mobile_tiearb_never_raises():
 # --------------------------------------------------------------------------- #
 # 2. _Session / new_game — resolution against a live (or degraded) backend    #
 # --------------------------------------------------------------------------- #
-def test_new_game_defaults_to_b32_armed_on_rust():
+def test_new_game_defaults_to_b64_armed_on_rust():
     st = _j(B.new_game(json.dumps({"seed": 5, "opponent": "champion",
                                    "backend": "rust", **TINY})))
     assert st["backend"] == "rust", st["backend_note"]
     s = B._S
-    assert s.tiearb_level == "b32"
+    assert s.tiearb_level == "b64"
     assert s.tiearb["enabled"] is True
-    assert s.tiearb["B"] == 32
+    assert s.tiearb["B"] == 64
     assert s.tiearb["threads"] == 2
     assert s.tiearb["salt"] == "tiearb2-deploy-v1"
     # "cannot silently no-op": the live rust telemetry must agree.
     live = s.rs.stats()
     assert live["tiearb_enabled"] is True
-    assert live["tiearb_b"] == 32
+    assert live["tiearb_b"] == 64
     assert live["tiearb_threads"] == 2
 
 
-@pytest.mark.parametrize("level,b", [("b32", 32), ("b16", 16), ("b8", 8)])
+# ⚠️ b32 stays in this list even though the Settings MENU retired it on 2026-08-29:
+# a save/archive from the B32 epoch carries `tiearb_level: "b32"` and must still
+# restore at B=32 rather than degrading to an unarmed game. See
+# `android_bridge.TIEARB_LEVELS` and `TieArbLevel`'s companion docstring.
+@pytest.mark.parametrize("level,b", [("b64", 64), ("b32", 32), ("b16", 16), ("b8", 8)])
 def test_each_settings_value_resolves_and_goes_live(level, b):
     st = _j(B.new_game(json.dumps({
         "seed": 5, "opponent": "champion", "backend": "rust",
@@ -189,7 +213,10 @@ def test_off_disables_the_arbiter_end_to_end():
 
 
 def test_unknown_tiearb_level_is_refused_not_defaulted():
-    d = json.loads(B.new_game(json.dumps({"seed": 5, "tiearb_level": "b64"})))
+    # "b128" — a level ahead of the ladder. See the note on
+    # test_unknown_level_fails_closed_with_a_reason: this was "b64" until the
+    # 2026-08-29 ruling promoted b64 to a real level.
+    d = json.loads(B.new_game(json.dumps({"seed": 5, "tiearb_level": "b128"})))
     assert d["ok"] is False
     assert "tiearb_level" in d["error"]["message"]
 
@@ -349,6 +376,6 @@ def test_a_resumed_game_keeps_its_own_level_not_the_current_default():
 def test_unknown_saved_tiearb_level_is_refused_not_guessed():
     _j(B.new_game(json.dumps({"seed": 5, "opponent": "tier1"})))
     save = _j(B.save_game())
-    save["tiearb_level"] = "b64"
+    save["tiearb_level"] = "b128"          # ahead of the ladder — see the note above
     d = json.loads(B.restore_game(json.dumps(save)))
     assert d["ok"] is False

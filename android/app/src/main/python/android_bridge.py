@@ -187,16 +187,26 @@ TIEARB_LEVEL_OFF = "off"
 TIEARB_LEVEL_B8 = "b8"
 TIEARB_LEVEL_B16 = "b16"
 TIEARB_LEVEL_B32 = "b32"
-# Strongest-first, matching the Settings screen's display order and B_options.
+TIEARB_LEVEL_B64 = "b64"
+# Strongest-first, matching B_options. ⚠️ THIS IS THE RESOLVER'S VOCABULARY, NOT THE
+# SETTINGS MENU. The menu is Kotlin's `TieArbLevel`, and since 2026-08-29 it offers
+# OFF/B8/B16/B64 — b32 is RETIRED FROM THE MENU but stays resolvable here, because a
+# save or archive written by the B32 epoch carries `tiearb_level: "b32"` and must
+# still restore at B=32 rather than silently degrading to an unarmed game.
 TIEARB_LEVELS: tuple[str, ...] = (
-    TIEARB_LEVEL_B32, TIEARB_LEVEL_B16, TIEARB_LEVEL_B8, TIEARB_LEVEL_OFF)
-TIEARB_LEVEL_DEFAULT = TIEARB_LEVEL_B32          # what a NEW app game uses (the owner ruling).
+    TIEARB_LEVEL_B64, TIEARB_LEVEL_B32, TIEARB_LEVEL_B16, TIEARB_LEVEL_B8,
+    TIEARB_LEVEL_OFF)
+TIEARB_LEVEL_DEFAULT = TIEARB_LEVEL_B64          # ⭐ RAISED b32 -> b64 2026-08-29 (owner:
+# "set phone APK to b64"), licensed by the tier1 flat-score swap making a B=64 fire
+# CHEAPER than the B=32 fire it replaces. Kotlin always sends `tiearb_level`
+# explicitly, so this default only governs a caller that omits the key.
 # A save/archive written before this feature shipped has no `tiearb_level` key at
 # all; absent means "played without the arbiter", never a guessed B — the same
 # absent-is-legacy contract as start_rule/grid_rule/draw_rule/cloister_rule/farm_rule.
 TIEARB_LEVEL_LEGACY = TIEARB_LEVEL_OFF
 TIEARB_LEVEL_TO_B: dict[str, int] = {
-    TIEARB_LEVEL_B8: 8, TIEARB_LEVEL_B16: 16, TIEARB_LEVEL_B32: 32}
+    TIEARB_LEVEL_B8: 8, TIEARB_LEVEL_B16: 16, TIEARB_LEVEL_B32: 32,
+    TIEARB_LEVEL_B64: 64}
 
 # Desktop convenience: when the repo tree is visible above this file and the package is
 # not installed, make src/ importable. On device this resolves to a path that does not

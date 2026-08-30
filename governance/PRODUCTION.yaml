@@ -383,16 +383,31 @@ champion:
           enabled: true                  # default ON at B_default. The Settings screen can drop to a smaller
                                         # B or OFF; OFF and any resolution failure are BOTH fail-closed (no
                                         # arbiter, never a crash) — android_bridge.mobile_tiearb() owns it.
-          B_default: 32                  # ⭐ OWNER RULING (2026-08-2x, Joshua, verbatim): "so let's default to
+          B_default: 64                  # ⭐ RAISED 32 -> 64 on 2026-08-29 by OWNER RULING (Joshua, verbatim:
+                                        # "set phone APK to b64"). THE PHONE NOW MATCHES DESKTOP'S RUNG
+                                        # (fair_deploy.tiearb.B = 64). LICENSED BY THE tier1 FLAT-SCORE SWAP
+                                        # (measurement/arb_costopt_prep/, merged b4d4eecd): the playout scorer
+                                        # got ~8.5x cheaper BIT-IDENTICALLY, so a B=64 fire now costs LESS
+                                        # wall-clock than the B=32 fire the owner had been playing — ~5-7 s
+                                        # vs the old 20.8-28.9 s. NO STRENGTH CLAIM IS OWED FOR THE SWAP (it is
+                                        # bit-identical, G-BITEXACT digest 0c2e39fe.. reproduced 15360/15360);
+                                        # the B rung change IS a strength change, and it moves TOWARD the
+                                        # already-deployed desktop rung rather than to a new one.
+                                        # PRIOR RULING (2026-08-2x, superseded on B only): "so let's default to
                                         # b32 on phone. but. give me a settings screen where I can choose lower
                                         # options. and there should be a progress indicator during the longer
-                                        # thinking turns." Desktop stays B=64 (fair_deploy.tiearb.B above) —
-                                        # this is a separate, smaller number for the phone's thermal/latency
-                                        # budget, not a desktop change. Desktop prior: B=32 retains ~85% of the
-                                        # B=64 arbiter's value (measurement/tiearb_widening_20260817/ ladder).
-          B_options: [32, 16, 8]         # the Settings screen's selectable levels, strongest first. A 4th
-                                        # option (OFF) is not a B value — it clears `enabled` entirely rather
-                                        # than naming a B.
+                                        # thinking turns." The settings screen and the progress indicator STAND.
+                                        # Desktop prior: B=32 retains ~85% of the B=64 arbiter's value
+                                        # (measurement/tiearb_widening_20260817/ ladder) — so this buys back the
+                                        # ~15% the phone was giving up, and buys it at a LOWER latency than before.
+          B_options: [64, 32, 16, 8]     # the Settings screen's selectable levels, strongest first. OFF is not
+                                        # a B value — it clears `enabled` entirely rather than naming a B.
+                                        # ⚠️ 32 STAYS LISTED even though the Settings menu no longer offers it:
+                                        # `mobile_tiearb()` is fail-closed against THIS list, and a save or
+                                        # archive written by the B32 epoch carries `tiearb_level: "b32"`, which
+                                        # must still resolve to B=32 on restore rather than silently degrading
+                                        # to an unarmed game. The MENU is Kotlin's TieArbLevel; this is the
+                                        # RESOLVER's vocabulary, and the two are deliberately not the same set.
           J: 4                           # UNCHANGED from desktop — rung3_r5 read X-INCONCLUSIVE, no licence to
                                         # widen J on either platform. No independent mobile measurement of J.
           mode: argmax
@@ -404,9 +419,16 @@ champion:
                                         # worlds; this folds the arbiter's B*arms playouts) — same decoupling
                                         # as desktop's `threads: 8` vs the champion's own `rust_threads`.
           measured_per_fire_s:           # per-fire wall-clock at threads=2 (thermal drift noted at B=32).
+                                        # ⚠️ EPOCH: b8/b16/b32 were MEASURED on the PRE-SWAP build (before
+                                        # b4d4eecd). The tier1 flat-score swap made the playout scorer ~8.5x
+                                        # cheaper, so every one of these is now a stale UPPER BOUND; b64 below
+                                        # is the only post-swap figure and it is DERIVED, not yet measured
+                                        # on-device. Re-measure the ladder before quoting any of these.
             b8: [7.0, 7.0]
             b16: [15.2, 15.2]
             b32: [20.8, 28.9]
+            b64: [5.0, 7.0]              # DERIVED (post-swap), not measured: 2x the B=32 work at ~8.5x cheaper
+                                        # per playout => ~2*(20.8..28.9)/8.5. Owner-quoted as ~5-7 s.
           measured_tied_plies_per_game: 17.6
           note: >
             Owner-decided change (verbatim ruling above). MEASURED FACTS baked in: tiearb_threads=2 is the

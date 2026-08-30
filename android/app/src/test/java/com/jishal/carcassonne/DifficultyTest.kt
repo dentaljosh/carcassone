@@ -57,12 +57,12 @@ class DifficultyTest {
     }
 
     @Test
-    fun `tiearb_level defaults to b32 and always sends explicitly`() {
+    fun `tiearb_level defaults to b64 and always sends explicitly`() {
         // Unlike sims/k_dets, tiearb_level has no "let the bridge decide" case —
         // it is always present, even at the default.
         val c = cfg(Difficulty.CHAMPION)
         assertTrue("tiearb_level must be present even at the default", c.has("tiearb_level"))
-        assertEquals("b32", c.getString("tiearb_level"))
+        assertEquals("b64", c.getString("tiearb_level"))
     }
 
     @Test
