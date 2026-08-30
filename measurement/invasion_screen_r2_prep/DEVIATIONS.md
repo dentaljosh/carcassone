@@ -56,3 +56,27 @@ round 1's own emitted archive. It is documented in full in [`DESIGN.md`](DESIGN.
 void a healthy round. It is **not** a deviation — nothing had launched and no bar existed to move —
 but it belongs in the same lineage of lessons: **point a new gate at real emitted output before you
 trust it**, and let the archive win.
+
+## Bar-library import hardened to round 3's by-path form (2026-08-29, statistics-blind)
+
+Same class as round 1's `IS-D2`, applied to **both** of this round's adjudicators
+(`analyze_screen.py` and `analyze_screen_amended.py`). Both loaded the bar library as a bare
+`import screen_lib` off a `sys.path` insertion; rounds 1/2/3 each ship a different
+`screen_lib.py` (sha256 `6168b325…` / `0824a3e2…` / `47c01830…`), so in a process holding two
+rounds the first loaded won `sys.modules["screen_lib"]` and the second adjudicator read the
+**wrong round's bars**. Round 3 shipped with the fix; this round did not.
+
+Now loaded **by path** under `screen_lib__invasion_screen_r2_prep`, registered in `sys.modules`
+before `exec_module`. The two files in this directory deliberately share one module instance —
+that is the same `screen_lib.py` either way, which is the intended collision-free behaviour.
+
+**Statistics-blind:** the identical bar library is loaded from the identical path; only the
+module name changes. No bar, gate, threshold, branch table, statistic or verdict of round 2
+moves, and the round's verdict of record stands unaltered.
+
+**Verification:** `--selftest` GREEN on both files (0 sanity problems, all 19 gate ids
+evaluated, ABSENT-is-FAIL holds). The three instrument suites run **together** went from 50
+failures to 4, and those 4 are precisely the failures each suite already produces standalone
+(the `BAND_CLAIMED` freeze-time interlocks, now tripping because the bands have since been
+claimed, plus this round's pre-existing wheel-preflight failure) — none of them in the code
+this edit touched.

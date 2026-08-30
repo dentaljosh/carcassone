@@ -74,10 +74,41 @@ from pathlib import Path
 from typing import Any, Mapping
 
 HERE = Path(__file__).resolve().parent
-if str(HERE) not in sys.path:
-    sys.path.insert(0, str(HERE))
 
-import screen_lib as L  # noqa: E402
+# ⛔ THE BAR LIBRARY IS LOADED **BY PATH**, UNDER A DIRECTORY-QUALIFIED MODULE
+# NAME — never as a bare `import screen_lib` off `sys.path`.
+#
+# ⚠️ ROUNDS 1, 2 AND 3 EACH SHIP A FILE CALLED `screen_lib.py`, and each round's
+# adjudicator used to insert its OWN directory on `sys.path` and `import
+# screen_lib`. In any process that touches two rounds — the instrument suite is
+# exactly that — whichever loaded FIRST won `sys.modules["screen_lib"]`, and the
+# second adjudicator then silently adjudicated against the WRONG ROUND'S BARS.
+# Found by round 3's suite: the round-2 tests failed only when run alongside
+# round 3's, and passed alone.
+#
+# ⛔ A GATE LIBRARY RESOLVED BY IMPORT ORDER IS NOT A GATE LIBRARY. The name below
+# is derived from this file's own directory, so two rounds cannot collide, and the
+# module is registered in `sys.modules` BEFORE `exec_module` because `@dataclass`
+# resolves its field annotations through `sys.modules[cls.__module__]`.
+# (This file and its unamended sibling share one directory, so they deliberately
+# share ONE module instance of THIS round's `screen_lib` — that is the same file
+# either way, and is exactly the collision-free behaviour intended.)
+#
+# ⚠️ RETROFITTED 2026-08-29 (import-hygiene chore) from round 3's adjudicator,
+# which shipped with this pattern. THIS IS A PURE IMPORT-RESOLUTION CHANGE: the
+# same `screen_lib.py`, byte-for-byte, is loaded from the same directory, so NO
+# statistic, bar, gate, threshold or verdict of this round moves. It only removes
+# the possibility that a co-resident round's `screen_lib` is served instead.
+_LIB_NAME = f"screen_lib__{HERE.name}"
+if _LIB_NAME in sys.modules:
+    L = sys.modules[_LIB_NAME]
+else:
+    import importlib.util as _ilu
+
+    _spec = _ilu.spec_from_file_location(_LIB_NAME, HERE / "screen_lib.py")
+    L = _ilu.module_from_spec(_spec)
+    sys.modules[_LIB_NAME] = L
+    _spec.loader.exec_module(L)
 
 MISSING = object()
 
