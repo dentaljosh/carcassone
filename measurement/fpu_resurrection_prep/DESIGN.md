@@ -290,7 +290,9 @@ laptop  282.1 x 2 = 564.2 worker-s/game   ->  W22 / 564.2 = 140.4 games/h
 | one cell (800 games) on one box | 800 | **3.9 h** | **5.7 h** |
 | `CELL_FPU02` + `CELL_FPU04` (local) | 1,600 | **7.8 h** | — |
 | `CELL_CPUCT10` (laptop) | 800 | — | **5.7 h** |
-| **THE ROUND (whole cells per box)** | **2,400** | \multicolumn — **≈ 7.8 h wall** | |
+| **THE ROUND (whole cells per box)** | **2,400** | **7.8 h** (2 cells, serial) | **5.7 h** (1 cell) |
+
+⭐ **Round wall = `max(7.8, 5.7)` = 7.8 h.**
 
 **Core-hours: ≈ 359 worker-h** (2,400 games × 539 worker-s mean = (2 × 526.4 + 564.1) ÷ 3).
 
