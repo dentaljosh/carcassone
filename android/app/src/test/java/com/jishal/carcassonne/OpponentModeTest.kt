@@ -13,13 +13,14 @@ import org.junit.Test
  * Two things are pinned here and neither is cosmetic:
  *
  * 1. **THE GOLDEN GATE** — with [OpponentMode.CHAMPION] selected,
- *    [Difficulty.newGameConfig] emits the BYTE-IDENTICAL JSON it emitted before
- *    the remote opponent existed, for every difficulty stop. The E4 stream is
- *    one continuous measurement of the owner against the champion; if this build
- *    changed the champion game's config in any way, that continuity would break
- *    silently and every trend read across the boundary would be wrong. The
- *    expected strings are written out LITERALLY rather than derived, because a
- *    derived expectation would move whenever the thing it is guarding moved.
+ *    [Difficulty.newGameConfig] emits exactly the config it emitted before the
+ *    remote opponent existed, for every difficulty stop: same keys, same values,
+ *    no extras. The E4 stream is one continuous measurement of the owner against
+ *    the champion; if this build changed the champion game's config in any way,
+ *    that continuity would break silently and every trend read across the
+ *    boundary would be wrong. The expected strings are written out LITERALLY
+ *    rather than derived, because a derived expectation would move whenever the
+ *    thing it is guarding moved.
  *
  * 2. **THE LABEL** — a remote game names an opponent that is not `"champion"`,
  *    so `scripts/e4_archives.py` (absent-or-different EXCLUDES) can keep it out
@@ -44,30 +45,44 @@ class OpponentModeTest {
 
     // -- 1. the golden gate ------------------------------------------------- //
 
+    /**
+     * The config as a canonical, order-independent string: every key sorted,
+     * `key=value` joined by `|`.
+     *
+     * ⚠️ Why not compare the raw JSON string. On DEVICE, `org.json.JSONObject` is
+     * backed by a `LinkedHashMap` and preserves insertion order, so the raw text
+     * is stable — but the JVM stub these unit tests run against is not, and it
+     * reorders `seed` and `human_player`. A raw-text pin therefore fails for a
+     * reason that has nothing to do with the app. Canonicalising keeps the pin
+     * LITERAL (the expectations below are written out, not derived) while making
+     * it a statement about the config's CONTENT, which is the property the bridge
+     * actually reads.
+     */
+    private fun canon(s: String): String {
+        val o = JSONObject(s)
+        return o.keys().asSequence().sorted().joinToString("|") { k -> "$k=${o.get(k)}" }
+    }
+
     @Test
-    fun `champion mode emits byte-identical config for every preset`() {
-        // The exact strings the app produced before the remote opponent existed.
-        // JSONObject preserves insertion order, so these are literal comparisons,
-        // not parsed ones — which is what makes this a byte-identity test.
+    fun `champion mode emits an unchanged config for every preset`() {
+        // Exactly what the app produced before the remote opponent existed.
         val expected = mapOf(
             Difficulty.INSTANT to
-                """{"seed":7,"human_player":0,"opponent":"tier1","verify":true,""" +
-                """"tiearb_level":"b64"}""",
+                "human_player=0|opponent=tier1|seed=7|tiearb_level=b64|verify=true",
             Difficulty.FAST to
-                """{"seed":7,"human_player":0,"opponent":"champion","verify":true,""" +
-                """"k_dets":2,"sims":172,"tiearb_level":"b64"}""",
+                "human_player=0|k_dets=2|opponent=champion|seed=7|sims=172|" +
+                "tiearb_level=b64|verify=true",
             Difficulty.MEDIUM to
-                """{"seed":7,"human_player":0,"opponent":"champion","verify":true,""" +
-                """"k_dets":4,"sims":172,"tiearb_level":"b64"}""",
+                "human_player=0|k_dets=4|opponent=champion|seed=7|sims=172|" +
+                "tiearb_level=b64|verify=true",
             Difficulty.STRONG to
-                """{"seed":7,"human_player":0,"opponent":"champion","verify":true,""" +
-                """"k_dets":4,"sims":344,"tiearb_level":"b64"}""",
+                "human_player=0|k_dets=4|opponent=champion|seed=7|sims=344|" +
+                "tiearb_level=b64|verify=true",
             Difficulty.CHAMPION to
-                """{"seed":7,"human_player":0,"opponent":"champion","verify":true,""" +
-                """"tiearb_level":"b64"}""",
+                "human_player=0|opponent=champion|seed=7|tiearb_level=b64|verify=true",
         )
         for ((d, want) in expected) {
-            assertEquals("preset ${d.id} config changed", want, cfg(d))
+            assertEquals("preset ${d.id} config changed", want, canon(cfg(d)))
         }
     }
 

@@ -361,8 +361,14 @@ android {
         // Chaquopy 17 requires >= 24; 26 keeps us clear of legacy multidex/ART quirks.
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1-m1"
+        // Bumped 2 -> 3 for the REMOTE-OPPONENT build (2026-08-30). The only
+        // shipped changes are Kotlin/bridge: the Settings opponent selector, the
+        // HTTP client, INTERNET + cleartext in the manifest, and the archive's
+        // `opponent` label. The champion path is byte-identical (OpponentModeTest
+        // pins the `new_game` JSON literally), so an E4 game played on this build
+        // is the same measurement as one played on versionCode 2.
+        versionCode = 3
+        versionName = "0.1-m2-remoteopp"
 
         // Instrumented tests are the ONLY surface that can run code inside the
         // app's Chaquopy environment (numpy + the carc_rs wheel as pip resolved
