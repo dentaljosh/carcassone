@@ -1,0 +1,618 @@
+{
+  "schema": "carcassonne-quiet-bench/v1",
+  "date": "2026-08-30",
+  "box": "local 5900XT (16C/32T), EXCLUSIVE TENANT",
+  "why": "the quiet-window re-reads owed by three banked 2026-08-30 rounds",
+  "loadavg_note": "0.10-0.19 before every phase-1 bench; the <=1.05 reads during the consumer arms are this bench's OWN single-threaded process. No foreign tenant appeared at any point.",
+  "sources": {
+    "registry_flattening": {
+      "worktree": "agent-a396dc03111d62cda",
+      "branch": "worktree-agent-a396dc03111d62cda",
+      "commit": "35569f38d4abb5981c3b6287766941a3c8bcf3db",
+      "owes": "measurement/registry_flattening_20260830/READOUT.md section 6 items 1-3"
+    },
+    "l1a_hoist": {
+      "worktree": "agent-acf104f4eb41c6a55",
+      "branch": "worktree-agent-acf104f4eb41c6a55",
+      "commit": "5aa789725cf906ff9661c3e0b52fd2b4e9a576d5",
+      "owes": "measurement/arb_costopt_prep/GATES_L0_L1A_20260830.md section 3 item 2"
+    },
+    "omm1_omd2": {
+      "worktree": "agent-a6de39b2de1b23a94",
+      "branch": "worktree-agent-a6de39b2de1b23a94",
+      "commit": "16924e2f5d9007e2ce845204d4dee51ca2cad035",
+      "owes": "measurement/omm1_refuter_gate_20260830/DEVIATIONS.md OM-D2"
+    }
+  },
+  "bench_a_decompose_cost_law": {
+    "harness": "rust/carc/carc-core/examples/registry_flat_bench.rs (unmodified, run from the source worktree's prebuilt release binary)",
+    "replicates": [
+      {
+        "replicate": 1,
+        "ref_law": {
+          "a": -196.7308,
+          "b": 122.6185,
+          "r2": 0.99489
+        },
+        "new_law": {
+          "a": -122.3786,
+          "b": 103.2607,
+          "r2": 0.99368
+        },
+        "slope_factor": 1.1875,
+        "decompose_factor": 1.1733,
+        "decompose_plus_leaf_factor": 1.1374,
+        "reps": 400,
+        "samples": 575
+      },
+      {
+        "replicate": 2,
+        "ref_law": {
+          "a": -215.8504,
+          "b": 124.7914,
+          "r2": 0.99072
+        },
+        "new_law": {
+          "a": -149.6452,
+          "b": 104.9015,
+          "r2": 0.99082
+        },
+        "slope_factor": 1.1896,
+        "decompose_factor": 1.1793,
+        "decompose_plus_leaf_factor": 1.1382,
+        "reps": 400,
+        "samples": 575
+      },
+      {
+        "replicate": 3,
+        "ref_law": {
+          "a": -226.595,
+          "b": 122.3021,
+          "r2": 0.99158
+        },
+        "new_law": {
+          "a": -165.3334,
+          "b": 103.6523,
+          "r2": 0.99319
+        },
+        "slope_factor": 1.1799,
+        "decompose_factor": 1.1712,
+        "decompose_plus_leaf_factor": 1.1319,
+        "reps": 400,
+        "samples": 575
+      },
+      {
+        "replicate": 4,
+        "ref_law": {
+          "a": -197.2615,
+          "b": 121.7078,
+          "r2": 0.993
+        },
+        "new_law": {
+          "a": -133.5317,
+          "b": 102.8496,
+          "r2": 0.99395
+        },
+        "slope_factor": 1.1834,
+        "decompose_factor": 1.1725,
+        "decompose_plus_leaf_factor": 1.1328,
+        "reps": 400,
+        "samples": 575
+      }
+    ],
+    "summary": {
+      "slope_factor": {
+        "mean": 1.1851,
+        "min": 1.1799,
+        "max": 1.1896
+      },
+      "decompose_factor": {
+        "mean": 1.174075,
+        "min": 1.1712,
+        "max": 1.1793
+      },
+      "decompose_plus_leaf_factor": {
+        "mean": 1.135075,
+        "min": 1.1319,
+        "max": 1.1382
+      },
+      "ref_slope_ns_per_placed": {
+        "mean": 122.85495,
+        "min": 121.7078,
+        "max": 124.7914
+      },
+      "new_slope_ns_per_placed": {
+        "mean": 103.66602499999999,
+        "min": 102.8496,
+        "max": 104.9015
+      },
+      "ref_r2": {
+        "mean": 0.9925475,
+        "min": 0.99072,
+        "max": 0.99489
+      }
+    },
+    "buckets_replicate4": [
+      {
+        "lo": 0,
+        "hi": 7,
+        "n": 56,
+        "ref_ns": 493.7,
+        "new_ns": 448.4,
+        "factor": 1.1011
+      },
+      {
+        "lo": 8,
+        "hi": 15,
+        "n": 64,
+        "ref_ns": 1276.3,
+        "new_ns": 1122.4,
+        "factor": 1.1371
+      },
+      {
+        "lo": 16,
+        "hi": 23,
+        "n": 64,
+        "ref_ns": 2122.8,
+        "new_ns": 1840.9,
+        "factor": 1.1531
+      },
+      {
+        "lo": 24,
+        "hi": 31,
+        "n": 64,
+        "ref_ns": 3024.2,
+        "new_ns": 2587.3,
+        "factor": 1.1688
+      },
+      {
+        "lo": 32,
+        "hi": 39,
+        "n": 64,
+        "ref_ns": 3982.4,
+        "new_ns": 3392.8,
+        "factor": 1.1738
+      },
+      {
+        "lo": 40,
+        "hi": 47,
+        "n": 64,
+        "ref_ns": 4983.3,
+        "new_ns": 4206.1,
+        "factor": 1.1848
+      },
+      {
+        "lo": 48,
+        "hi": 55,
+        "n": 64,
+        "ref_ns": 6016.0,
+        "new_ns": 5111.3,
+        "factor": 1.177
+      },
+      {
+        "lo": 56,
+        "hi": 63,
+        "n": 64,
+        "ref_ns": 7127.1,
+        "new_ns": 6050.1,
+        "factor": 1.178
+      },
+      {
+        "lo": 64,
+        "hi": 71,
+        "n": 64,
+        "ref_ns": 8152.8,
+        "new_ns": 6951.6,
+        "factor": 1.1728
+      },
+      {
+        "lo": 72,
+        "hi": 79,
+        "n": 7,
+        "ref_ns": 8732.1,
+        "new_ns": 7459.5,
+        "factor": 1.1706
+      }
+    ],
+    "contended_banked_for_contrast": {
+      "slope_factor_range": [
+        1.156,
+        1.187
+      ],
+      "decompose_factor_range": [
+        1.152,
+        1.157
+      ],
+      "decompose_plus_leaf_range": [
+        1.117,
+        1.149
+      ],
+      "ref_slope_ns_per_placed_range": [
+        181.17,
+        210.92
+      ],
+      "r2_range": [
+        0.751,
+        0.864
+      ]
+    }
+  },
+  "consumer_arms": {
+    "harness": "quiet_consumer_bench.rs \u2014 NEW, written for this re-read; lives only in the scratch build, NOT in the source worktree",
+    "arm_switch": "CARC_DECOMP_REF env var -> a OnceLock dispatch inserted at the top of leaf::decomp::decompose_into in the SCRATCH COPY of the crate. The branch is paid identically by both arms.",
+    "identity_receipts": "every root reported the SAME chosen_action / node_count / root_n, and every tier1 playout the SAME margin and ply count, in both arms \u2014 the bit-identity of READOUT section 3 re-observed at the consumer level",
+    "search_config": "SearchConfig::default(), simulations=1376",
+    "search_roots": "3 deck seeds (1, 17, 1234) x plies 10/30/50/70/90, first-legal replay",
+    "tier1_roots": "3 deck seeds x plies 8/24/40, 12 playouts per timed rep",
+    "replicates": [
+      {
+        "replicate": 1,
+        "search_ref_s": 1.09235,
+        "search_flat_s": 0.98746,
+        "search_factor": 1.1062220241832579,
+        "tier1_ref_s": 0.12302,
+        "tier1_flat_s": 0.10859,
+        "tier1_factor": 1.132885164379777
+      },
+      {
+        "replicate": 2,
+        "search_ref_s": 1.08084,
+        "search_flat_s": 0.9945,
+        "search_factor": 1.086817496229261,
+        "tier1_ref_s": 0.1229,
+        "tier1_flat_s": 0.10838,
+        "tier1_factor": 1.1339730577597342
+      },
+      {
+        "replicate": 3,
+        "search_ref_s": 1.08365,
+        "search_flat_s": 1.01696,
+        "search_factor": 1.0655778005034613,
+        "tier1_ref_s": 0.12397,
+        "tier1_flat_s": 0.1086,
+        "tier1_factor": 1.1415285451197053
+      }
+    ],
+    "summary": {
+      "search_slice_factor": {
+        "mean": 1.08620577363866,
+        "min": 1.0655778005034613,
+        "max": 1.1062220241832579
+      },
+      "tier1_playout_factor": {
+        "mean": 1.1361289224197388,
+        "min": 1.132885164379777,
+        "max": 1.1415285451197053
+      }
+    }
+  },
+  "l1a_meeple_hoist_reread": {
+    "harness": "cargo test -p carc-core --release -- --ignored bench_meeple_hoist (unmodified, from a scratch copy of the L1a worktree)",
+    "replicates": [
+      {
+        "replicate": "r1",
+        "roots": [
+          {
+            "seed": "28000000000",
+            "ply": 30,
+            "fresh_ms": 69.61,
+            "hoist_ms": 65.0,
+            "factor": 1.0709
+          },
+          {
+            "seed": "28000000000",
+            "ply": 55,
+            "fresh_ms": 82.85,
+            "hoist_ms": 75.21,
+            "factor": 1.1016
+          },
+          {
+            "seed": "42",
+            "ply": 80,
+            "fresh_ms": 164.22,
+            "hoist_ms": 158.23,
+            "factor": 1.0378
+          },
+          {
+            "seed": "11",
+            "ply": 105,
+            "fresh_ms": 279.59,
+            "hoist_ms": 273.18,
+            "factor": 1.0235
+          }
+        ],
+        "pooled_fresh_ms": 149.07,
+        "pooled_hoist_ms": 142.91,
+        "pooled_factor": 1.0431
+      },
+      {
+        "replicate": "r2",
+        "roots": [
+          {
+            "seed": "28000000000",
+            "ply": 30,
+            "fresh_ms": 69.34,
+            "hoist_ms": 65.33,
+            "factor": 1.0615
+          },
+          {
+            "seed": "28000000000",
+            "ply": 55,
+            "fresh_ms": 83.33,
+            "hoist_ms": 75.96,
+            "factor": 1.0971
+          },
+          {
+            "seed": "42",
+            "ply": 80,
+            "fresh_ms": 165.19,
+            "hoist_ms": 160.27,
+            "factor": 1.0307
+          },
+          {
+            "seed": "11",
+            "ply": 105,
+            "fresh_ms": 276.35,
+            "hoist_ms": 269.91,
+            "factor": 1.0239
+          }
+        ],
+        "pooled_fresh_ms": 148.55,
+        "pooled_hoist_ms": 142.86,
+        "pooled_factor": 1.0398
+      },
+      {
+        "replicate": "r3",
+        "roots": [
+          {
+            "seed": "28000000000",
+            "ply": 30,
+            "fresh_ms": 69.29,
+            "hoist_ms": 64.75,
+            "factor": 1.0701
+          },
+          {
+            "seed": "28000000000",
+            "ply": 55,
+            "fresh_ms": 82.58,
+            "hoist_ms": 75.67,
+            "factor": 1.0914
+          },
+          {
+            "seed": "42",
+            "ply": 80,
+            "fresh_ms": 164.46,
+            "hoist_ms": 158.76,
+            "factor": 1.0359
+          },
+          {
+            "seed": "11",
+            "ply": 105,
+            "fresh_ms": 281.19,
+            "hoist_ms": 273.74,
+            "factor": 1.0272
+          }
+        ],
+        "pooled_fresh_ms": 149.38,
+        "pooled_hoist_ms": 143.23,
+        "pooled_factor": 1.0429
+      }
+    ],
+    "summary": {
+      "pooled_factor": {
+        "mean": 1.0419333333333334,
+        "min": 1.0398,
+        "max": 1.0431
+      },
+      "pooled_fresh_ms": {
+        "mean": 149.0,
+        "min": 148.55,
+        "max": 149.38
+      }
+    },
+    "banked_contended": {
+      "pooled_factor": 1.0309,
+      "pooled_fresh_ms": 309.13,
+      "per_root_factor": {
+        "30": 1.0563,
+        "55": 1.0638,
+        "80": 1.0271,
+        "105": 1.0165
+      },
+      "per_root_fresh_ms": {
+        "30": 152.01,
+        "55": 182.42,
+        "80": 337.21,
+        "105": 564.87
+      }
+    }
+  },
+  "omd2_full_join": {
+    "command": "scripts/omm1/build_fired_plies.py --limit 120 --workers 30 (patched: the 10-example cap replaced by a full witness join)",
+    "patch": "_g_fire_join now records EVERY disagreeing key with the census's own `gap`; the banked run capped `disagreement_examples` at 10, which IS the '10 unverifiable keys' caveat",
+    "n_games": 240,
+    "n_fired_plies_total": 8871,
+    "fired_plies_per_game": 36.9625,
+    "fired_over_tied_fraction": 0.8166703490941228,
+    "G_FIRE": "PASS",
+    "elapsed_s": 2.1199522018432617,
+    "n_joined": 4443,
+    "n_disagree": 20,
+    "agreement": 0.995498537024533,
+    "n_disagree_witnessed": 20,
+    "n_disagree_unverifiable": 0,
+    "all_witnessed": true,
+    "class_counts": {
+      "ULP": 2,
+      "REAL": 18,
+      "UNKNOWN": 0
+    },
+    "banked_class_counts_of_the_10_recorded": {
+      "ULP": 2,
+      "REAL": 8,
+      "UNRECORDED": 10
+    },
+    "witnesses": [
+      {
+        "deck_seed": 28000000011,
+        "ply": 24,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000012,
+        "ply": 112,
+        "corpus": "champ449",
+        "census_gap": 0.40000000000000036,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000015,
+        "ply": 72,
+        "corpus": "champ449",
+        "census_gap": 0.9999999999999964,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000017,
+        "ply": 30,
+        "corpus": "champ449",
+        "census_gap": 0.5000000000000004,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000022,
+        "ply": 66,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000031,
+        "ply": 110,
+        "corpus": "champ449",
+        "census_gap": 1.7763568394002505e-15,
+        "gap_recorded": true,
+        "class": "ULP"
+      },
+      {
+        "deck_seed": 28000000031,
+        "ply": 114,
+        "corpus": "champ449",
+        "census_gap": 1.7763568394002505e-15,
+        "gap_recorded": true,
+        "class": "ULP"
+      },
+      {
+        "deck_seed": 28000000050,
+        "ply": 24,
+        "corpus": "champ449",
+        "census_gap": 0.5,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000052,
+        "ply": 48,
+        "corpus": "champ449",
+        "census_gap": 0.2500000000000018,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000059,
+        "ply": 138,
+        "corpus": "champ449",
+        "census_gap": 1.0,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000072,
+        "ply": 12,
+        "corpus": "champ449",
+        "census_gap": 0.6000000000000001,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000076,
+        "ply": 112,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000078,
+        "ply": 52,
+        "corpus": "champ449",
+        "census_gap": 0.5999999999999996,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000086,
+        "ply": 24,
+        "corpus": "champ449",
+        "census_gap": 1.0,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000093,
+        "ply": 20,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000096,
+        "ply": 18,
+        "corpus": "champ449",
+        "census_gap": 0.5,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000096,
+        "ply": 124,
+        "corpus": "champ449",
+        "census_gap": 0.09999999999999964,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000100,
+        "ply": 94,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000106,
+        "ply": 22,
+        "corpus": "champ449",
+        "census_gap": 0.34999999999999964,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000115,
+        "ply": 60,
+        "corpus": "champ449",
+        "census_gap": 0.3000000000000007,
+        "gap_recorded": true,
+        "class": "REAL"
+      }
+    ]
+  }
+}

@@ -1,0 +1,2616 @@
+{
+  "schema": "carcassonne-cachekey-rerun-diff/v1",
+  "date": "2026-08-30",
+  "framing": "SUPERSEDE-BY-RERUN \u2014 no banked artifact was edited",
+  "verdicts": [
+    {
+      "label": "CL-083 Census 2 (CF-M1)",
+      "banked_file": "/home/doctor/projects/carcassone/.claude/worktrees/agent-abfe6c58e4ad5ba70/measurement/cl083_mech_censuses_20260830/CENSUS2.json",
+      "rerun_file": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1737802af703e857/measurement/cachekey_rerun_diffs_20260830/CENSUS2_rerun.json",
+      "banked_sha256_16": "7bf61e59e4ef9546",
+      "rerun_sha256_16": "7bf61e59e4ef9546",
+      "n_scalars": 289,
+      "n_differing": 0,
+      "verdict": "STANDS",
+      "rows": [
+        {
+          "stat": "PRIMARY_N",
+          "banked": 12,
+          "rerun": 12,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "VERDICT",
+          "banked": "CF-M1 KILLED (D <= 0: champion abandons no more than the owner)",
+          "rerun": "CF-M1 KILLED (D <= 0: champion abandons no more than the owner)",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).D_champ_minus_owner",
+          "banked": -0.35714285714285715,
+          "rerun": -0.35714285714285715,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).D_ci95_gamecluster[0]",
+          "banked": -0.35714285714285715,
+          "rerun": -0.35714285714285715,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).D_ci95_gamecluster[1]",
+          "banked": -0.35714285714285715,
+          "rerun": -0.35714285714285715,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.abandonment_rate",
+          "banked": 0.14285714285714285,
+          "rerun": 0.14285714285714285,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.finished_in_window_rate",
+          "banked": 0.42857142857142855,
+          "rerun": 0.42857142857142855,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.mean_own_growth",
+          "banked": 1.2857142857142858,
+          "rerun": 1.2857142857142858,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.n_abandoned",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.n_censored",
+          "banked": 0,
+          "rerun": 0,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.n_eligible",
+          "banked": 7,
+          "rerun": 7,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.n_setups",
+          "banked": 7,
+          "rerun": 7,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.opp_growth_rate",
+          "banked": 0.14285714285714285,
+          "rerun": 0.14285714285714285,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).champion.still_open_at_end_rate",
+          "banked": 0.5714285714285714,
+          "rerun": 0.5714285714285714,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).n_game_clusters",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.abandonment_rate",
+          "banked": 0.5,
+          "rerun": 0.5,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.finished_in_window_rate",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.mean_own_growth",
+          "banked": 0.5,
+          "rerun": 0.5,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.n_abandoned",
+          "banked": 2,
+          "rerun": 2,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.n_censored",
+          "banked": 0,
+          "rerun": 0,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.n_eligible",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.n_setups",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.opp_growth_rate",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 16).owner.still_open_at_end_rate",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).D_champ_minus_owner",
+          "banked": -0.04256120527306967,
+          "rerun": -0.04256120527306967,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).D_ci95_gamecluster[0]",
+          "banked": -0.11538847620959641,
+          "rerun": -0.11538847620959641,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).D_ci95_gamecluster[1]",
+          "banked": 0.036619718309859106,
+          "rerun": 0.036619718309859106,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.abandonment_rate",
+          "banked": 0.37966101694915255,
+          "rerun": 0.37966101694915255,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.finished_in_window_rate",
+          "banked": 0.18305084745762712,
+          "rerun": 0.18305084745762712,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.mean_own_growth",
+          "banked": 0.7966101694915254,
+          "rerun": 0.7966101694915254,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.n_abandoned",
+          "banked": 112,
+          "rerun": 112,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.n_censored",
+          "banked": 17,
+          "rerun": 17,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.n_eligible",
+          "banked": 295,
+          "rerun": 295,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.n_setups",
+          "banked": 312,
+          "rerun": 312,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.opp_growth_rate",
+          "banked": 0.2305084745762712,
+          "rerun": 0.2305084745762712,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).champion.still_open_at_end_rate",
+          "banked": 0.8169491525423729,
+          "rerun": 0.8169491525423729,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).n_game_clusters",
+          "banked": 53,
+          "rerun": 53,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.abandonment_rate",
+          "banked": 0.4222222222222222,
+          "rerun": 0.4222222222222222,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.finished_in_window_rate",
+          "banked": 0.1962962962962963,
+          "rerun": 0.1962962962962963,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.mean_own_growth",
+          "banked": 0.6851851851851852,
+          "rerun": 0.6851851851851852,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.n_abandoned",
+          "banked": 114,
+          "rerun": 114,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.n_censored",
+          "banked": 18,
+          "rerun": 18,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.n_eligible",
+          "banked": 270,
+          "rerun": 270,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.n_setups",
+          "banked": 288,
+          "rerun": 288,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.opp_growth_rate",
+          "banked": 0.13703703703703704,
+          "rerun": 0.13703703703703704,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(1376, 8).owner.still_open_at_end_rate",
+          "banked": 0.8037037037037037,
+          "rerun": 0.8037037037037037,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).D_champ_minus_owner",
+          "banked": -0.21153846153846156,
+          "rerun": -0.21153846153846156,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).D_ci95_gamecluster[0]",
+          "banked": -0.31746031746031744,
+          "rerun": -0.31746031746031744,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).D_ci95_gamecluster[1]",
+          "banked": -0.07142857142857145,
+          "rerun": -0.07142857142857145,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.abandonment_rate",
+          "banked": 0.25,
+          "rerun": 0.25,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.finished_in_window_rate",
+          "banked": 0.25,
+          "rerun": 0.25,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.mean_own_growth",
+          "banked": 0.875,
+          "rerun": 0.875,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.n_abandoned",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.n_censored",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.n_eligible",
+          "banked": 16,
+          "rerun": 16,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.n_setups",
+          "banked": 17,
+          "rerun": 17,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.opp_growth_rate",
+          "banked": 0.125,
+          "rerun": 0.125,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).champion.still_open_at_end_rate",
+          "banked": 0.75,
+          "rerun": 0.75,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).n_game_clusters",
+          "banked": 2,
+          "rerun": 2,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.abandonment_rate",
+          "banked": 0.46153846153846156,
+          "rerun": 0.46153846153846156,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.finished_in_window_rate",
+          "banked": 0.23076923076923078,
+          "rerun": 0.23076923076923078,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.mean_own_growth",
+          "banked": 0.6923076923076923,
+          "rerun": 0.6923076923076923,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.n_abandoned",
+          "banked": 6,
+          "rerun": 6,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.n_censored",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.n_eligible",
+          "banked": 13,
+          "rerun": 13,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.n_setups",
+          "banked": 14,
+          "rerun": 14,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.opp_growth_rate",
+          "banked": 0.15384615384615385,
+          "rerun": 0.15384615384615385,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_budget_epoch.(688, 4).owner.still_open_at_end_rate",
+          "banked": 0.6923076923076923,
+          "rerun": 0.6923076923076923,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.D_champ_minus_owner",
+          "banked": -0.07396226415094342,
+          "rerun": -0.07396226415094342,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.D_ci95_gamecluster[0]",
+          "banked": -0.16125259875259873,
+          "rerun": -0.16125259875259873,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.D_ci95_gamecluster[1]",
+          "banked": 0.02097163139783781,
+          "rerun": 0.02097163139783781,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.abandonment_rate",
+          "banked": 0.36,
+          "rerun": 0.36,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.finished_in_window_rate",
+          "banked": 0.19428571428571428,
+          "rerun": 0.19428571428571428,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.mean_own_growth",
+          "banked": 0.8342857142857143,
+          "rerun": 0.8342857142857143,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.n_abandoned",
+          "banked": 63,
+          "rerun": 63,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.n_censored",
+          "banked": 10,
+          "rerun": 10,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.n_eligible",
+          "banked": 175,
+          "rerun": 175,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.n_setups",
+          "banked": 185,
+          "rerun": 185,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.opp_growth_rate",
+          "banked": 0.18285714285714286,
+          "rerun": 0.18285714285714286,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.champion.still_open_at_end_rate",
+          "banked": 0.8057142857142857,
+          "rerun": 0.8057142857142857,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.n_game_clusters",
+          "banked": 56,
+          "rerun": 56,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.abandonment_rate",
+          "banked": 0.4339622641509434,
+          "rerun": 0.4339622641509434,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.finished_in_window_rate",
+          "banked": 0.19339622641509435,
+          "rerun": 0.19339622641509435,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.mean_own_growth",
+          "banked": 0.6792452830188679,
+          "rerun": 0.6792452830188679,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.n_abandoned",
+          "banked": 92,
+          "rerun": 92,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.n_censored",
+          "banked": 15,
+          "rerun": 15,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.n_eligible",
+          "banked": 212,
+          "rerun": 212,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.n_setups",
+          "banked": 227,
+          "rerun": 227,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.opp_growth_rate",
+          "banked": 0.13679245283018868,
+          "rerun": 0.13679245283018868,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.city.owner.still_open_at_end_rate",
+          "banked": 0.8018867924528302,
+          "rerun": 0.8018867924528302,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.D_champ_minus_owner",
+          "banked": -0.02237762237762242,
+          "rerun": -0.02237762237762242,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.D_ci95_gamecluster[0]",
+          "banked": -0.15000000000000002,
+          "rerun": -0.15000000000000002,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.D_ci95_gamecluster[1]",
+          "banked": 0.10040485829959517,
+          "rerun": 0.10040485829959517,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.abandonment_rate",
+          "banked": 0.3776223776223776,
+          "rerun": 0.3776223776223776,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.finished_in_window_rate",
+          "banked": 0.1888111888111888,
+          "rerun": 0.1888111888111888,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.mean_own_growth",
+          "banked": 0.7832167832167832,
+          "rerun": 0.7832167832167832,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.n_abandoned",
+          "banked": 54,
+          "rerun": 54,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.n_censored",
+          "banked": 8,
+          "rerun": 8,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.n_eligible",
+          "banked": 143,
+          "rerun": 143,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.n_setups",
+          "banked": 151,
+          "rerun": 151,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.opp_growth_rate",
+          "banked": 0.2727272727272727,
+          "rerun": 0.2727272727272727,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.champion.still_open_at_end_rate",
+          "banked": 0.8111888111888111,
+          "rerun": 0.8111888111888111,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.n_game_clusters",
+          "banked": 56,
+          "rerun": 56,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.abandonment_rate",
+          "banked": 0.4,
+          "rerun": 0.4,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.finished_in_window_rate",
+          "banked": 0.2,
+          "rerun": 0.2,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.mean_own_growth",
+          "banked": 0.6933333333333334,
+          "rerun": 0.6933333333333334,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.n_abandoned",
+          "banked": 30,
+          "rerun": 30,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.n_censored",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.n_eligible",
+          "banked": 75,
+          "rerun": 75,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.n_setups",
+          "banked": 79,
+          "rerun": 79,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.opp_growth_rate",
+          "banked": 0.13333333333333333,
+          "rerun": 0.13333333333333333,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_class.road.owner.still_open_at_end_rate",
+          "banked": 0.8,
+          "rerun": 0.8,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.D_champ_minus_owner",
+          "banked": 0.55,
+          "rerun": 0.55,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.D_ci95_gamecluster[0]",
+          "banked": 0.55,
+          "rerun": 0.55,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.D_ci95_gamecluster[1]",
+          "banked": 0.55,
+          "rerun": 0.55,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.abandonment_rate",
+          "banked": 0.75,
+          "rerun": 0.75,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.finished_in_window_rate",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.mean_own_growth",
+          "banked": 0.25,
+          "rerun": 0.25,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.n_abandoned",
+          "banked": 3,
+          "rerun": 3,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.n_censored",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.n_eligible",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.n_setups",
+          "banked": 5,
+          "rerun": 5,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.opp_growth_rate",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.champion.still_open_at_end_rate",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.n_game_clusters",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.abandonment_rate",
+          "banked": 0.2,
+          "rerun": 0.2,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.finished_in_window_rate",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.mean_own_growth",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.n_abandoned",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.n_censored",
+          "banked": 0,
+          "rerun": 0,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.n_eligible",
+          "banked": 5,
+          "rerun": 5,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.n_setups",
+          "banked": 5,
+          "rerun": 5,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.opp_growth_rate",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.app_aug2.owner.still_open_at_end_rate",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.D_champ_minus_owner",
+          "banked": -0.058381776901773874,
+          "rerun": -0.058381776901773874,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.D_ci95_gamecluster[0]",
+          "banked": -0.12855357700718528,
+          "rerun": -0.12855357700718528,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.D_ci95_gamecluster[1]",
+          "banked": 0.01845291194086912,
+          "rerun": 0.01845291194086912,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.abandonment_rate",
+          "banked": 0.3691275167785235,
+          "rerun": 0.3691275167785235,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.finished_in_window_rate",
+          "banked": 0.1912751677852349,
+          "rerun": 0.1912751677852349,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.mean_own_growth",
+          "banked": 0.8154362416107382,
+          "rerun": 0.8154362416107382,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.n_abandoned",
+          "banked": 110,
+          "rerun": 110,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.n_censored",
+          "banked": 16,
+          "rerun": 16,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.n_eligible",
+          "banked": 298,
+          "rerun": 298,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.n_setups",
+          "banked": 314,
+          "rerun": 314,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.opp_growth_rate",
+          "banked": 0.23154362416107382,
+          "rerun": 0.23154362416107382,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.champion.still_open_at_end_rate",
+          "banked": 0.8087248322147651,
+          "rerun": 0.8087248322147651,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.n_game_clusters",
+          "banked": 53,
+          "rerun": 53,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.abandonment_rate",
+          "banked": 0.4275092936802974,
+          "rerun": 0.4275092936802974,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.finished_in_window_rate",
+          "banked": 0.1970260223048327,
+          "rerun": 0.1970260223048327,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.mean_own_growth",
+          "banked": 0.6765799256505576,
+          "rerun": 0.6765799256505576,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.n_abandoned",
+          "banked": 115,
+          "rerun": 115,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.n_censored",
+          "banked": 18,
+          "rerun": 18,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.n_eligible",
+          "banked": 269,
+          "rerun": 269,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.n_setups",
+          "banked": 287,
+          "rerun": 287,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.opp_growth_rate",
+          "banked": 0.137546468401487,
+          "rerun": 0.137546468401487,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.fixed_v1.owner.still_open_at_end_rate",
+          "banked": 0.8029739776951673,
+          "rerun": 0.8029739776951673,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.D_champ_minus_owner",
+          "banked": -0.21153846153846156,
+          "rerun": -0.21153846153846156,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.D_ci95_gamecluster[0]",
+          "banked": -0.31746031746031744,
+          "rerun": -0.31746031746031744,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.D_ci95_gamecluster[1]",
+          "banked": -0.07142857142857145,
+          "rerun": -0.07142857142857145,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.abandonment_rate",
+          "banked": 0.25,
+          "rerun": 0.25,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.finished_in_window_rate",
+          "banked": 0.25,
+          "rerun": 0.25,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.mean_own_growth",
+          "banked": 0.875,
+          "rerun": 0.875,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.n_abandoned",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.n_censored",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.n_eligible",
+          "banked": 16,
+          "rerun": 16,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.n_setups",
+          "banked": 17,
+          "rerun": 17,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.opp_growth_rate",
+          "banked": 0.125,
+          "rerun": 0.125,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.champion.still_open_at_end_rate",
+          "banked": 0.75,
+          "rerun": 0.75,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.n_game_clusters",
+          "banked": 2,
+          "rerun": 2,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.abandonment_rate",
+          "banked": 0.46153846153846156,
+          "rerun": 0.46153846153846156,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.finished_in_window_rate",
+          "banked": 0.23076923076923078,
+          "rerun": 0.23076923076923078,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.mean_own_growth",
+          "banked": 0.6923076923076923,
+          "rerun": 0.6923076923076923,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.n_abandoned",
+          "banked": 6,
+          "rerun": 6,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.n_censored",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.n_eligible",
+          "banked": 13,
+          "rerun": 13,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.n_setups",
+          "banked": 14,
+          "rerun": 14,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.opp_growth_rate",
+          "banked": 0.15384615384615385,
+          "rerun": 0.15384615384615385,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_rules_profile.walled.owner.still_open_at_end_rate",
+          "banked": 0.6923076923076923,
+          "rerun": 0.6923076923076923,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "coverage.by_profile.app_aug2",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "coverage.by_profile.fixed_v1",
+          "banked": 53,
+          "rerun": 53,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "coverage.by_profile.walled",
+          "banked": 2,
+          "rerun": 2,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "coverage.n_games",
+          "banked": 56,
+          "rerun": 56,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "coverage.n_recon_failures",
+          "banked": 0,
+          "rerun": 0,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "coverage.n_setups",
+          "banked": 642,
+          "rerun": 642,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "coverage.setups_by_seat.champion",
+          "banked": 336,
+          "rerun": 336,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "coverage.setups_by_seat.owner",
+          "banked": 306,
+          "rerun": 306,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "judge_free",
+          "banked": true,
+          "rerun": true,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "prereg",
+          "banked": "measurement/cl083_mech_censuses_20260830/PREREG.md",
+          "rerun": "measurement/cl083_mech_censuses_20260830/PREREG.md",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "primary.D_champ_minus_owner",
+          "banked": -0.05716257971205052,
+          "rerun": -0.05716257971205052,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.D_ci95_gamecluster[0]",
+          "banked": -0.12592154680762274,
+          "rerun": -0.12592154680762274,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.D_ci95_gamecluster[1]",
+          "banked": 0.019523422969820903,
+          "rerun": 0.019523422969820903,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.abandonment_rate",
+          "banked": 0.36792452830188677,
+          "rerun": 0.36792452830188677,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.finished_in_window_rate",
+          "banked": 0.1918238993710692,
+          "rerun": 0.1918238993710692,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.mean_own_growth",
+          "banked": 0.8113207547169812,
+          "rerun": 0.8113207547169812,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.n_abandoned",
+          "banked": 117,
+          "rerun": 117,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.n_censored",
+          "banked": 18,
+          "rerun": 18,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.n_eligible",
+          "banked": 318,
+          "rerun": 318,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.n_setups",
+          "banked": 336,
+          "rerun": 336,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.opp_growth_rate",
+          "banked": 0.22327044025157233,
+          "rerun": 0.22327044025157233,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.champion.still_open_at_end_rate",
+          "banked": 0.8081761006289309,
+          "rerun": 0.8081761006289309,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.n_game_clusters",
+          "banked": 56,
+          "rerun": 56,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.abandonment_rate",
+          "banked": 0.4250871080139373,
+          "rerun": 0.4250871080139373,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.finished_in_window_rate",
+          "banked": 0.1951219512195122,
+          "rerun": 0.1951219512195122,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.mean_own_growth",
+          "banked": 0.6829268292682927,
+          "rerun": 0.6829268292682927,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.n_abandoned",
+          "banked": 122,
+          "rerun": 122,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.n_censored",
+          "banked": 19,
+          "rerun": 19,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.n_eligible",
+          "banked": 287,
+          "rerun": 287,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.n_setups",
+          "banked": 306,
+          "rerun": 306,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.opp_growth_rate",
+          "banked": 0.13588850174216027,
+          "rerun": 0.13588850174216027,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "primary.owner.still_open_at_end_rate",
+          "banked": 0.8013937282229965,
+          "rerun": 0.8013937282229965,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.D_champ_minus_owner",
+          "banked": -0.05716257971205052,
+          "rerun": -0.05716257971205052,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.D_ci95_gamecluster[0]",
+          "banked": -0.12592154680762274,
+          "rerun": -0.12592154680762274,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.D_ci95_gamecluster[1]",
+          "banked": 0.019523422969820903,
+          "rerun": 0.019523422969820903,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.abandonment_rate",
+          "banked": 0.36792452830188677,
+          "rerun": 0.36792452830188677,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.finished_in_window_rate",
+          "banked": 0.1918238993710692,
+          "rerun": 0.1918238993710692,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.mean_own_growth",
+          "banked": 0.8113207547169812,
+          "rerun": 0.8113207547169812,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.n_abandoned",
+          "banked": 117,
+          "rerun": 117,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.n_censored",
+          "banked": 18,
+          "rerun": 18,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.n_eligible",
+          "banked": 318,
+          "rerun": 318,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.n_setups",
+          "banked": 336,
+          "rerun": 336,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.opp_growth_rate",
+          "banked": 0.22327044025157233,
+          "rerun": 0.22327044025157233,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.champion.still_open_at_end_rate",
+          "banked": 0.8081761006289309,
+          "rerun": 0.8081761006289309,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.n_game_clusters",
+          "banked": 56,
+          "rerun": 56,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.abandonment_rate",
+          "banked": 0.4250871080139373,
+          "rerun": 0.4250871080139373,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.finished_in_window_rate",
+          "banked": 0.1951219512195122,
+          "rerun": 0.1951219512195122,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.mean_own_growth",
+          "banked": 0.6829268292682927,
+          "rerun": 0.6829268292682927,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.n_abandoned",
+          "banked": 122,
+          "rerun": 122,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.n_censored",
+          "banked": 19,
+          "rerun": 19,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.n_eligible",
+          "banked": 287,
+          "rerun": 287,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.n_setups",
+          "banked": 306,
+          "rerun": 306,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.opp_growth_rate",
+          "banked": 0.13588850174216027,
+          "rerun": 0.13588850174216027,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N12.owner.still_open_at_end_rate",
+          "banked": 0.8013937282229965,
+          "rerun": 0.8013937282229965,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.D_champ_minus_owner",
+          "banked": -0.01916491578348639,
+          "rerun": -0.01916491578348639,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.D_ci95_gamecluster[0]",
+          "banked": -0.08745260374995653,
+          "rerun": -0.08745260374995653,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.D_ci95_gamecluster[1]",
+          "banked": 0.05190133607399794,
+          "rerun": 0.05190133607399794,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.abandonment_rate",
+          "banked": 0.24437299035369775,
+          "rerun": 0.24437299035369775,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.finished_in_window_rate",
+          "banked": 0.2604501607717042,
+          "rerun": 0.2604501607717042,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.mean_own_growth",
+          "banked": 1.1768488745980707,
+          "rerun": 1.1768488745980707,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.n_abandoned",
+          "banked": 76,
+          "rerun": 76,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.n_censored",
+          "banked": 25,
+          "rerun": 25,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.n_eligible",
+          "banked": 311,
+          "rerun": 311,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.n_setups",
+          "banked": 336,
+          "rerun": 336,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.opp_growth_rate",
+          "banked": 0.31189710610932475,
+          "rerun": 0.31189710610932475,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.champion.still_open_at_end_rate",
+          "banked": 0.7395498392282959,
+          "rerun": 0.7395498392282959,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.n_game_clusters",
+          "banked": 56,
+          "rerun": 56,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.abandonment_rate",
+          "banked": 0.26353790613718414,
+          "rerun": 0.26353790613718414,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.finished_in_window_rate",
+          "banked": 0.2924187725631769,
+          "rerun": 0.2924187725631769,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.mean_own_growth",
+          "banked": 1.0433212996389891,
+          "rerun": 1.0433212996389891,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.n_abandoned",
+          "banked": 73,
+          "rerun": 73,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.n_censored",
+          "banked": 29,
+          "rerun": 29,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.n_eligible",
+          "banked": 277,
+          "rerun": 277,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.n_setups",
+          "banked": 306,
+          "rerun": 306,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.opp_growth_rate",
+          "banked": 0.19855595667870035,
+          "rerun": 0.19855595667870035,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N20.owner.still_open_at_end_rate",
+          "banked": 0.703971119133574,
+          "rerun": 0.703971119133574,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.D_champ_minus_owner",
+          "banked": -0.033680490202229296,
+          "rerun": -0.033680490202229296,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.D_ci95_gamecluster[0]",
+          "banked": -0.11361638537271446,
+          "rerun": -0.11361638537271446,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.D_ci95_gamecluster[1]",
+          "banked": 0.04308918953305907,
+          "rerun": 0.04308918953305907,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.abandonment_rate",
+          "banked": 0.6801242236024845,
+          "rerun": 0.6801242236024845,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.finished_in_window_rate",
+          "banked": 0.08074534161490683,
+          "rerun": 0.08074534161490683,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.mean_own_growth",
+          "banked": 0.30434782608695654,
+          "rerun": 0.30434782608695654,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.n_abandoned",
+          "banked": 219,
+          "rerun": 219,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.n_censored",
+          "banked": 14,
+          "rerun": 14,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.n_eligible",
+          "banked": 322,
+          "rerun": 322,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.n_setups",
+          "banked": 336,
+          "rerun": 336,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.opp_growth_rate",
+          "banked": 0.16459627329192547,
+          "rerun": 0.16459627329192547,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.champion.still_open_at_end_rate",
+          "banked": 0.9192546583850931,
+          "rerun": 0.9192546583850931,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.n_boot_ok",
+          "banked": 2000,
+          "rerun": 2000,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.n_game_clusters",
+          "banked": 56,
+          "rerun": 56,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.abandonment_rate",
+          "banked": 0.7138047138047138,
+          "rerun": 0.7138047138047138,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.finished_in_window_rate",
+          "banked": 0.08417508417508418,
+          "rerun": 0.08417508417508418,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.mean_own_growth",
+          "banked": 0.2828282828282828,
+          "rerun": 0.2828282828282828,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.n_abandoned",
+          "banked": 212,
+          "rerun": 212,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.n_censored",
+          "banked": 9,
+          "rerun": 9,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.n_eligible",
+          "banked": 297,
+          "rerun": 297,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.n_setups",
+          "banked": 306,
+          "rerun": 306,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.opp_growth_rate",
+          "banked": 0.08754208754208755,
+          "rerun": 0.08754208754208755,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "robustness_windows.N6.owner.still_open_at_end_rate",
+          "banked": 0.9124579124579124,
+          "rerun": 0.9124579124579124,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "schema",
+          "banked": "carcassonne-cl083-census2-readout/v1",
+          "rerun": "carcassonne-cl083-census2-readout/v1",
+          "abs_delta": null,
+          "identical": true
+        }
+      ]
+    },
+    {
+      "label": "HP-M1 field-fate gate (RESULTS.json)",
+      "banked_file": "/home/doctor/projects/carcassone/.claude/worktrees/agent-abfe6c58e4ad5ba70/measurement/hpm1_fieldfate_gate_20260830/RESULTS.json",
+      "rerun_file": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a1737802af703e857/measurement/cachekey_rerun_diffs_20260830/hpm1_out/RESULTS.json",
+      "banked_sha256_16": "a8d572acd8e6ae1e",
+      "rerun_sha256_16": "d3edff127822d788",
+      "n_scalars": 74,
+      "n_differing": 18,
+      "verdict": "FLAGGED",
+      "rows": [
+        {
+          "stat": "auc.B_BAG",
+          "banked": 0.5609508329947176,
+          "rerun": 0.5609508329947176,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "auc.B_LEAF",
+          "banked": 0.5609508329947176,
+          "rerun": 0.5609508329947176,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "auc.F_FIT_oof",
+          "banked": 0.6518183665176758,
+          "rerun": 0.6518183665176758,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "auc.F_FIT_oof_ci95[0]",
+          "banked": 0.5656565656565656,
+          "rerun": 0.566398608998044,
+          "abs_delta": 0.0007420433414783156,
+          "identical": false
+        },
+        {
+          "stat": "auc.F_FIT_oof_ci95[1]",
+          "banked": 0.7323814962878356,
+          "rerun": 0.7338709677419355,
+          "abs_delta": 0.0014894714540999443,
+          "identical": false
+        },
+        {
+          "stat": "auc.F_PF",
+          "banked": 0.6479581470946769,
+          "rerun": 0.6479581470946769,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "auc.ci95[0]",
+          "banked": -0.0013756613756613634,
+          "rerun": 0.003955056179775318,
+          "abs_delta": 0.0053307175554366815,
+          "identical": false
+        },
+        {
+          "stat": "auc.ci95[1]",
+          "banked": 0.185105467068446,
+          "rerun": 0.18440709617180207,
+          "abs_delta": 0.0006983708966439295,
+          "identical": false
+        },
+        {
+          "stat": "auc.ci95_bag[0]",
+          "banked": -0.0013756613756613634,
+          "rerun": 0.003955056179775318,
+          "abs_delta": 0.0053307175554366815,
+          "identical": false
+        },
+        {
+          "stat": "auc.ci95_bag[1]",
+          "banked": 0.185105467068446,
+          "rerun": 0.18440709617180207,
+          "abs_delta": 0.0006983708966439295,
+          "identical": false
+        },
+        {
+          "stat": "auc.d_F_FIT_minus_B_BAG",
+          "banked": 0.09086753352295818,
+          "rerun": 0.09086753352295818,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "auc.d_F_FIT_minus_B_LEAF",
+          "banked": 0.09086753352295818,
+          "rerun": 0.09086753352295818,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "auc.n_neg",
+          "banked": 92,
+          "rerun": 92,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "auc.n_pos",
+          "banked": 107,
+          "rerun": 107,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "auc.n_rows_scored",
+          "banked": 199,
+          "rerun": 199,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "bag_ok_all",
+          "banked": false,
+          "rerun": false,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "bag_ok_fail_n",
+          "banked": 264,
+          "rerun": 264,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "bars.a_AUC_ge_0.70.bar",
+          "banked": 0.7,
+          "rerun": 0.7,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.a_AUC_ge_0.70.ci95[0]",
+          "banked": 0.5656565656565656,
+          "rerun": 0.566398608998044,
+          "abs_delta": 0.0007420433414783156,
+          "identical": false
+        },
+        {
+          "stat": "bars.a_AUC_ge_0.70.ci95[1]",
+          "banked": 0.7323814962878356,
+          "rerun": 0.7338709677419355,
+          "abs_delta": 0.0014894714540999443,
+          "identical": false
+        },
+        {
+          "stat": "bars.a_AUC_ge_0.70.pass",
+          "banked": false,
+          "rerun": false,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "bars.a_AUC_ge_0.70.value",
+          "banked": 0.6518183665176758,
+          "rerun": 0.6518183665176758,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.B_BAG",
+          "banked": 0.5609508329947176,
+          "rerun": 0.5609508329947176,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.B_LEAF",
+          "banked": 0.5609508329947176,
+          "rerun": 0.5609508329947176,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.F_FIT",
+          "banked": 0.6518183665176758,
+          "rerun": 0.6518183665176758,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.d_bag",
+          "banked": 0.09086753352295818,
+          "rerun": 0.09086753352295818,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.d_bag_ci95[0]",
+          "banked": -0.0013756613756613634,
+          "rerun": 0.003955056179775318,
+          "abs_delta": 0.0053307175554366815,
+          "identical": false
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.d_bag_ci95[1]",
+          "banked": 0.185105467068446,
+          "rerun": 0.18440709617180207,
+          "abs_delta": 0.0006983708966439295,
+          "identical": false
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.d_leaf",
+          "banked": 0.09086753352295818,
+          "rerun": 0.09086753352295818,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.d_leaf_ci95[0]",
+          "banked": -0.0013756613756613634,
+          "rerun": 0.003955056179775318,
+          "abs_delta": 0.0053307175554366815,
+          "identical": false
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.d_leaf_ci95[1]",
+          "banked": 0.185105467068446,
+          "rerun": 0.18440709617180207,
+          "abs_delta": 0.0006983708966439295,
+          "identical": false
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.pass",
+          "banked": true,
+          "rerun": true,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "bars.b_beats_B_LEAF_and_B_BAG.weak",
+          "banked": true,
+          "rerun": false,
+          "abs_delta": null,
+          "identical": false
+        },
+        {
+          "stat": "bars.c_seat_owner_high.champ_zero_rate",
+          "banked": 0.46411483253588515,
+          "rerun": 0.46411483253588515,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.c_seat_owner_high.delta",
+          "banked": -0.3022245093287652,
+          "rerun": -0.302224509328765,
+          "abs_delta": 2.220446049250313e-16,
+          "identical": false
+        },
+        {
+          "stat": "bars.c_seat_owner_high.mean_champ",
+          "banked": 1.8709435269163632,
+          "rerun": 1.8709435269163643,
+          "abs_delta": 1.1102230246251565e-15,
+          "identical": false
+        },
+        {
+          "stat": "bars.c_seat_owner_high.mean_owner",
+          "banked": 1.568719017587598,
+          "rerun": 1.5687190175875994,
+          "abs_delta": 1.3322676295501878e-15,
+          "identical": false
+        },
+        {
+          "stat": "bars.c_seat_owner_high.n_champ",
+          "banked": 209,
+          "rerun": 209,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "bars.c_seat_owner_high.n_owner",
+          "banked": 231,
+          "rerun": 231,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "bars.c_seat_owner_high.owner_zero_rate",
+          "banked": 0.05627705627705626,
+          "rerun": 0.05627705627705626,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars.c_seat_owner_high.pass",
+          "banked": false,
+          "rerun": false,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "bars.c_seat_owner_high.perm_p_two_sided",
+          "banked": 9.999000099990002e-05,
+          "rerun": 9.999000099990002e-05,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "bars_failed[0]",
+          "banked": "a_AUC_ge_0.70",
+          "rerun": "a_AUC_ge_0.70",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "bars_failed[1]",
+          "banked": "c_seat_owner_high",
+          "rerun": "c_seat_owner_high",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "corpora.E4_rows",
+          "banked": 440,
+          "rerun": 440,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "corpora.SP449_rows",
+          "banked": 3080,
+          "rerun": 3080,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "e4_profiles.app_aug2",
+          "banked": 5,
+          "rerun": 5,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "e4_profiles.fixed_v1",
+          "banked": 418,
+          "rerun": 418,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "e4_profiles.walled",
+          "banked": 17,
+          "rerun": 17,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "e4_seat_counts.champion",
+          "banked": 209,
+          "rerun": 209,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "e4_seat_counts.owner",
+          "banked": 231,
+          "rerun": 231,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "e4_zero_rate_by_seat.champion",
+          "banked": 0.46411483253588515,
+          "rerun": 0.46411483253588515,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "e4_zero_rate_by_seat.owner",
+          "banked": 0.05627705627705628,
+          "rerun": 0.05627705627705628,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "n_features",
+          "banked": 45,
+          "rerun": 45,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "prereg",
+          "banked": "PREREG.md (frozen 2026-08-30)",
+          "rerun": "PREREG.md (frozen 2026-08-30)",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "primary_universe.definition",
+          "banked": "E4 champion farmer deployments",
+          "rerun": "E4 champion farmer deployments",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "primary_universe.n_games",
+          "banked": 53,
+          "rerun": 53,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary_universe.n_rows",
+          "banked": 199,
+          "rerun": 199,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary_universe.n_scoring",
+          "banked": 107,
+          "rerun": 107,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary_universe.n_zero",
+          "banked": 92,
+          "rerun": 92,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "primary_universe.profile",
+          "banked": "fixed_v1",
+          "rerun": "fixed_v1",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "primary_universe.zero_rate",
+          "banked": 0.4623115577889447,
+          "rerun": 0.4623115577889447,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "seat_model_source",
+          "banked": "SP449-trained (never saw an E4 row)",
+          "rerun": "SP449-trained (never saw an E4 row)",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "seed",
+          "banked": 20260830,
+          "rerun": 20260830,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "sp449.AUC_B_BAG",
+          "banked": 0.5413763006364279,
+          "rerun": 0.5413754924739873,
+          "abs_delta": 8.081624406353072e-07,
+          "identical": false
+        },
+        {
+          "stat": "sp449.AUC_B_LEAF",
+          "banked": 0.5416975452065865,
+          "rerun": 0.5416967370441459,
+          "abs_delta": 8.081624406353072e-07,
+          "identical": false
+        },
+        {
+          "stat": "sp449.AUC_F_FIT_oof",
+          "banked": 0.592632387109809,
+          "rerun": 0.592632387109809,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "sp449.AUC_F_PF",
+          "banked": 0.5467958379634307,
+          "rerun": 0.5467958379634307,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "sp449.n_games",
+          "banked": 449,
+          "rerun": 449,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "sp449.n_rows",
+          "banked": 3080,
+          "rerun": 3080,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "sp449.n_scored",
+          "banked": 3080,
+          "rerun": 3080,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "sp449.zero_rate",
+          "banked": 0.15422077922077926,
+          "rerun": 0.15422077922077926,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "transfer_SP449_to_E4champ_AUC",
+          "banked": 0.6749796830556685,
+          "rerun": 0.6749796830556685,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "verdict",
+          "banked": "MECHANISM DEAD (a bar failed) \u2014 no build, no band, no follow-on cell",
+          "rerun": "MECHANISM DEAD (a bar failed) \u2014 no build, no band, no follow-on cell",
+          "abs_delta": null,
+          "identical": true
+        }
+      ]
+    }
+  ],
+  "raw_row_files": [
+    {
+      "file": "hpm1 rows_E4_fixed_v1",
+      "banked_sha256_16": "78065b9648f9f591",
+      "rerun_sha256_16": "3481fe9bc295346a",
+      "identical": false
+    },
+    {
+      "file": "hpm1 rows_E4_walled",
+      "banked_sha256_16": "eabbe4ebc4c0adab",
+      "rerun_sha256_16": "b44364fa0d394467",
+      "identical": false
+    },
+    {
+      "file": "hpm1 rows_E4_app_aug2",
+      "banked_sha256_16": "bd4b77702e14198f",
+      "rerun_sha256_16": "bd4b77702e14198f",
+      "identical": true
+    },
+    {
+      "file": "hpm1 rows_SP449_walled",
+      "banked_sha256_16": "cd20d141c8a2bb47",
+      "rerun_sha256_16": "78b5379e68c5cdfb",
+      "identical": false
+    },
+    {
+      "file": "cl083 C2_fixed_v1",
+      "banked_sha256_16": "f4f470801114cc3b",
+      "rerun_sha256_16": "f4f470801114cc3b",
+      "identical": true
+    },
+    {
+      "file": "cl083 C2_walled",
+      "banked_sha256_16": "72aa15b4c89895a6",
+      "rerun_sha256_16": "72aa15b4c89895a6",
+      "identical": true
+    },
+    {
+      "file": "cl083 C2_app_aug2",
+      "banked_sha256_16": "24275abb29fc9700",
+      "rerun_sha256_16": "24275abb29fc9700",
+      "identical": true
+    }
+  ]
+}

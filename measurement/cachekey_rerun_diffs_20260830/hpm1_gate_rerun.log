@@ -1,0 +1,74 @@
+{
+ "primary_universe": {
+  "definition": "E4 champion farmer deployments",
+  "profile": "fixed_v1",
+  "n_rows": 199,
+  "n_scoring": 107,
+  "n_zero": 92,
+  "n_games": 53,
+  "zero_rate": 0.4623115577889447
+ },
+ "auc": {
+  "F_FIT_oof": 0.6518183665176758,
+  "F_FIT_oof_ci95": [
+   0.566398608998044,
+   0.7338709677419355
+  ],
+  "F_PF": 0.6479581470946769,
+  "B_LEAF": 0.5609508329947176,
+  "B_BAG": 0.5609508329947176,
+  "d_F_FIT_minus_B_LEAF": 0.09086753352295818,
+  "ci95": [
+   0.003955056179775318,
+   0.18440709617180207
+  ],
+  "d_F_FIT_minus_B_BAG": 0.09086753352295818,
+  "ci95_bag": [
+   0.003955056179775318,
+   0.18440709617180207
+  ],
+  "n_rows_scored": 199,
+  "n_pos": 107,
+  "n_neg": 92
+ },
+ "bars": {
+  "a_AUC_ge_0.70": {
+   "pass": false,
+   "value": 0.6518183665176758,
+   "bar": 0.7,
+   "ci95": [
+    0.566398608998044,
+    0.7338709677419355
+   ]
+  },
+  "b_beats_B_LEAF_and_B_BAG": {
+   "pass": true,
+   "weak": false,
+   "F_FIT": 0.6518183665176758,
+   "B_LEAF": 0.5609508329947176,
+   "B_BAG": 0.5609508329947176,
+   "d_leaf": 0.09086753352295818,
+   "d_leaf_ci95": [
+    0.003955056179775318,
+    0.18440709617180207
+   ],
+   "d_bag": 0.09086753352295818,
+   "d_bag_ci95": [
+    0.003955056179775318,
+    0.18440709617180207
+   ]
+  },
+  "c_seat_owner_high": {
+   "pass": false,
+   "n_owner": 231,
+   "n_champ": 209,
+   "mean_owner": 1.5687190175875994,
+   "mean_champ": 1.8709435269163643,
+   "delta": -0.302224509328765,
+   "perm_p_two_sided": 9.999000099990002e-05,
+   "owner_zero_rate": 0.05627705627705626,
+   "champ_zero_rate": 0.46411483253588515
+  }
+ },
+ "verdict": "MECHANISM DEAD (a bar failed) \u2014 no build, no band, no follow-on cell"
+}

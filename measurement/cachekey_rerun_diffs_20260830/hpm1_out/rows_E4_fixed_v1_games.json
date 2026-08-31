@@ -1,0 +1,903 @@
+[
+ {
+  "game": "1786045035_338139.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   105,
+   115
+  ],
+  "recorded_scores": [
+   105,
+   115
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1786367787_389099.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   78,
+   90
+  ],
+  "recorded_scores": [
+   78,
+   90
+  ],
+  "human_player": 0,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "1786113542_627623.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 141,
+  "final_scores": [
+   116,
+   78
+  ],
+  "recorded_scores": [
+   116,
+   78
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1786118143_1621601234.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 141,
+  "final_scores": [
+   74,
+   71
+  ],
+  "recorded_scores": [
+   74,
+   71
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1786243458_1382293676.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   97,
+   75
+  ],
+  "recorded_scores": [
+   97,
+   75
+  ],
+  "human_player": 0,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "1786116818_134510.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   76,
+   104
+  ],
+  "recorded_scores": [
+   76,
+   104
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1786242001_49628.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   86,
+   95
+  ],
+  "recorded_scores": [
+   86,
+   95
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1785984310_1698417952.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   101,
+   107
+  ],
+  "recorded_scores": [
+   101,
+   107
+  ],
+  "human_player": 0,
+  "n_farm_commits": 11
+ },
+ {
+  "game": "1786142936_703591.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   74,
+   112
+  ],
+  "recorded_scores": [
+   74,
+   112
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1786329790_523563.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   115,
+   86
+  ],
+  "recorded_scores": [
+   115,
+   86
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1786074812_935815.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   90,
+   104
+  ],
+  "recorded_scores": [
+   90,
+   104
+  ],
+  "human_player": 0,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "1786337185_638286.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   125,
+   71
+  ],
+  "recorded_scores": [
+   125,
+   71
+  ],
+  "human_player": 0,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "1786325073_523563.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   140,
+   84
+  ],
+  "recorded_scores": [
+   140,
+   84
+  ],
+  "human_player": 0,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "1786076853_2116173857.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   90,
+   87
+  ],
+  "recorded_scores": [
+   90,
+   87
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1785982194_705585.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   80,
+   87
+  ],
+  "recorded_scores": [
+   80,
+   87
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1785986044_1911511187.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   109,
+   65
+  ],
+  "recorded_scores": [
+   109,
+   65
+  ],
+  "human_player": 0,
+  "n_farm_commits": 11
+ },
+ {
+  "game": "1786403231_207028.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   103,
+   106
+  ],
+  "recorded_scores": [
+   103,
+   106
+  ],
+  "human_player": 0,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "1786418867_411846845.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   119,
+   105
+  ],
+  "recorded_scores": [
+   119,
+   105
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1786454767_166575.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   118,
+   108
+  ],
+  "recorded_scores": [
+   118,
+   108
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1786503336_446661.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   102,
+   83
+  ],
+  "recorded_scores": [
+   102,
+   83
+  ],
+  "human_player": 0,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "1786511848_634689.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   132,
+   72
+  ],
+  "recorded_scores": [
+   132,
+   72
+  ],
+  "human_player": 0,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "1786590116_64346.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   55,
+   55
+  ],
+  "recorded_scores": [
+   55,
+   55
+  ],
+  "human_player": 0,
+  "n_farm_commits": 3
+ },
+ {
+  "game": "1786417055_68387.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   81,
+   93
+  ],
+  "recorded_scores": [
+   81,
+   93
+  ],
+  "human_player": 0,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "1786719876_241820.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   107,
+   93
+  ],
+  "recorded_scores": [
+   107,
+   93
+  ],
+  "human_player": 0,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "1786904828_407067.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   99,
+   108
+  ],
+  "recorded_scores": [
+   99,
+   108
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1786906191_1630706897.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   91,
+   48
+  ],
+  "recorded_scores": [
+   91,
+   48
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1786501074_943197.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   111,
+   93
+  ],
+  "recorded_scores": [
+   111,
+   93
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1786680851_216289.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   99,
+   74
+  ],
+  "recorded_scores": [
+   99,
+   74
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "1786591802_1104719504.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   116,
+   79
+  ],
+  "recorded_scores": [
+   116,
+   79
+  ],
+  "human_player": 0,
+  "n_farm_commits": 12
+ },
+ {
+  "game": "1786851750_988400.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   120,
+   71
+  ],
+  "recorded_scores": [
+   120,
+   71
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "1786684476_1793735743.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   88,
+   77
+  ],
+  "recorded_scores": [
+   88,
+   77
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1786853357_1865394167.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   120,
+   98
+  ],
+  "recorded_scores": [
+   120,
+   98
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "1786975727_210415.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   92,
+   109
+  ],
+  "recorded_scores": [
+   92,
+   109
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1786940705_1217326033.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 141,
+  "final_scores": [
+   103,
+   100
+  ],
+  "recorded_scores": [
+   103,
+   100
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "1786939252_94231.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 141,
+  "final_scores": [
+   123,
+   68
+  ],
+  "recorded_scores": [
+   123,
+   68
+  ],
+  "human_player": 0,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "1787005678_833139.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   112,
+   97
+  ],
+  "recorded_scores": [
+   112,
+   97
+  ],
+  "human_player": 0,
+  "n_farm_commits": 12
+ },
+ {
+  "game": "1787017561_548945.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   117,
+   82
+  ],
+  "recorded_scores": [
+   117,
+   82
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1786992300_991662233.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   113,
+   123
+  ],
+  "recorded_scores": [
+   113,
+   123
+  ],
+  "human_player": 0,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "1787024619_442449.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   106,
+   107
+  ],
+  "recorded_scores": [
+   106,
+   107
+  ],
+  "human_player": 0,
+  "n_farm_commits": 11
+ },
+ {
+  "game": "1787019007_1477882043.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   105,
+   69
+  ],
+  "recorded_scores": [
+   105,
+   69
+  ],
+  "human_player": 0,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "1787181677_238637.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   96,
+   103
+  ],
+  "recorded_scores": [
+   96,
+   103
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1787061939_873977203.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   68,
+   38
+  ],
+  "recorded_scores": [
+   68,
+   38
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "1787277974_331305.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   108,
+   53
+  ],
+  "recorded_scores": [
+   108,
+   53
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "1787060359_31068.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   87,
+   110
+  ],
+  "recorded_scores": [
+   87,
+   110
+  ],
+  "human_player": 0,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "1787189021_930939.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   106,
+   79
+  ],
+  "recorded_scores": [
+   106,
+   79
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "1787350915_108813.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   136,
+   84
+  ],
+  "recorded_scores": [
+   136,
+   84
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "1787551302_182159.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   75,
+   80
+  ],
+  "recorded_scores": [
+   75,
+   80
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1787579978_682909.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   83,
+   59
+  ],
+  "recorded_scores": [
+   83,
+   59
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1787532255_79977.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   130,
+   124
+  ],
+  "recorded_scores": [
+   130,
+   124
+  ],
+  "human_player": 0,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "1787540385_436222.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   97,
+   121
+  ],
+  "recorded_scores": [
+   97,
+   121
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "1787618319_251279.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   124,
+   99
+  ],
+  "recorded_scores": [
+   124,
+   99
+  ],
+  "human_player": 0,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "1787624395_184395.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   71,
+   65
+  ],
+  "recorded_scores": [
+   71,
+   65
+  ],
+  "human_player": 0,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "1787706106_368012.json",
+  "corpus": "E4",
+  "profile": "fixed_v1",
+  "recon_ok": true,
+  "n_plies": 142,
+  "final_scores": [
+   107,
+   92
+  ],
+  "recorded_scores": [
+   107,
+   92
+  ],
+  "human_player": 0,
+  "n_farm_commits": 8
+ }
+]

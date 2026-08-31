@@ -1,0 +1,36 @@
+[
+ {
+  "game": "1785205383_867966.json",
+  "corpus": "E4",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   111,
+   113
+  ],
+  "recorded_scores": [
+   111,
+   113
+  ],
+  "human_player": 0,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "1785466497_161583.json",
+  "corpus": "E4",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   73,
+   108
+  ],
+  "recorded_scores": [
+   73,
+   108
+  ],
+  "human_player": 0,
+  "n_farm_commits": 10
+ }
+]

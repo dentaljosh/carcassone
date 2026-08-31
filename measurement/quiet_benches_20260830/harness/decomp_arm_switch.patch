@@ -1,0 +1,29 @@
+--- a396dc03/leaf/decomp/mod.rs
++++ scratch/leaf/decomp/mod.rs
+@@ -278,7 +278,26 @@
+ ///
+ /// `out` is overwritten; anything it held is dropped logically (the capacity is
+ /// kept).  See [`decompose`] for the allocating convenience wrapper.
++/// BENCH-ONLY runtime arm switch (scratch build; NOT in the source worktree).
++/// `CARC_DECOMP_REF=1` routes every `decompose_into` call to the frozen
++/// object-registry reference, so a whole-consumer bench (search slice, tier1
++/// playout) can time the two arms in the same binary. Read once via `OnceLock`;
++/// the branch is paid identically by BOTH arms, so the factor is unaffected.
++static DECOMP_USE_REF: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
++
++#[inline]
+ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
++    if *DECOMP_USE_REF
++        .get_or_init(|| std::env::var("CARC_DECOMP_REF").map(|v| v == "1").unwrap_or(false))
++    {
++        return decompose_into_ref(state, out, sc);
++    }
++    decompose_into_flat(state, out, sc)
++}
++
++/// The flat-registry decomposition proper (was `decompose_into` before the
++/// bench-only dispatch above was inserted).
++pub fn decompose_into_flat(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
+     let Decomp {
+         placed,
+         cell_ord,
