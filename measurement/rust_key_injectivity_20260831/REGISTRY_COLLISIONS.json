@@ -1,0 +1,2624 @@
+{
+ "r9_enabled_in_process": false,
+ "n_rotated_tiles": 128,
+ "n_distinct_descriptions": 32,
+ "n_key_classes": 107,
+ "n_colliding_classes": 15,
+ "colliding": [
+  {
+   "r9": false,
+   "description": "chapel",
+   "rot_sig_repr": "(('grass', 'grass', 'grass', 'grass'), False, True, False)",
+   "rotations": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "n_farm_slots": {
+    "0": 1,
+    "1": 1,
+    "2": 1,
+    "3": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left"
+    ],
+    "1": [
+     "top_right"
+    ],
+    "2": [
+     "bottom_right"
+    ],
+    "3": [
+     "bottom_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr",
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "1": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr",
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr",
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr",
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "city_left_right",
+   "rot_sig_repr": "(('city', 'grass', 'city', 'grass'), False, False, False)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 1,
+    "3": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "top_right"
+    ],
+    "3": [
+     "bottom_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "bll",
+       "brr",
+       "tll",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "bll",
+       "brr",
+       "tll",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "city_left_right",
+   "rot_sig_repr": "(('grass', 'city', 'grass', 'city'), False, False, False)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 1,
+    "2": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left"
+    ],
+    "2": [
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "brb",
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "brb",
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "city_narrow",
+   "rot_sig_repr": "(('city', 'grass', 'city', 'grass'), False, False, False)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 2,
+    "3": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "top_left",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "bll",
+       "tll"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brr",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "bll",
+       "tll"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brr",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "city_narrow",
+   "rot_sig_repr": "(('grass', 'city', 'grass', 'city'), False, False, False)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 2,
+    "2": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "bottom_left",
+     "top_left"
+    ],
+    "2": [
+     "bottom_right",
+     "top_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "brb"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "brb"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "city_narrow_shield",
+   "rot_sig_repr": "(('city', 'grass', 'city', 'grass'), True, False, False)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 2,
+    "3": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "top_left",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "bll",
+       "tll"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brr",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "bll",
+       "tll"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brr",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "city_narrow_shield",
+   "rot_sig_repr": "(('grass', 'city', 'grass', 'city'), True, False, False)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 2,
+    "2": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "bottom_left",
+     "top_left"
+    ],
+    "2": [
+     "bottom_right",
+     "top_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "brb"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "brb"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "city_top_bottom_flowers",
+   "rot_sig_repr": "(('city', 'grass', 'city', 'grass'), False, False, True)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 1,
+    "2": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left"
+    ],
+    "2": [
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "bll",
+       "brr",
+       "tll",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "bll",
+       "brr",
+       "tll",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "city_top_bottom_flowers",
+   "rot_sig_repr": "(('grass', 'city', 'grass', 'city'), False, False, True)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 1,
+    "3": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "top_right"
+    ],
+    "3": [
+     "bottom_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "blb",
+       "brb",
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "brb",
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "crossroads",
+   "rot_sig_repr": "(('road', 'road', 'road', 'road'), False, False, False)",
+   "rotations": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "n_farm_slots": {
+    "0": 4,
+    "1": 4,
+    "2": 4,
+    "3": 4
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "bottom_left",
+     "bottom_right",
+     "top_left",
+     "top_right"
+    ],
+    "1": [
+     "bottom_left",
+     "bottom_right",
+     "top_left",
+     "top_right"
+    ],
+    "2": [
+     "bottom_left",
+     "bottom_right",
+     "top_left",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "bottom_right",
+     "top_left",
+     "top_right"
+    ]
+   },
+   "offered_corners_identical": true,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "bll"
+      ],
+      [],
+      [
+       "bottom_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_right"
+      ]
+     ]
+    ],
+    "1": [
+     [
+      [
+       "blb",
+       "bll"
+      ],
+      [],
+      [
+       "bottom_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "bll"
+      ],
+      [],
+      [
+       "bottom_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "bll"
+      ],
+      [],
+      [
+       "bottom_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "full_city_with_shield",
+   "rot_sig_repr": "(('city', 'city', 'city', 'city'), True, False, False)",
+   "rotations": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "n_farm_slots": {
+    "0": 0,
+    "1": 0,
+    "2": 0,
+    "3": 0
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [],
+    "1": [],
+    "2": [],
+    "3": []
+   },
+   "offered_corners_identical": true,
+   "geometry": {
+    "0": [],
+    "1": [],
+    "2": [],
+    "3": []
+   }
+  },
+  {
+   "r9": false,
+   "description": "straight_road",
+   "rot_sig_repr": "(('grass', 'road', 'grass', 'road'), False, False, False)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 2,
+    "3": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "bottom_right",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "top_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "straight_road",
+   "rot_sig_repr": "(('road', 'grass', 'road', 'grass'), False, False, False)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 2,
+    "2": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left",
+     "top_right"
+    ],
+    "2": [
+     "bottom_left",
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "bll",
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "bll",
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "straight_road_flowers",
+   "rot_sig_repr": "(('grass', 'road', 'grass', 'road'), False, False, True)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 2,
+    "3": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "bottom_right",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "top_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": false,
+   "description": "straight_road_flowers",
+   "rot_sig_repr": "(('road', 'grass', 'road', 'grass'), False, False, True)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 2,
+    "2": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left",
+     "top_right"
+    ],
+    "2": [
+     "bottom_left",
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "bll",
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "bll",
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "chapel",
+   "rot_sig_repr": "(('grass', 'grass', 'grass', 'grass'), False, True, False)",
+   "rotations": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "n_farm_slots": {
+    "0": 1,
+    "1": 1,
+    "2": 1,
+    "3": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left"
+    ],
+    "1": [
+     "top_right"
+    ],
+    "2": [
+     "bottom_right"
+    ],
+    "3": [
+     "bottom_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr",
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "1": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr",
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr",
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr",
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "city_left_right",
+   "rot_sig_repr": "(('city', 'grass', 'city', 'grass'), False, False, False)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 1,
+    "3": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "top_right"
+    ],
+    "3": [
+     "bottom_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "bll",
+       "brr",
+       "tll",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "bll",
+       "brr",
+       "tll",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "city_left_right",
+   "rot_sig_repr": "(('grass', 'city', 'grass', 'city'), False, False, False)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 1,
+    "2": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left"
+    ],
+    "2": [
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "brb",
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "brb",
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "city_narrow",
+   "rot_sig_repr": "(('city', 'grass', 'city', 'grass'), False, False, False)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 2,
+    "3": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "top_left",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "bll",
+       "tll"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brr",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "bll",
+       "tll"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brr",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "city_narrow",
+   "rot_sig_repr": "(('grass', 'city', 'grass', 'city'), False, False, False)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 2,
+    "2": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "bottom_left",
+     "top_left"
+    ],
+    "2": [
+     "bottom_right",
+     "top_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "brb"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "brb"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "city_narrow_shield",
+   "rot_sig_repr": "(('city', 'grass', 'city', 'grass'), True, False, False)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 2,
+    "3": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "top_left",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "bll",
+       "tll"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brr",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "bll",
+       "tll"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brr",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "city_narrow_shield",
+   "rot_sig_repr": "(('grass', 'city', 'grass', 'city'), True, False, False)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 2,
+    "2": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "bottom_left",
+     "top_left"
+    ],
+    "2": [
+     "bottom_right",
+     "top_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "brb"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "brb"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "city_top_bottom_flowers",
+   "rot_sig_repr": "(('city', 'grass', 'city', 'grass'), False, False, True)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 1,
+    "2": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left"
+    ],
+    "2": [
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "bll",
+       "brr",
+       "tll",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "bll",
+       "brr",
+       "tll",
+       "trr"
+      ],
+      [
+       "bottom",
+       "top"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "city_top_bottom_flowers",
+   "rot_sig_repr": "(('grass', 'city', 'grass', 'city'), False, False, True)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 1,
+    "3": 1
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "top_right"
+    ],
+    "3": [
+     "bottom_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "blb",
+       "brb",
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "brb",
+       "tlt",
+       "trt"
+      ],
+      [
+       "left",
+       "right"
+      ],
+      [
+       "bottom_left",
+       "bottom_right",
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "crossroads",
+   "rot_sig_repr": "(('road', 'road', 'road', 'road'), False, False, False)",
+   "rotations": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "n_farm_slots": {
+    "0": 4,
+    "1": 4,
+    "2": 4,
+    "3": 4
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "bottom_left",
+     "bottom_right",
+     "top_left",
+     "top_right"
+    ],
+    "1": [
+     "bottom_left",
+     "bottom_right",
+     "top_left",
+     "top_right"
+    ],
+    "2": [
+     "bottom_left",
+     "bottom_right",
+     "top_left",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "bottom_right",
+     "top_left",
+     "top_right"
+    ]
+   },
+   "offered_corners_identical": true,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "bll"
+      ],
+      [],
+      [
+       "bottom_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_right"
+      ]
+     ]
+    ],
+    "1": [
+     [
+      [
+       "blb",
+       "bll"
+      ],
+      [],
+      [
+       "bottom_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "bll"
+      ],
+      [],
+      [
+       "bottom_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "bll"
+      ],
+      [],
+      [
+       "bottom_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "full_city_with_shield",
+   "rot_sig_repr": "(('city', 'city', 'city', 'city'), True, False, False)",
+   "rotations": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "n_farm_slots": {
+    "0": 0,
+    "1": 0,
+    "2": 0,
+    "3": 0
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [],
+    "1": [],
+    "2": [],
+    "3": []
+   },
+   "offered_corners_identical": true,
+   "geometry": {
+    "0": [],
+    "1": [],
+    "2": [],
+    "3": []
+   }
+  },
+  {
+   "r9": true,
+   "description": "straight_road",
+   "rot_sig_repr": "(('grass', 'road', 'grass', 'road'), False, False, False)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 2,
+    "3": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "bottom_right",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "top_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "straight_road",
+   "rot_sig_repr": "(('road', 'grass', 'road', 'grass'), False, False, False)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 2,
+    "2": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left",
+     "top_right"
+    ],
+    "2": [
+     "bottom_left",
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "bll",
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "bll",
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "straight_road_flowers",
+   "rot_sig_repr": "(('grass', 'road', 'grass', 'road'), False, False, True)",
+   "rotations": [
+    1,
+    3
+   ],
+   "n_farm_slots": {
+    "1": 2,
+    "3": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "1": [
+     "bottom_right",
+     "top_right"
+    ],
+    "3": [
+     "bottom_left",
+     "top_left"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "1": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ],
+    "3": [
+     [
+      [
+       "blb",
+       "bll",
+       "brb",
+       "brr"
+      ],
+      [],
+      [
+       "bottom_left",
+       "bottom_right"
+      ]
+     ],
+     [
+      [
+       "tll",
+       "tlt",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "top_left",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "r9": true,
+   "description": "straight_road_flowers",
+   "rot_sig_repr": "(('road', 'grass', 'road', 'grass'), False, False, True)",
+   "rotations": [
+    0,
+    2
+   ],
+   "n_farm_slots": {
+    "0": 2,
+    "2": 2
+   },
+   "geometry_identical": true,
+   "offered_corners": {
+    "0": [
+     "top_left",
+     "top_right"
+    ],
+    "2": [
+     "bottom_left",
+     "bottom_right"
+    ]
+   },
+   "offered_corners_identical": false,
+   "geometry": {
+    "0": [
+     [
+      [
+       "blb",
+       "bll",
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ],
+    "2": [
+     [
+      [
+       "blb",
+       "bll",
+       "tll",
+       "tlt"
+      ],
+      [],
+      [
+       "bottom_left",
+       "top_left"
+      ]
+     ],
+     [
+      [
+       "brb",
+       "brr",
+       "trr",
+       "trt"
+      ],
+      [],
+      [
+       "bottom_right",
+       "top_right"
+      ]
+     ]
+    ]
+   }
+  }
+ ],
+ "summary": {
+  "classes_with_DIFFERENT_physical_geometry": 0,
+  "classes_with_DIFFERENT_offered_farmer_corners": 26,
+  "verdict_tile_level": "KEY IS NON-INJECTIVE OVER ROTATIONS"
+ }
+}

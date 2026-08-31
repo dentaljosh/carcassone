@@ -1,0 +1,93 @@
+{
+ "profile": "walled",
+ "witness": {
+  "deck_seed": 28000000011,
+  "ply": 24,
+  "actions": [
+   949,
+   951
+  ]
+ },
+ "parent_n_legal": 22,
+ "K1_rust_key_collides": true,
+ "K1_key_len": 1418,
+ "K2_honest_legal_actions_differ": true,
+ "K2_legal_a": [
+  2502,
+  2504,
+  2507,
+  2509,
+  2510
+ ],
+ "K2_legal_b": [
+  2502,
+  2504,
+  2506,
+  2508,
+  2510
+ ],
+ "K2_a_minus_b": [
+  2507,
+  2509
+ ],
+ "K2_b_minus_a": [
+  2506,
+  2508
+ ],
+ "K3_same_position": {
+  "placed_tile_diffs": [
+   {
+    "coord": [
+     3,
+     13
+    ],
+    "a": [
+     "straight_road",
+     1
+    ],
+    "b": [
+     "straight_road",
+     3
+    ]
+   }
+  ],
+  "diff_is_rotation_label_only": true,
+  "leaf_value_a": -12,
+  "leaf_value_b": -12,
+  "leaf_value_identical": true,
+  "successor_leaf_multiset_identical": true,
+  "n_successors": [
+   5,
+   5
+  ]
+ },
+ "K4_reachable_in_one_deployed_tree": {
+  "sims": 256,
+  "both_actions_visited_in_one_tree": true,
+  "child_digest_a": [
+   "2f6c95caaca4030e"
+  ],
+  "child_digest_b": [
+   "2f6c95caaca4030e"
+  ],
+  "SAME_NODE_IN_ONE_TREE": true
+ },
+ "K5_blast_radius": {
+  "root_children_a": [
+   20,
+   13846793761073668187
+  ],
+  "root_children_b": [
+   20,
+   13846793761073668187
+  ],
+  "root_children_NW_identical": true,
+  "a_in_deduped": true,
+  "b_in_deduped": false,
+  "exactly_one_of_the_pair_survives_dedup": true,
+  "chosen_action": 1361,
+  "n_root_children": 22,
+  "n_deduped": 11,
+  "node_count": 246
+ }
+}

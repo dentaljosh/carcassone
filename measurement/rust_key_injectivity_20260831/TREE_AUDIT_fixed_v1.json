@@ -1,0 +1,26 @@
+{
+ "profile": "fixed_v1",
+ "sims_per_root": 400,
+ "totals": {
+  "roots": 30,
+  "nodes_seen": 11028,
+  "merged_nodes": 725,
+  "merge_pairs": 972,
+  "FAIL_not_rotation_only": 0,
+  "FAIL_scalar_mismatch": 0,
+  "FAIL_leaf_mismatch": 0,
+  "merge_tiles": {
+   "straight_road_flowers": 74,
+   "crossroads": 143,
+   "city_narrow_shield": 122,
+   "straight_road": 239,
+   "city_narrow": 26,
+   "city_left_right": 72,
+   "full_city_with_shield": 74,
+   "chapel": 208,
+   "city_top_bottom_flowers": 14
+  }
+ },
+ "failures": [],
+ "verdict": "every multi-prefix node in every audited tree is a SAME-POSITION merge"
+}

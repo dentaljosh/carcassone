@@ -1,0 +1,2249 @@
+{
+ "profile": "fixed_v1",
+ "seeds": [
+  28000000000,
+  28000000001,
+  28000000002,
+  28000000003,
+  28000000004,
+  28000000005,
+  28000000006,
+  28000000007,
+  28000000008,
+  28000000009,
+  28000000010,
+  28000000011,
+  28000000012,
+  28000000013,
+  28000000014,
+  28000000015,
+  28000000016,
+  28000000017,
+  28000000018,
+  28000000019,
+  28000000020,
+  28000000021,
+  28000000022,
+  28000000023,
+  28000000024,
+  28000000025,
+  28000000026,
+  28000000027,
+  28000000028,
+  28000000029,
+  28000000030,
+  28000000031,
+  28000000032,
+  28000000033,
+  28000000034,
+  28000000035,
+  28000000036,
+  28000000037,
+  28000000038,
+  28000000039,
+  28000000040,
+  28000000041,
+  28000000042,
+  28000000043,
+  28000000044,
+  28000000045,
+  28000000046,
+  28000000047,
+  28000000048,
+  28000000049,
+  28000000050,
+  28000000051,
+  28000000052,
+  28000000053,
+  28000000054,
+  28000000055,
+  28000000056,
+  28000000057,
+  28000000058,
+  28000000059
+ ],
+ "census": {
+  "tile_plies": 4320,
+  "tile_actions": 120823,
+  "collision_groups": 15395,
+  "collision_actions": 37042,
+  "pct_tile_actions_in_a_collision_group": 30.658,
+  "group_sizes": {
+   "2": 12269,
+   "4": 3126
+  },
+  "colliding_tiles": {
+   "city_top_bottom_flowers": 737,
+   "straight_road": 6680,
+   "city_narrow_shield": 1570,
+   "straight_road_flowers": 899,
+   "chapel": 7662,
+   "crossroads": 1077,
+   "city_left_right": 1577,
+   "full_city_with_shield": 639,
+   "city_narrow": 806
+  }
+ },
+ "same_position_gates": {
+  "S1_rotation_label_only_FAILURES": 0,
+  "S2_leaf_value_identical_FAILURES": 0,
+  "S3_pairs_with_NO_observable_action_diff": 9096,
+  "S4_terminal_margin_identical_FAILURES": 0,
+  "S4_playout_comparisons": 1440
+ },
+ "rust_LegalMaskCache_defect": {
+  "playouts_compared": 3414,
+  "playouts_the_memo_MOVED": 0,
+  "pct": 0.0
+ },
+ "detail": [
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1148,
+    1150
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -1.0,
+     139
+    ],
+    [
+     -1.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -1.0,
+     139
+    ],
+    [
+     -1.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1148,
+    1150
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -17.0,
+     139
+    ],
+    [
+     -17.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -17.0,
+     139
+    ],
+    [
+     -17.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1148,
+    1150
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     30.0,
+     139
+    ],
+    [
+     30.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     30.0,
+     139
+    ],
+    [
+     30.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1153,
+    1155
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     7.0,
+     139
+    ],
+    [
+     7.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     7.0,
+     139
+    ],
+    [
+     7.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1153,
+    1155
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -7.0,
+     139
+    ],
+    [
+     -7.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -7.0,
+     139
+    ],
+    [
+     -7.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1153,
+    1155
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     35.0,
+     139
+    ],
+    [
+     35.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     35.0,
+     139
+    ],
+    [
+     35.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1245,
+    1247
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     29.0,
+     139
+    ],
+    [
+     29.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     29.0,
+     139
+    ],
+    [
+     29.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1245,
+    1247
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     12.0,
+     139
+    ],
+    [
+     12.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     12.0,
+     139
+    ],
+    [
+     12.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1245,
+    1247
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     48.0,
+     139
+    ],
+    [
+     48.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     48.0,
+     139
+    ],
+    [
+     48.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1256,
+    1258
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -6.0,
+     139
+    ],
+    [
+     -6.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -6.0,
+     139
+    ],
+    [
+     -6.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1256,
+    1258
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     12.0,
+     139
+    ],
+    [
+     12.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     12.0,
+     139
+    ],
+    [
+     12.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1256,
+    1258
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     45.0,
+     139
+    ],
+    [
+     45.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     45.0,
+     139
+    ],
+    [
+     45.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1348,
+    1350
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -40.0,
+     139
+    ],
+    [
+     -40.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -40.0,
+     139
+    ],
+    [
+     -40.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1348,
+    1350
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -35.0,
+     139
+    ],
+    [
+     -35.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -35.0,
+     139
+    ],
+    [
+     -35.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 4,
+   "actions": [
+    1348,
+    1350
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -28.0,
+     139
+    ],
+    [
+     -28.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -28.0,
+     139
+    ],
+    [
+     -28.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    944,
+    946
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     9.0,
+     127
+    ],
+    [
+     9.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     9.0,
+     127
+    ],
+    [
+     9.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    944,
+    946
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     7.0,
+     127
+    ],
+    [
+     7.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     7.0,
+     127
+    ],
+    [
+     7.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    944,
+    946
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     9.0,
+     127
+    ],
+    [
+     9.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     9.0,
+     127
+    ],
+    [
+     9.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    1049,
+    1051
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -43.0,
+     127
+    ],
+    [
+     -43.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     -43.0,
+     127
+    ],
+    [
+     -43.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    1049,
+    1051
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     17.0,
+     127
+    ],
+    [
+     17.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     17.0,
+     127
+    ],
+    [
+     17.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    1049,
+    1051
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -7.0,
+     127
+    ],
+    [
+     -7.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     -7.0,
+     127
+    ],
+    [
+     -7.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    1053,
+    1055
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -4.0,
+     127
+    ],
+    [
+     -4.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     -4.0,
+     127
+    ],
+    [
+     -4.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    1053,
+    1055
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     10.0,
+     127
+    ],
+    [
+     10.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     10.0,
+     127
+    ],
+    [
+     10.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000000,
+   "ply": 16,
+   "actions": [
+    1053,
+    1055
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     4.0,
+     127
+    ],
+    [
+     4.0,
+     127
+    ]
+   ],
+   "memo_margins": [
+    [
+     4.0,
+     127
+    ],
+    [
+     4.0,
+     127
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1148,
+    1150
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     9.0,
+     139
+    ],
+    [
+     9.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     9.0,
+     139
+    ],
+    [
+     9.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1148,
+    1150
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -7.0,
+     139
+    ],
+    [
+     -7.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -7.0,
+     139
+    ],
+    [
+     -7.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1148,
+    1150
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     10.0,
+     139
+    ],
+    [
+     10.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     10.0,
+     139
+    ],
+    [
+     10.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1240,
+    1242
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -7.0,
+     139
+    ],
+    [
+     -7.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -7.0,
+     139
+    ],
+    [
+     -7.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1240,
+    1242
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -2.0,
+     139
+    ],
+    [
+     -2.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -2.0,
+     139
+    ],
+    [
+     -2.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1240,
+    1242
+   ],
+   "tile": "straight_road",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     9.0,
+     139
+    ],
+    [
+     9.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     9.0,
+     139
+    ],
+    [
+     9.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1253,
+    1255
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     12.0,
+     139
+    ],
+    [
+     12.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     12.0,
+     139
+    ],
+    [
+     12.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1253,
+    1255
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     14.0,
+     139
+    ],
+    [
+     14.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     14.0,
+     139
+    ],
+    [
+     14.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1253,
+    1255
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -7.0,
+     139
+    ],
+    [
+     -7.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -7.0,
+     139
+    ],
+    [
+     -7.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1345,
+    1347
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -18.0,
+     139
+    ],
+    [
+     -18.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -18.0,
+     139
+    ],
+    [
+     -18.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1345,
+    1347
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     6.0,
+     139
+    ],
+    [
+     6.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     6.0,
+     139
+    ],
+    [
+     6.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1345,
+    1347
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -3.0,
+     139
+    ],
+    [
+     -3.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -3.0,
+     139
+    ],
+    [
+     -3.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1349,
+    1351
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     3.0,
+     139
+    ],
+    [
+     3.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     3.0,
+     139
+    ],
+    [
+     3.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1349,
+    1351
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     9.0,
+     139
+    ],
+    [
+     9.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     9.0,
+     139
+    ],
+    [
+     9.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 4,
+   "actions": [
+    1349,
+    1351
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -22.0,
+     139
+    ],
+    [
+     -22.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -22.0,
+     139
+    ],
+    [
+     -22.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1153,
+    1155
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -43.0,
+     129
+    ],
+    [
+     -43.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     -43.0,
+     129
+    ],
+    [
+     -43.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1153,
+    1155
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -1.0,
+     129
+    ],
+    [
+     -1.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     -1.0,
+     129
+    ],
+    [
+     -1.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1153,
+    1155
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -4.0,
+     129
+    ],
+    [
+     -4.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     -4.0,
+     129
+    ],
+    [
+     -4.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1236,
+    1238
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -7.0,
+     129
+    ],
+    [
+     -7.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     -7.0,
+     129
+    ],
+    [
+     -7.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1236,
+    1238
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     15.0,
+     129
+    ],
+    [
+     15.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     15.0,
+     129
+    ],
+    [
+     15.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1236,
+    1238
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    0,
+    2
+   ],
+   "honest_margins": [
+    [
+     -1.0,
+     129
+    ],
+    [
+     -1.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     -1.0,
+     129
+    ],
+    [
+     -1.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1341,
+    1343
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -21.0,
+     129
+    ],
+    [
+     -21.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     -21.0,
+     129
+    ],
+    [
+     -21.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1341,
+    1343
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -10.0,
+     129
+    ],
+    [
+     -10.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     -10.0,
+     129
+    ],
+    [
+     -10.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000001,
+   "ply": 14,
+   "actions": [
+    1341,
+    1343
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     21.0,
+     129
+    ],
+    [
+     21.0,
+     129
+    ]
+   ],
+   "memo_margins": [
+    [
+     21.0,
+     129
+    ],
+    [
+     21.0,
+     129
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 4,
+   "actions": [
+    1048,
+    1049,
+    1050,
+    1051
+   ],
+   "tile": "full_city_with_shield",
+   "rots": [
+    0,
+    3
+   ],
+   "honest_margins": [
+    [
+     -1.0,
+     139
+    ],
+    [
+     -1.0,
+     139
+    ],
+    [
+     -1.0,
+     139
+    ],
+    [
+     -1.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -1.0,
+     139
+    ],
+    [
+     -1.0,
+     139
+    ],
+    [
+     -1.0,
+     139
+    ],
+    [
+     -1.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 4,
+   "actions": [
+    1048,
+    1049,
+    1050,
+    1051
+   ],
+   "tile": "full_city_with_shield",
+   "rots": [
+    0,
+    3
+   ],
+   "honest_margins": [
+    [
+     -4.0,
+     139
+    ],
+    [
+     -4.0,
+     139
+    ],
+    [
+     -4.0,
+     139
+    ],
+    [
+     -4.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -4.0,
+     139
+    ],
+    [
+     -4.0,
+     139
+    ],
+    [
+     -4.0,
+     139
+    ],
+    [
+     -4.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 4,
+   "actions": [
+    1048,
+    1049,
+    1050,
+    1051
+   ],
+   "tile": "full_city_with_shield",
+   "rots": [
+    0,
+    3
+   ],
+   "honest_margins": [
+    [
+     8.0,
+     139
+    ],
+    [
+     8.0,
+     139
+    ],
+    [
+     8.0,
+     139
+    ],
+    [
+     8.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     8.0,
+     139
+    ],
+    [
+     8.0,
+     139
+    ],
+    [
+     8.0,
+     139
+    ],
+    [
+     8.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 4,
+   "actions": [
+    1152,
+    1153,
+    1154,
+    1155
+   ],
+   "tile": "full_city_with_shield",
+   "rots": [
+    0,
+    3
+   ],
+   "honest_margins": [
+    [
+     -25.0,
+     139
+    ],
+    [
+     -25.0,
+     139
+    ],
+    [
+     -25.0,
+     139
+    ],
+    [
+     -25.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -25.0,
+     139
+    ],
+    [
+     -25.0,
+     139
+    ],
+    [
+     -25.0,
+     139
+    ],
+    [
+     -25.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 4,
+   "actions": [
+    1152,
+    1153,
+    1154,
+    1155
+   ],
+   "tile": "full_city_with_shield",
+   "rots": [
+    0,
+    3
+   ],
+   "honest_margins": [
+    [
+     16.0,
+     139
+    ],
+    [
+     16.0,
+     139
+    ],
+    [
+     16.0,
+     139
+    ],
+    [
+     16.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     16.0,
+     139
+    ],
+    [
+     16.0,
+     139
+    ],
+    [
+     16.0,
+     139
+    ],
+    [
+     16.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 4,
+   "actions": [
+    1152,
+    1153,
+    1154,
+    1155
+   ],
+   "tile": "full_city_with_shield",
+   "rots": [
+    0,
+    3
+   ],
+   "honest_margins": [
+    [
+     -2.0,
+     139
+    ],
+    [
+     -2.0,
+     139
+    ],
+    [
+     -2.0,
+     139
+    ],
+    [
+     -2.0,
+     139
+    ]
+   ],
+   "memo_margins": [
+    [
+     -2.0,
+     139
+    ],
+    [
+     -2.0,
+     139
+    ],
+    [
+     -2.0,
+     139
+    ],
+    [
+     -2.0,
+     139
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 9,
+   "actions": [
+    1349,
+    1351
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -15.0,
+     133
+    ],
+    [
+     -15.0,
+     133
+    ]
+   ],
+   "memo_margins": [
+    [
+     -15.0,
+     133
+    ],
+    [
+     -15.0,
+     133
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 9,
+   "actions": [
+    1349,
+    1351
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -42.0,
+     133
+    ],
+    [
+     -42.0,
+     133
+    ]
+   ],
+   "memo_margins": [
+    [
+     -42.0,
+     133
+    ],
+    [
+     -42.0,
+     133
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 9,
+   "actions": [
+    1349,
+    1351
+   ],
+   "tile": "straight_road",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     5.0,
+     133
+    ],
+    [
+     5.0,
+     133
+    ]
+   ],
+   "memo_margins": [
+    [
+     5.0,
+     133
+    ],
+    [
+     5.0,
+     133
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 37,
+   "actions": [
+    957,
+    959
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     8.0,
+     105
+    ],
+    [
+     8.0,
+     105
+    ]
+   ],
+   "memo_margins": [
+    [
+     8.0,
+     105
+    ],
+    [
+     8.0,
+     105
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 37,
+   "actions": [
+    957,
+    959
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -7.0,
+     105
+    ],
+    [
+     -7.0,
+     105
+    ]
+   ],
+   "memo_margins": [
+    [
+     -7.0,
+     105
+    ],
+    [
+     -7.0,
+     105
+    ]
+   ],
+   "S4_same_margin_honest": true
+  },
+  {
+   "seed": 28000000002,
+   "ply": 37,
+   "actions": [
+    957,
+    959
+   ],
+   "tile": "city_top_bottom_flowers",
+   "rots": [
+    1,
+    3
+   ],
+   "honest_margins": [
+    [
+     -19.0,
+     105
+    ],
+    [
+     -19.0,
+     105
+    ]
+   ],
+   "memo_margins": [
+    [
+     -19.0,
+     105
+    ],
+    [
+     -19.0,
+     105
+    ]
+   ],
+   "S4_same_margin_honest": true
+  }
+ ]
+}
