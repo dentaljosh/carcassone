@@ -1,0 +1,103 @@
+[
+ {
+  "W": 18,
+  "n": 78,
+  "rc": 0,
+  "wall_s": 2474,
+  "steady_games": 60,
+  "paired_games": 48,
+  "A_mean_el_s": 542.5,
+  "A_games_h": 119.4,
+  "P_mean_el_s": 534.1,
+  "P_games_h": 121.3,
+  "P_sem_pct": 1.89,
+  "B_games_h": 102.9,
+  "C_gross_games_h": 113.5,
+  "loadavg_med": 18.01,
+  "min_avail_MB": 10104,
+  "running_med": 18
+ },
+ {
+  "W": 22,
+  "n": 78,
+  "rc": 0,
+  "wall_s": 2340,
+  "steady_games": 56,
+  "paired_games": 48,
+  "A_mean_el_s": 624.3,
+  "A_games_h": 126.9,
+  "P_mean_el_s": 613.9,
+  "P_games_h": 129.0,
+  "P_sem_pct": 1.69,
+  "B_games_h": 106.9,
+  "C_gross_games_h": 120.0,
+  "loadavg_med": 22.05,
+  "min_avail_MB": 10038,
+  "running_med": 22.0
+ },
+ {
+  "W": 26,
+  "n": 78,
+  "rc": 0,
+  "wall_s": 2226,
+  "steady_games": 52,
+  "paired_games": 48,
+  "A_mean_el_s": 705.7,
+  "A_games_h": 132.6,
+  "P_mean_el_s": 691.1,
+  "P_games_h": 135.4,
+  "P_sem_pct": 1.71,
+  "B_games_h": 107.5,
+  "C_gross_games_h": 126.1,
+  "loadavg_med": 26.0,
+  "min_avail_MB": 9976,
+  "running_med": 26.0
+ },
+ {
+  "W": 28,
+  "n": 78,
+  "rc": 0,
+  "wall_s": 2219,
+  "steady_games": 50,
+  "paired_games": 48,
+  "A_mean_el_s": 746.5,
+  "A_games_h": 135.0,
+  "P_mean_el_s": 745.1,
+  "P_games_h": 135.3,
+  "P_sem_pct": 1.71,
+  "B_games_h": 111.3,
+  "C_gross_games_h": 126.5,
+  "loadavg_med": 27.97,
+  "min_avail_MB": 9934,
+  "running_med": 28.0
+ },
+ {
+  "W": 30,
+  "n": 78,
+  "rc": 0,
+  "wall_s": 2227,
+  "steady_games": 48,
+  "paired_games": 48,
+  "A_mean_el_s": 798.0,
+  "A_games_h": 135.3,
+  "P_mean_el_s": 798.0,
+  "P_games_h": 135.3,
+  "P_sem_pct": 1.74,
+  "B_games_h": 103.2,
+  "C_gross_games_h": 126.1,
+  "loadavg_med": 29.97,
+  "min_avail_MB": 9871,
+  "running_med": 30
+ }
+]
+
+primary estimator = P_games_h   (paired over 48 common games)
+   W  paired g/h   sem%  steady g/h  satur g/h  gross g/h  s/game   %peak   load   run  availMB
+  18       121.3   1.89       119.4      102.9      113.5    29.7   89.6%  18.01    18    10104
+  22       129.0   1.69       126.9      106.9      120.0    27.9   95.3%  22.05  22.0    10038
+  26       135.4   1.71       132.6      107.5      126.1    26.6  100.0%   26.0  26.0     9976
+  28       135.3   1.71       135.0      111.3      126.5    26.6   99.9%  27.97  28.0     9934
+  30       135.3   1.74       135.3      103.2      126.1    26.6   99.9%  29.97    30     9871
+
+SMALLEST W within 5% of peak = 22 (129.0 games/h, 95.3% of peak)
+argmax W = 26 (NOT the settle rule)

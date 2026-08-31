@@ -1,0 +1,11 @@
+W points: [18, 22, 26, 28, 30]
+W18 vs W22: n_paired= 56  throughput W18/W22 =  -5.65%  [95% CI -6.45%, -4.84%]  z=-13.33
+W18 vs W26: n_paired= 52  throughput W18/W26 = -10.16%  [95% CI -10.98%, -9.35%]  z=-23.14
+W18 vs W28: n_paired= 50  throughput W18/W28 = -10.23%  [95% CI -11.14%, -9.31%]  z=-20.73
+W18 vs W30: n_paired= 48  throughput W18/W30 = -10.27%  [95% CI -11.19%, -9.33%]  z=-20.47
+W22 vs W26: n_paired= 51  throughput W22/W26 =  -4.73%  [95% CI -4.98%, -4.48%]  z=-36.33
+W22 vs W28: n_paired= 50  throughput W22/W28 =  -4.68%  [95% CI -5.07%, -4.29%]  z=-23.03
+W22 vs W30: n_paired= 48  throughput W22/W30 =  -4.72%  [95% CI -5.21%, -4.24%]  z=-18.53
+W26 vs W28: n_paired= 49  throughput W26/W28 =  +0.11%  [95% CI -0.29%, +0.51%]  z=+0.53
+W26 vs W30: n_paired= 48  throughput W26/W30 =  +0.04%  [95% CI -0.46%, +0.55%]  z=+0.16
+W28 vs W30: n_paired= 48  throughput W28/W30 =  -0.07%  [95% CI -0.64%, +0.50%]  z=-0.24
