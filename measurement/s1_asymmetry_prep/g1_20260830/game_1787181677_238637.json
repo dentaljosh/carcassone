@@ -1,0 +1,241 @@
+{
+ "schema": "carcassonne-jrules-priors-e4-replay/v1",
+ "archive": "1787181677_238637.json",
+ "deck_seed": 238637,
+ "rules_profile": "fixed_v1",
+ "human_player": 0,
+ "champion_seat": 1,
+ "recorded_scores": [
+  96,
+  103
+ ],
+ "replayed_scores": [
+  96,
+  103
+ ],
+ "replay_scores_match": true,
+ "partial": false,
+ "budget": {
+  "sims_per_det": 1376,
+  "k_dets": 16,
+  "total_per_decision": 22016,
+  "source": "CLI override"
+ },
+ "seed": 12345,
+ "surface": "prior",
+ "arms": [
+  {
+   "name": "s1_d0p25",
+   "dose": 0.25,
+   "mask": 31,
+   "scope": "opp",
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "s1_d0p5",
+   "dose": 0.5,
+   "mask": 31,
+   "scope": "opp",
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "s1_d1p0",
+   "dose": 1.0,
+   "mask": 31,
+   "scope": "opp",
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "s1_d2p0",
+   "dose": 2.0,
+   "mask": 31,
+   "scope": "opp",
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  }
+ ],
+ "leaf_hash_production": "a36d2e15a3b3d71d",
+ "n_plies_total": 142,
+ "n_graded": 66,
+ "n_searched_this_run": 66,
+ "champ_agrees_archive": 52,
+ "flips": {
+  "s1_d0p25": 0,
+  "s1_d0p5": 2,
+  "s1_d1p0": 6,
+  "s1_d2p0": 8
+ },
+ "root_visit_tv_mean": {
+  "s1_d0p25": 0.006151862006694859,
+  "s1_d0p5": 0.011813034046863988,
+  "s1_d1p0": 0.01567110971634954,
+  "s1_d2p0": 0.028018190627202257
+ },
+ "root_visit_tv_n": {
+  "s1_d0p25": 66,
+  "s1_d0p5": 66,
+  "s1_d1p0": 66,
+  "s1_d2p0": 66
+ },
+ "root_visit_tv_sum": {
+  "s1_d0p25": 0.4060228924418607,
+  "s1_d0p5": 0.7796602470930233,
+  "s1_d1p0": 1.0342932412790697,
+  "s1_d2p0": 1.849200581395349
+ },
+ "flip_plies": {
+  "s1_d0p25": [],
+  "s1_d0p5": [
+   {
+    "ply": 87,
+    "phase": "meeples",
+    "k_remaining": 27,
+    "champ_pick": 2510,
+    "pick_s1_d0p5": 2506
+   },
+   {
+    "ply": 114,
+    "phase": "tiles",
+    "k_remaining": 13,
+    "champ_pick": 966,
+    "pick_s1_d0p5": 1066
+   }
+  ],
+  "s1_d1p0": [
+   {
+    "ply": 58,
+    "phase": "tiles",
+    "k_remaining": 41,
+    "champ_pick": 1161,
+    "pick_s1_d1p0": 961
+   },
+   {
+    "ply": 74,
+    "phase": "tiles",
+    "k_remaining": 33,
+    "champ_pick": 859,
+    "pick_s1_d1p0": 750
+   },
+   {
+    "ply": 87,
+    "phase": "meeples",
+    "k_remaining": 27,
+    "champ_pick": 2510,
+    "pick_s1_d1p0": 2506
+   },
+   {
+    "ply": 114,
+    "phase": "tiles",
+    "k_remaining": 13,
+    "champ_pick": 966,
+    "pick_s1_d1p0": 1066
+   },
+   {
+    "ply": 122,
+    "phase": "tiles",
+    "k_remaining": 9,
+    "champ_pick": 1272,
+    "pick_s1_d1p0": 648
+   },
+   {
+    "ply": 130,
+    "phase": "tiles",
+    "k_remaining": 5,
+    "champ_pick": 1374,
+    "pick_s1_d1p0": 1748
+   }
+  ],
+  "s1_d2p0": [
+   {
+    "ply": 2,
+    "phase": "tiles",
+    "k_remaining": 69,
+    "champ_pick": 1145,
+    "pick_s1_d2p0": 1146
+   },
+   {
+    "ply": 23,
+    "phase": "meeples",
+    "k_remaining": 59,
+    "champ_pick": 2510,
+    "pick_s1_d2p0": 2502
+   },
+   {
+    "ply": 50,
+    "phase": "tiles",
+    "k_remaining": 45,
+    "champ_pick": 1440,
+    "pick_s1_d2p0": 944
+   },
+   {
+    "ply": 58,
+    "phase": "tiles",
+    "k_remaining": 41,
+    "champ_pick": 1161,
+    "pick_s1_d2p0": 961
+   },
+   {
+    "ply": 67,
+    "phase": "meeples",
+    "k_remaining": 37,
+    "champ_pick": 2506,
+    "pick_s1_d2p0": 2501
+   },
+   {
+    "ply": 74,
+    "phase": "tiles",
+    "k_remaining": 33,
+    "champ_pick": 859,
+    "pick_s1_d2p0": 750
+   },
+   {
+    "ply": 87,
+    "phase": "meeples",
+    "k_remaining": 27,
+    "champ_pick": 2510,
+    "pick_s1_d2p0": 2506
+   },
+   {
+    "ply": 130,
+    "phase": "tiles",
+    "k_remaining": 5,
+    "champ_pick": 1374,
+    "pick_s1_d2p0": 1843
+   }
+  ]
+ },
+ "mean_secs_per_graded_ply": 24.898,
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "wall_secs": 1643.4
+}

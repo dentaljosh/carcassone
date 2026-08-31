@@ -320,6 +320,18 @@ def adjudicate_cell(spec, cell) -> dict:
     }
 
 
+#: G3-A1 (2026-08-31, statistics-blind, execution-layer): when set (via
+#: --allow-dirty-rev REASON), the manifests' `-dirty` suffix is stripped BEFORE
+#: the frozen G-REV gate and the override + reason land in the gate detail.
+#: Licensed use ONLY for ground-truthed NON-CODE dirt: run_manifest.code_rev()
+#: marks dirty on ANY `git status --porcelain` output — including untracked
+#: files and measurement/ churn — while the launcher's own assert_rev
+#: (SRC_CLEAN_G3.jsonl) witnessed the CODE paths clean at the pin before and
+#: after every cell on both boxes. The frozen verdict is retained beside the
+#: amended one; this flag never edits it.
+ALLOW_DIRTY_REV_REASON = None
+
+
 def adjudicate(cells_by_name: dict, pins_by_role: dict | None = None,
                smoke_mode: bool = False, specs=None,
                signature_bar_met=None) -> dict:
@@ -336,7 +348,16 @@ def adjudicate(cells_by_name: dict, pins_by_role: dict | None = None,
         revs[spec.name] = (None if rev is L.MISSING else rev, spec.role)
         decks[spec.name] = sorted(L.per_deck_margins(cell.get("records") or []))
 
-    round_gates = [L.cross_box_rev_gate(revs, pins_by_role or {})]
+    if ALLOW_DIRTY_REV_REASON:
+        revs = {n: ((None if r is None else L.split_dirty(r)[0]), role)
+                for n, (r, role) in revs.items()}
+    _grev = L.cross_box_rev_gate(revs, pins_by_role or {})
+    if ALLOW_DIRTY_REV_REASON:
+        _grev.setdefault("detail", {})["_dirty_override"] = {
+            "applied": True, "reason": ALLOW_DIRTY_REV_REASON,
+            "amendment": "G3-A1",
+            "receipts": "SRC_CLEAN_G3.jsonl (both boxes, before+after every cell)"}
+    round_gates = [_grev]
     if not smoke_mode:
         round_gates.append(L.crn_gate(decks, specs))
         # ⭐ the arms must differ in SCOPE AND NOTHING ELSE
@@ -800,7 +821,13 @@ def main() -> int:
                          "run_g3.sh. Required by (and only legal with) "
                          "--smoke-mode. Repeatable.")
     ap.add_argument("--out", type=Path)
+    ap.add_argument("--allow-dirty-rev", default=None, metavar="REASON",
+                    help="G3-A1: strip -dirty from manifest code_revs before "
+                         "G-REV, recording REASON in the gate detail. ONLY for "
+                         "ground-truthed non-code dirt with SRC_CLEAN receipts.")
     args = ap.parse_args()
+    global ALLOW_DIRTY_REV_REASON
+    ALLOW_DIRTY_REV_REASON = args.allow_dirty_rev
 
     if args.selftest:
         return selftest()

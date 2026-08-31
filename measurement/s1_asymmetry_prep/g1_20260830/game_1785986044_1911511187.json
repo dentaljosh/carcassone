@@ -1,0 +1,235 @@
+{
+ "schema": "carcassonne-jrules-priors-e4-replay/v1",
+ "archive": "1785986044_1911511187.json",
+ "deck_seed": 1911511187,
+ "rules_profile": "fixed_v1",
+ "human_player": 0,
+ "champion_seat": 1,
+ "recorded_scores": [
+  109,
+  65
+ ],
+ "replayed_scores": [
+  109,
+  65
+ ],
+ "replay_scores_match": true,
+ "partial": false,
+ "budget": {
+  "sims_per_det": 1376,
+  "k_dets": 16,
+  "total_per_decision": 22016,
+  "source": "CLI override"
+ },
+ "seed": 12345,
+ "surface": "prior",
+ "arms": [
+  {
+   "name": "s1_d0p25",
+   "dose": 0.25,
+   "mask": 31,
+   "scope": "opp",
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "s1_d0p5",
+   "dose": 0.5,
+   "mask": 31,
+   "scope": "opp",
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "s1_d1p0",
+   "dose": 1.0,
+   "mask": 31,
+   "scope": "opp",
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  },
+  {
+   "name": "s1_d2p0",
+   "dose": 2.0,
+   "mask": 31,
+   "scope": "opp",
+   "rules": [
+    "J1",
+    "J2",
+    "J5",
+    "J6",
+    "J8"
+   ],
+   "leaf_hash": "a36d2e15a3b3d71d"
+  }
+ ],
+ "leaf_hash_production": "a36d2e15a3b3d71d",
+ "n_plies_total": 142,
+ "n_graded": 64,
+ "n_searched_this_run": 64,
+ "champ_agrees_archive": 47,
+ "flips": {
+  "s1_d0p25": 2,
+  "s1_d0p5": 3,
+  "s1_d1p0": 2,
+  "s1_d2p0": 8
+ },
+ "root_visit_tv_mean": {
+  "s1_d0p25": 0.008866421011991279,
+  "s1_d0p5": 0.012936614280523256,
+  "s1_d1p0": 0.016913125681322676,
+  "s1_d2p0": 0.03368501884992733
+ },
+ "root_visit_tv_n": {
+  "s1_d0p25": 64,
+  "s1_d0p5": 64,
+  "s1_d1p0": 64,
+  "s1_d2p0": 64
+ },
+ "root_visit_tv_sum": {
+  "s1_d0p25": 0.5674509447674418,
+  "s1_d0p5": 0.8279433139534884,
+  "s1_d1p0": 1.0824400436046513,
+  "s1_d2p0": 2.155841206395349
+ },
+ "flip_plies": {
+  "s1_d0p25": [
+   {
+    "ply": 90,
+    "phase": "tiles",
+    "k_remaining": 25,
+    "champ_pick": 1071,
+    "pick_s1_d0p25": 1056
+   },
+   {
+    "ply": 106,
+    "phase": "tiles",
+    "k_remaining": 17,
+    "champ_pick": 1172,
+    "pick_s1_d0p25": 1175
+   }
+  ],
+  "s1_d0p5": [
+   {
+    "ply": 31,
+    "phase": "meeples",
+    "k_remaining": 55,
+    "champ_pick": 2504,
+    "pick_s1_d0p5": 2502
+   },
+   {
+    "ply": 90,
+    "phase": "tiles",
+    "k_remaining": 25,
+    "champ_pick": 1071,
+    "pick_s1_d0p5": 1056
+   },
+   {
+    "ply": 106,
+    "phase": "tiles",
+    "k_remaining": 17,
+    "champ_pick": 1172,
+    "pick_s1_d0p5": 1175
+   }
+  ],
+  "s1_d1p0": [
+   {
+    "ply": 31,
+    "phase": "meeples",
+    "k_remaining": 55,
+    "champ_pick": 2504,
+    "pick_s1_d1p0": 2502
+   },
+   {
+    "ply": 90,
+    "phase": "tiles",
+    "k_remaining": 25,
+    "champ_pick": 1071,
+    "pick_s1_d1p0": 1056
+   }
+  ],
+  "s1_d2p0": [
+   {
+    "ply": 31,
+    "phase": "meeples",
+    "k_remaining": 55,
+    "champ_pick": 2504,
+    "pick_s1_d2p0": 2502
+   },
+   {
+    "ply": 51,
+    "phase": "meeples",
+    "k_remaining": 45,
+    "champ_pick": 2508,
+    "pick_s1_d2p0": 2503
+   },
+   {
+    "ply": 75,
+    "phase": "meeples",
+    "k_remaining": 33,
+    "champ_pick": 2501,
+    "pick_s1_d2p0": 2510
+   },
+   {
+    "ply": 82,
+    "phase": "tiles",
+    "k_remaining": 29,
+    "champ_pick": 951,
+    "pick_s1_d2p0": 827
+   },
+   {
+    "ply": 86,
+    "phase": "tiles",
+    "k_remaining": 27,
+    "champ_pick": 836,
+    "pick_s1_d2p0": 832
+   },
+   {
+    "ply": 90,
+    "phase": "tiles",
+    "k_remaining": 25,
+    "champ_pick": 1071,
+    "pick_s1_d2p0": 1056
+   },
+   {
+    "ply": 106,
+    "phase": "tiles",
+    "k_remaining": 17,
+    "champ_pick": 1172,
+    "pick_s1_d2p0": 923
+   },
+   {
+    "ply": 134,
+    "phase": "tiles",
+    "k_remaining": 3,
+    "champ_pick": 1472,
+    "pick_s1_d2p0": 1661
+   }
+  ]
+ },
+ "mean_secs_per_graded_ply": 18.752,
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "wall_secs": 1200.3
+}

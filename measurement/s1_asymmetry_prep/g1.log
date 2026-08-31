@@ -1,0 +1,511 @@
+[g1] repo=/home/doctor/projects/carcassone out=/home/doctor/projects/carcassone/measurement/s1_asymmetry_prep/g1_20260830 workers=30 smoke=0
+[g1] read rule: measurement/s1_asymmetry_prep/READ_RULE_G1.md
+[jp_e4] 56 archives, 0 already done, 56 to grade; workers=30 arms=['s1_d0p25:0.25:31:opp', 's1_d0p5:0.5:31:opp', 's1_d1p0:1:31:opp', 's1_d2p0:2:31:opp']
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787624395_184395] ply 15/142 graded=8 53s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787019007_1477882043] ply 15/142 graded=8 53s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787350915_108813] ply 15/142 graded=8 55s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786680851_216289] ply 15/142 graded=8 55s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787618319_251279] ply 15/142 graded=8 55s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786992300_991662233] ply 15/142 graded=8 56s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786590116_64346] ply 15/142 graded=8 56s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787579978_682909] ply 15/142 graded=8 56s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787189021_930939] ply 15/142 graded=8 57s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786975727_210415] ply 15/142 graded=8 58s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786684476_1793735743] ply 15/142 graded=8 58s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786906191_1630706897] ply 15/142 graded=8 59s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787540385_436222] ply 15/142 graded=8 59s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787017561_548945] ply 15/142 graded=8 59s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787060359_31068] ply 15/142 graded=8 59s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787532255_79977] ply 15/142 graded=8 60s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787181677_238637] ply 18/142 graded=8 60s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786853357_1865394167] ply 15/142 graded=8 60s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787005678_833139] ply 15/142 graded=8 60s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787277974_331305] ply 15/142 graded=8 61s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786851750_988400] ply 18/142 graded=8 61s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786591802_1104719504] ply 18/142 graded=8 61s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787706106_368012] ply 15/142 graded=8 61s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786939252_94231] ply 15/141 graded=8 62s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787024619_442449] ply 15/142 graded=8 62s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787551302_182159] ply 15/142 graded=8 63s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786940705_1217326033] ply 15/141 graded=8 63s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1787061939_873977203] ply 15/142 graded=8 63s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786719876_241820] ply 15/142 graded=8 63s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786904828_407067] ply 15/142 graded=8 64s
+  [1787624395_184395] ply 34/142 graded=16 136s
+  [1786975727_210415] ply 31/142 graded=16 140s
+  [1786684476_1793735743] ply 34/142 graded=16 143s
+  [1786992300_991662233] ply 31/142 graded=16 148s
+  [1787019007_1477882043] ply 31/142 graded=16 148s
+  [1787350915_108813] ply 31/142 graded=16 151s
+  [1787706106_368012] ply 31/142 graded=16 153s
+  [1787618319_251279] ply 31/142 graded=16 156s
+  [1787060359_31068] ply 31/142 graded=16 157s
+  [1787579978_682909] ply 31/142 graded=16 157s
+  [1786939252_94231] ply 31/141 graded=16 157s
+  [1786680851_216289] ply 31/142 graded=16 159s
+  [1787024619_442449] ply 31/142 graded=16 159s
+  [1786719876_241820] ply 31/142 graded=16 160s
+  [1786590116_64346] ply 31/142 graded=16 160s
+  [1787189021_930939] ply 31/142 graded=16 162s
+  [1787017561_548945] ply 31/142 graded=16 162s
+  [1787532255_79977] ply 31/142 graded=16 163s
+  [1787540385_436222] ply 34/142 graded=16 164s
+  [1787277974_331305] ply 31/142 graded=16 164s
+  [1786940705_1217326033] ply 32/141 graded=16 164s
+  [1786851750_988400] ply 34/142 graded=16 165s
+  [1787005678_833139] ply 31/142 graded=16 167s
+  [1786906191_1630706897] ply 31/142 graded=16 168s
+  [1787181677_238637] ply 35/142 graded=16 168s
+  [1787061939_873977203] ply 31/142 graded=16 168s
+  [1787551302_182159] ply 31/142 graded=16 169s
+  [1786904828_407067] ply 34/142 graded=16 171s
+  [1786591802_1104719504] ply 35/142 graded=16 174s
+  [1786853357_1865394167] ply 34/142 graded=16 178s
+  [1786975727_210415] ply 47/142 graded=24 266s
+  [1787019007_1477882043] ply 47/142 graded=24 273s
+  [1786684476_1793735743] ply 51/142 graded=24 273s
+  [1787350915_108813] ply 47/142 graded=24 274s
+  [1787624395_184395] ply 50/142 graded=24 276s
+  [1786992300_991662233] ply 47/142 graded=24 278s
+  [1787532255_79977] ply 47/142 graded=24 283s
+  [1787706106_368012] ply 51/142 graded=24 283s
+  [1787060359_31068] ply 47/142 graded=24 284s
+  [1787618319_251279] ply 47/142 graded=24 287s
+  [1787579978_682909] ply 58/142 graded=24 292s
+  [1786851750_988400] ply 50/142 graded=24 296s
+  [1786590116_64346] ply 50/142 graded=24 297s
+  [1787017561_548945] ply 47/142 graded=24 299s
+  [1787189021_930939] ply 50/142 graded=24 301s
+  [1787024619_442449] ply 50/142 graded=24 304s
+  [1786719876_241820] ply 47/142 graded=24 306s
+  [1786680851_216289] ply 47/142 graded=24 306s
+  [1787277974_331305] ply 47/142 graded=24 307s
+  [1787005678_833139] ply 54/142 graded=24 307s
+  [1786939252_94231] ply 47/141 graded=24 307s
+  [1787061939_873977203] ply 50/142 graded=24 311s
+  [1787181677_238637] ply 51/142 graded=24 312s
+  [1786904828_407067] ply 50/142 graded=24 313s
+  [1787540385_436222] ply 50/142 graded=24 314s
+  [1787551302_182159] ply 50/142 graded=24 315s
+  [1786940705_1217326033] ply 48/141 graded=24 322s
+  [1786906191_1630706897] ply 47/142 graded=24 333s
+  [1786591802_1104719504] ply 51/142 graded=24 333s
+  [1786853357_1865394167] ply 50/142 graded=24 346s
+  [1786992300_991662233] ply 63/142 graded=32 426s
+  [1786975727_210415] ply 63/142 graded=32 431s
+  [1786851750_988400] ply 66/142 graded=32 432s
+  [1787532255_79977] ply 63/142 graded=32 444s
+  [1787551302_182159] ply 66/142 graded=32 448s
+  [1787350915_108813] ply 63/142 graded=32 449s
+  [1787579978_682909] ply 82/142 graded=32 450s
+  [1787019007_1477882043] ply 78/142 graded=32 451s
+  [1787618319_251279] ply 63/142 graded=32 453s
+  [1787706106_368012] ply 70/142 graded=32 457s
+  [1786684476_1793735743] ply 67/142 graded=32 457s
+  [1786719876_241820] ply 63/142 graded=32 459s
+  [1787624395_184395] ply 66/142 graded=32 460s
+  [1787060359_31068] ply 66/142 graded=32 462s
+  [1787017561_548945] ply 63/142 graded=32 465s
+  [1786904828_407067] ply 66/142 graded=32 466s
+  [1787061939_873977203] ply 66/142 graded=32 467s
+  [1786939252_94231] ply 70/141 graded=32 472s
+  [1786940705_1217326033] ply 64/141 graded=32 476s
+  [1786590116_64346] ply 66/142 graded=32 480s
+  [1786680851_216289] ply 70/142 graded=32 489s
+  [1787277974_331305] ply 63/142 graded=32 490s
+  [1787005678_833139] ply 71/142 graded=32 490s
+  [1786906191_1630706897] ply 74/142 graded=32 495s
+  [1787181677_238637] ply 67/142 graded=32 496s
+  [1787540385_436222] ply 66/142 graded=32 501s
+  [1787189021_930939] ply 70/142 graded=32 509s
+  [1787024619_442449] ply 66/142 graded=32 521s
+  [1786591802_1104719504] ply 67/142 graded=32 540s
+  [1786853357_1865394167] ply 66/142 graded=32 548s
+  [1787551302_182159] ply 82/142 graded=40 619s
+  [1786992300_991662233] ply 79/142 graded=40 623s
+  [1786975727_210415] ply 82/142 graded=40 624s
+  [1787624395_184395] ply 94/142 graded=40 633s
+  [1787061939_873977203] ply 98/142 graded=40 639s
+  [1787618319_251279] ply 79/142 graded=40 643s
+  [1787532255_79977] ply 79/142 graded=40 644s
+  [1786719876_241820] ply 79/142 graded=40 648s
+  [1786851750_988400] ply 86/142 graded=40 655s
+  [1787005678_833139] ply 102/142 graded=40 655s
+  [1787706106_368012] ply 90/142 graded=40 666s
+  [1786940705_1217326033] ply 80/141 graded=40 667s
+  [1786904828_407067] ply 82/142 graded=40 676s
+  [1786684476_1793735743] ply 83/142 graded=40 680s
+  [1787350915_108813] ply 79/142 graded=40 686s
+  [1787017561_548945] ply 82/142 graded=40 687s
+  [1786590116_64346] ply 82/142 graded=40 693s
+  [1786906191_1630706897] ply 106/142 graded=40 698s
+  [1787060359_31068] ply 82/142 graded=40 701s
+  [1786939252_94231] ply 92/141 graded=40 702s
+  [1786680851_216289] ply 86/142 graded=40 717s
+  [1787019007_1477882043] ply 94/142 graded=40 723s
+  [1787579978_682909] ply 102/142 graded=40 726s
+  [1787189021_930939] ply 86/142 graded=40 728s
+  [1786591802_1104719504] ply 83/142 graded=40 733s
+  [1787181677_238637] ply 83/142 graded=40 735s
+  [1787277974_331305] ply 79/142 graded=40 740s
+  [1787540385_436222] ply 83/142 graded=40 750s
+  [1787024619_442449] ply 82/142 graded=40 790s
+  [1786853357_1865394167] ply 82/142 graded=40 801s
+  [1787624395_184395] ply 126/142 graded=48 814s
+[jp_e4] 1786906191_1630706897: profile=fixed_v1 graded=47 flips={'s1_d0p25': 1, 's1_d0p5': 2, 's1_d1p0': 7, 's1_d2p0': 11} agree_archive=32/47 mean_secs_per_graded_ply=17.516 (823.4s)
+  [1786975727_210415] ply 111/142 graded=48 842s
+  [1787061939_873977203] ply 130/142 graded=48 856s
+[jp_e4] 1787624395_184395: profile=fixed_v1 graded=50 flips={'s1_d0p25': 1, 's1_d0p5': 5, 's1_d1p0': 5, 's1_d2p0': 6} agree_archive=35/50 mean_secs_per_graded_ply=17.298 (865.0s)
+  [1786992300_991662233] ply 98/142 graded=48 867s
+  [1787017561_548945] ply 111/142 graded=48 867s
+  [1786939252_94231] ply 119/141 graded=48 869s
+  [1786590116_64346] ply 110/142 graded=48 870s
+[jp_e4] 1787061939_873977203: profile=fixed_v1 graded=49 flips={'s1_d0p25': 2, 's1_d0p5': 4, 's1_d1p0': 4, 's1_d2p0': 4} agree_archive=29/49 mean_secs_per_graded_ply=17.809 (872.8s)
+  [1786904828_407067] ply 99/142 graded=48 873s
+  [1787551302_182159] ply 106/142 graded=48 883s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786511848_634689] ply 15/142 graded=8 59s
+  [1786719876_241820] ply 95/142 graded=48 892s
+  [1787005678_833139] ply 122/142 graded=48 899s
+  [1787618319_251279] ply 99/142 graded=48 904s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786503336_446661] ply 15/142 graded=8 53s
+  [1787532255_79977] ply 95/142 graded=48 921s
+  [1786684476_1793735743] ply 99/142 graded=48 925s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786501074_943197] ply 15/142 graded=8 52s
+  [1787540385_436222] ply 99/142 graded=48 931s
+[jp_e4] 1786939252_94231: profile=fixed_v1 graded=51 flips={'s1_d0p25': 4, 's1_d0p5': 3, 's1_d1p0': 5, 's1_d2p0': 9} agree_archive=35/51 mean_secs_per_graded_ply=18.319 (934.4s)
+  [1787277974_331305] ply 102/142 graded=48 942s
+  [1786591802_1104719504] ply 102/142 graded=48 949s
+  [1787060359_31068] ply 102/142 graded=48 958s
+  [1787350915_108813] ply 95/142 graded=48 959s
+  [1786940705_1217326033] ply 99/141 graded=48 964s
+  [1786851750_988400] ply 106/142 graded=48 965s
+  [1786680851_216289] ply 102/142 graded=48 967s
+  [1787706106_368012] ply 106/142 graded=48 971s
+  [1786511848_634689] ply 31/142 graded=16 160s
+[jp_e4] 1786590116_64346: profile=fixed_v1 graded=54 flips={'s1_d0p25': 5, 's1_d0p5': 8, 's1_d1p0': 13, 's1_d2p0': 10} agree_archive=42/54 mean_secs_per_graded_ply=18.334 (990.2s)
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786454767_166575] ply 15/142 graded=8 60s
+  [1786503336_446661] ply 31/142 graded=16 144s
+  [1787181677_238637] ply 99/142 graded=48 1011s
+  [1786501074_943197] ply 31/142 graded=16 156s
+  [1787189021_930939] ply 102/142 graded=48 1034s
+  [1787024619_442449] ply 98/142 graded=48 1035s
+  [1787579978_682909] ply 118/142 graded=48 1036s
+  [1787019007_1477882043] ply 115/142 graded=48 1045s
+[jp_e4] 1787017561_548945: profile=fixed_v1 graded=55 flips={'s1_d0p25': 5, 's1_d0p5': 6, 's1_d1p0': 8, 's1_d2p0': 8} agree_archive=45/55 mean_secs_per_graded_ply=19.02 (1046.2s)
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786418867_411846845] ply 15/142 graded=8 60s
+  [1786853357_1865394167] ply 98/142 graded=48 1064s
+  [1786975727_210415] ply 127/142 graded=56 1065s
+  [1786454767_166575] ply 31/142 graded=16 166s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786417055_68387] ply 15/142 graded=8 60s
+[jp_e4] 1787551302_182159: profile=fixed_v1 graded=55 flips={'s1_d0p25': 5, 's1_d0p5': 5, 's1_d1p0': 10, 's1_d2p0': 15} agree_archive=37/55 mean_secs_per_graded_ply=20.186 (1110.4s)
+  [1786684476_1793735743] ply 127/142 graded=56 1133s
+  [1786904828_407067] ply 122/142 graded=56 1135s
+  [1786511848_634689] ply 47/142 graded=24 310s
+  [1786418867_411846845] ply 31/142 graded=16 157s
+[jp_e4] 1787005678_833139: profile=fixed_v1 graded=55 flips={'s1_d0p25': 3, 's1_d0p5': 4, 's1_d1p0': 5, 's1_d2p0': 6} agree_archive=42/55 mean_secs_per_graded_ply=20.898 (1149.5s)
+  [1786503336_446661] ply 47/142 graded=24 287s
+  [1786591802_1104719504] ply 130/142 graded=56 1156s
+  [1786719876_241820] ply 114/142 graded=56 1167s
+  [1786501074_943197] ply 47/142 graded=24 295s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786403231_207028] ply 18/142 graded=8 63s
+  [1787277974_331305] ply 131/142 graded=56 1189s
+  [1787060359_31068] ply 118/142 graded=56 1191s
+[jp_e4] 1786975727_210415: profile=fixed_v1 graded=60 flips={'s1_d0p25': 2, 's1_d0p5': 4, 's1_d1p0': 3, 's1_d2p0': 5} agree_archive=47/60 mean_secs_per_graded_ply=19.878 (1192.8s)
+  [1787618319_251279] ply 119/142 graded=56 1199s
+  [1786680851_216289] ply 126/142 graded=56 1201s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786367787_389099] ply 15/142 graded=8 54s
+[jp_e4] 1786904828_407067: profile=fixed_v1 graded=59 flips={'s1_d0p25': 2, 's1_d0p5': 1, 's1_d1p0': 5, 's1_d2p0': 5} agree_archive=46/59 mean_secs_per_graded_ply=20.486 (1208.8s)
+  [1786417055_68387] ply 31/142 graded=16 162s
+  [1787532255_79977] ply 111/142 graded=56 1230s
+  [1786992300_991662233] ply 115/142 graded=56 1230s
+  [1786454767_166575] ply 54/142 graded=24 308s
+  [1787706106_368012] ply 130/142 graded=56 1244s
+  [1787350915_108813] ply 114/142 graded=56 1246s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786337185_638286] ply 15/142 graded=8 57s
+[jp_e4] 1786591802_1104719504: profile=fixed_v1 graded=59 flips={'s1_d0p25': 2, 's1_d0p5': 3, 's1_d1p0': 3, 's1_d2p0': 5} agree_archive=44/59 mean_secs_per_graded_ply=21.285 (1256.0s)
+  [1787181677_238637] ply 115/142 graded=56 1258s
+  [1786851750_988400] ply 122/142 graded=56 1268s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786329790_523563] ply 15/142 graded=8 62s
+  [1786418867_411846845] ply 47/142 graded=24 286s
+  [1787189021_930939] ply 126/142 graded=56 1282s
+[jp_e4] 1787706106_368012: profile=fixed_v1 graded=57 flips={'s1_d0p25': 4, 's1_d0p5': 5, 's1_d1p0': 8, 's1_d2p0': 5} agree_archive=39/57 mean_secs_per_graded_ply=22.523 (1283.9s)
+[jp_e4] 1787579978_682909: profile=fixed_v1 graded=55 flips={'s1_d0p25': 3, 's1_d0p5': 4, 's1_d1p0': 5, 's1_d2p0': 6} agree_archive=40/55 mean_secs_per_graded_ply=23.345 (1284.1s)
+  [1787540385_436222] ply 115/142 graded=56 1285s
+  [1786367787_389099] ply 31/142 graded=16 136s
+[jp_e4] 1786684476_1793735743: profile=fixed_v1 graded=60 flips={'s1_d0p25': 4, 's1_d0p5': 8, 's1_d1p0': 9, 's1_d2p0': 9} agree_archive=39/60 mean_secs_per_graded_ply=21.469 (1288.3s)
+  [1787024619_442449] ply 123/142 graded=56 1294s
+  [1786403231_207028] ply 34/142 graded=16 185s
+[jp_e4] 1787277974_331305: profile=fixed_v1 graded=58 flips={'s1_d0p25': 5, 's1_d0p5': 5, 's1_d1p0': 5, 's1_d2p0': 6} agree_archive=40/58 mean_secs_per_graded_ply=22.585 (1310.1s)
+  [1786511848_634689] ply 66/142 graded=32 491s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786325073_523563] ply 15/142 graded=8 61s
+  [1786940705_1217326033] ply 120/141 graded=56 1330s
+[jp_e4] 1787060359_31068: profile=fixed_v1 graded=61 flips={'s1_d0p25': 0, 's1_d0p5': 2, 's1_d1p0': 0, 's1_d2p0': 3} agree_archive=42/61 mean_secs_per_graded_ply=21.889 (1335.4s)
+  [1786417055_68387] ply 51/142 graded=24 295s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786243458_1382293676] ply 15/142 graded=8 58s
+[jp_e4] 1787189021_930939: profile=fixed_v1 graded=58 flips={'s1_d0p25': 3, 's1_d0p5': 4, 's1_d1p0': 2, 's1_d2p0': 7} agree_archive=46/58 mean_secs_per_graded_ply=23.222 (1347.0s)
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786242001_49628] ply 15/142 graded=8 63s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786142936_703591] ply 15/142 graded=8 59s
+[jp_e4] 1786680851_216289: profile=fixed_v1 graded=59 flips={'s1_d0p25': 2, 's1_d0p5': 5, 's1_d1p0': 6, 's1_d2p0': 6} agree_archive=37/59 mean_secs_per_graded_ply=22.886 (1350.4s)
+  [1786337185_638286] ply 31/142 graded=16 157s
+  [1786503336_446661] ply 63/142 graded=32 493s
+  [1786501074_943197] ply 63/142 graded=32 490s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786118143_1621601234] ply 16/141 graded=8 59s
+  [1786329790_523563] ply 31/142 graded=16 161s
+  [1786853357_1865394167] ply 114/142 graded=56 1375s
+  [1787019007_1477882043] ply 134/142 graded=56 1379s
+[jp_e4] 1787019007_1477882043: profile=fixed_v1 graded=56 flips={'s1_d0p25': 3, 's1_d0p5': 5, 's1_d1p0': 5, 's1_d2p0': 11} agree_archive=43/56 mean_secs_per_graded_ply=24.62 (1378.9s)
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786116818_134510] ply 18/142 graded=8 60s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786113542_627623] ply 15/141 graded=8 59s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786076853_2116173857] ply 15/142 graded=8 59s
+  [1786367787_389099] ply 50/142 graded=24 268s
+  [1786325073_523563] ply 31/142 graded=16 163s
+[jp_e4] 1786851750_988400: profile=fixed_v1 graded=61 flips={'s1_d0p25': 6, 's1_d0p5': 4, 's1_d1p0': 8, 's1_d2p0': 6} agree_archive=44/61 mean_secs_per_graded_ply=23.318 (1422.6s)
+  [1786454767_166575] ply 78/142 graded=32 494s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786074812_935815] ply 15/142 graded=8 54s
+  [1786418867_411846845] ply 63/142 graded=32 450s
+  [1786403231_207028] ply 50/142 graded=24 331s
+  [1786242001_49628] ply 31/142 graded=16 161s
+  [1786243458_1382293676] ply 31/142 graded=16 162s
+  [1786142936_703591] ply 31/142 graded=16 158s
+[jp_e4] 1787024619_442449: profile=fixed_v1 graded=60 flips={'s1_d0p25': 1, 's1_d0p5': 4, 's1_d1p0': 10, 's1_d2p0': 10} agree_archive=44/60 mean_secs_per_graded_ply=24.442 (1466.6s)
+  [1786118143_1621601234] ply 32/141 graded=16 158s
+[jp_e4] 1786992300_991662233: profile=fixed_v1 graded=62 flips={'s1_d0p25': 5, 's1_d0p5': 6, 's1_d1p0': 9, 's1_d2p0': 10} agree_archive=44/62 mean_secs_per_graded_ply=23.765 (1473.6s)
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1786045035_338139] ply 15/142 graded=8 59s
+  [1786337185_638286] ply 47/142 graded=24 289s
+  [1786511848_634689] ply 95/142 graded=40 665s
+  [1786329790_523563] ply 50/142 graded=24 284s
+  [1786116818_134510] ply 34/142 graded=16 161s
+  [1786719876_241820] ply 130/142 graded=64 1502s
+  [1786113542_627623] ply 31/141 graded=16 155s
+  [1786076853_2116173857] ply 31/142 graded=16 154s
+  [1787532255_79977] ply 134/142 graded=64 1523s
+[jp_e4] 1787532255_79977: profile=fixed_v1 graded=64 flips={'s1_d0p25': 0, 's1_d0p5': 1, 's1_d1p0': 1, 's1_d2p0': 4} agree_archive=52/64 mean_secs_per_graded_ply=23.789 (1522.6s)
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1785986044_1911511187] ply 15/142 graded=8 60s
+  [1786417055_68387] ply 67/142 graded=32 483s
+  [1786074812_935815] ply 31/142 graded=16 154s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1785984310_1698417952] ply 18/142 graded=8 60s
+[jp_e4] 1787618319_251279: profile=fixed_v1 graded=63 flips={'s1_d0p25': 9, 's1_d0p5': 10, 's1_d1p0': 11, 's1_d2p0': 10} agree_archive=43/63 mean_secs_per_graded_ply=24.402 (1537.5s)
+  [1786501074_943197] ply 79/142 graded=40 675s
+  [1786325073_523563] ply 50/142 graded=24 301s
+  [1787181677_238637] ply 131/142 graded=64 1564s
+  [1787350915_108813] ply 135/142 graded=64 1566s
+[jp_e4] 1787350915_108813: profile=fixed_v1 graded=64 flips={'s1_d0p25': 0, 's1_d0p5': 2, 's1_d1p0': 3, 's1_d2p0': 4} agree_archive=51/64 mean_secs_per_graded_ply=24.471 (1566.3s)
+  [1786242001_49628] ply 47/142 graded=24 283s
+  [1786142936_703591] ply 47/142 graded=24 282s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1785982194_705585] ply 15/142 graded=8 58s
+  [1786045035_338139] ply 31/142 graded=16 161s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1785975832_66810] ply 15/142 graded=8 56s
+  [1786367787_389099] ply 66/142 graded=32 450s
+[jp_e4] 1786853357_1865394167: profile=fixed_v1 graded=63 flips={'s1_d0p25': 2, 's1_d0p5': 4, 's1_d1p0': 5, 's1_d2p0': 9} agree_archive=48/63 mean_secs_per_graded_ply=25.485 (1605.7s)
+  [1786243458_1382293676] ply 47/142 graded=24 322s
+[jp_e4] 1786940705_1217326033: profile=fixed_v1 graded=62 flips={'s1_d0p25': 2, 's1_d0p5': 3, 's1_d1p0': 4, 's1_d2p0': 8} agree_archive=49/62 mean_secs_per_graded_ply=25.931 (1607.9s)
+  [1786403231_207028] ply 66/142 graded=32 501s
+  [1786118143_1621601234] ply 48/141 graded=24 301s
+  [1786503336_446661] ply 79/142 graded=40 747s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1785466497_161583] ply 15/144 graded=8 52s
+  [1785986044_1911511187] ply 34/142 graded=16 154s
+  [1786418867_411846845] ply 79/142 graded=40 641s
+  [1786116818_134510] ply 50/142 graded=24 296s
+  [1786113542_627623] ply 47/141 graded=24 291s
+[jp_e4] 1787181677_238637: profile=fixed_v1 graded=66 flips={'s1_d0p25': 0, 's1_d0p5': 2, 's1_d1p0': 6, 's1_d2p0': 8} agree_archive=52/66 mean_secs_per_graded_ply=24.898 (1643.4s)
+  [1785984310_1698417952] ply 34/142 graded=16 170s
+  [1786076853_2116173857] ply 51/142 graded=24 295s
+[jp_e4] S1 positive control PASS: (a) root priors + root leaf value FROZEN under scope=opp; (b) pooled root stats MOVED at 1376 sims (974 opponent expansions boosted); (c) partition holds within each tree [boosted/own_mover/total] all=1201/187/1201 own=187/187/1201 opp=974/186/1160.
+  [1785205383_867966] ply 15/144 graded=8 52s
+[jp_e4] 1786719876_241820: profile=fixed_v1 graded=67 flips={'s1_d0p25': 3, 's1_d0p5': 4, 's1_d1p0': 8, 's1_d2p0': 10} agree_archive=52/67 mean_secs_per_graded_ply=24.825 (1663.4s)
+  [1786337185_638286] ply 66/142 graded=32 471s
+  [1785982194_705585] ply 34/142 graded=16 145s
+  [1787540385_436222] ply 131/142 graded=64 1676s
+  [1786329790_523563] ply 66/142 graded=32 468s
+  [1786454767_166575] ply 94/142 graded=40 747s
+  [1785975832_66810] ply 31/142 graded=16 147s
+  [1786074812_935815] ply 47/142 graded=24 305s
+  [1786242001_49628] ply 66/142 graded=32 412s
+  [1786511848_634689] ply 118/142 graded=48 887s
+  [1786045035_338139] ply 47/142 graded=24 289s
+  [1785466497_161583] ply 38/144 graded=16 146s
+[jp_e4] 1787540385_436222: profile=fixed_v1 graded=65 flips={'s1_d0p25': 4, 's1_d0p5': 3, 's1_d1p0': 4, 's1_d2p0': 5} agree_archive=55/65 mean_secs_per_graded_ply=26.487 (1721.8s)
+  [1786142936_703591] ply 63/142 graded=32 434s
+  [1785986044_1911511187] ply 50/142 graded=24 260s
+  [1785205383_867966] ply 31/144 graded=16 128s
+  [1786417055_68387] ply 86/142 graded=40 703s
+  [1786325073_523563] ply 67/142 graded=32 498s
+  [1785984310_1698417952] ply 50/142 graded=24 285s
+  [1786501074_943197] ply 95/142 graded=48 899s
+  [1786116818_134510] ply 66/142 graded=32 443s
+  [1786403231_207028] ply 86/142 graded=40 669s
+  [1786118143_1621601234] ply 64/141 graded=32 477s
+  [1786243458_1382293676] ply 63/142 graded=32 505s
+  [1785982194_705585] ply 50/142 graded=24 271s
+  [1786076853_2116173857] ply 67/142 graded=32 452s
+  [1785975832_66810] ply 50/142 graded=24 277s
+  [1786113542_627623] ply 64/141 graded=32 469s
+  [1786367787_389099] ply 83/142 graded=40 669s
+  [1786418867_411846845] ply 95/142 graded=48 834s
+  [1785466497_161583] ply 54/144 graded=24 271s
+  [1785205383_867966] ply 47/144 graded=24 232s
+  [1786337185_638286] ply 83/142 graded=40 673s
+  [1786045035_338139] ply 63/142 graded=32 450s
+  [1786074812_935815] ply 63/142 graded=32 501s
+  [1785986044_1911511187] ply 66/142 graded=32 418s
+  [1786503336_446661] ply 95/142 graded=48 1026s
+  [1785984310_1698417952] ply 66/142 graded=32 434s
+  [1786242001_49628] ply 82/142 graded=40 627s
+  [1786329790_523563] ply 82/142 graded=40 705s
+  [1786142936_703591] ply 90/142 graded=40 642s
+  [1786454767_166575] ply 110/142 graded=48 1008s
+  [1785982194_705585] ply 66/142 graded=32 438s
+  [1786116818_134510] ply 82/142 graded=40 628s
+  [1785205383_867966] ply 63/144 graded=32 365s
+  [1786118143_1621601234] ply 95/141 graded=40 666s
+  [1785975832_66810] ply 66/142 graded=32 446s
+  [1786243458_1382293676] ply 79/142 graded=40 702s
+  [1785466497_161583] ply 70/144 graded=32 429s
+  [1786417055_68387] ply 102/142 graded=48 952s
+  [1786076853_2116173857] ply 83/142 graded=40 653s
+  [1786418867_411846845] ply 126/142 graded=56 1029s
+  [1786113542_627623] ply 80/141 graded=40 673s
+  [1786511848_634689] ply 134/142 graded=56 1202s
+[jp_e4] 1786511848_634689: profile=fixed_v1 graded=56 flips={'s1_d0p25': 3, 's1_d0p5': 6, 's1_d1p0': 6, 's1_d2p0': 9} agree_archive=44/56 mean_secs_per_graded_ply=21.462 (1202.0s)
+  [1786337185_638286] ply 110/142 graded=48 858s
+  [1786325073_523563] ply 83/142 graded=40 795s
+  [1785986044_1911511187] ply 82/142 graded=40 597s
+  [1786501074_943197] ply 114/142 graded=56 1193s
+  [1786045035_338139] ply 79/142 graded=40 651s
+  [1786074812_935815] ply 94/142 graded=40 696s
+  [1786403231_207028] ply 102/142 graded=48 987s
+  [1786242001_49628] ply 98/142 graded=48 815s
+  [1785984310_1698417952] ply 83/142 graded=40 635s
+  [1785205383_867966] ply 79/144 graded=40 510s
+  [1786367787_389099] ply 99/142 graded=48 968s
+  [1786503336_446661] ply 118/142 graded=56 1263s
+  [1785982194_705585] ply 90/142 graded=40 609s
+  [1786329790_523563] ply 98/142 graded=48 943s
+  [1785975832_66810] ply 82/142 graded=40 619s
+  [1785466497_161583] ply 90/144 graded=40 594s
+  [1786116818_134510] ply 99/142 graded=48 838s
+  [1786142936_703591] ply 115/142 graded=48 893s
+[jp_e4] 1786418867_411846845: profile=fixed_v1 graded=60 flips={'s1_d0p25': 2, 's1_d0p5': 3, 's1_d1p0': 4, 's1_d2p0': 5} agree_archive=43/60 mean_secs_per_graded_ply=20.22 (1213.3s)
+  [1786454767_166575] ply 134/142 graded=56 1270s
+[jp_e4] 1786454767_166575: profile=fixed_v1 graded=56 flips={'s1_d0p25': 5, 's1_d0p5': 6, 's1_d1p0': 5, 's1_d2p0': 8} agree_archive=41/56 mean_secs_per_graded_ply=22.67 (1269.7s)
+  [1786243458_1382293676] ply 98/142 graded=48 927s
+  [1786337185_638286] ply 134/142 graded=56 1032s
+[jp_e4] 1786337185_638286: profile=fixed_v1 graded=56 flips={'s1_d0p25': 1, 's1_d0p5': 3, 's1_d1p0': 5, 's1_d2p0': 6} agree_archive=42/56 mean_secs_per_graded_ply=18.426 (1032.0s)
+[jp_e4] 1786503336_446661: profile=fixed_v1 graded=60 flips={'s1_d0p25': 4, 's1_d0p5': 4, 's1_d1p0': 5, 's1_d2p0': 7} agree_archive=42/60 mean_secs_per_graded_ply=22.776 (1366.7s)
+  [1786118143_1621601234] ply 116/141 graded=48 922s
+  [1786076853_2116173857] ply 102/142 graded=48 890s
+  [1786113542_627623] ply 96/141 graded=48 907s
+  [1786417055_68387] ply 118/142 graded=56 1212s
+  [1785205383_867966] ply 95/144 graded=48 654s
+  [1785986044_1911511187] ply 98/142 graded=48 819s
+  [1786329790_523563] ply 130/142 graded=56 1082s
+  [1786242001_49628] ply 123/142 graded=56 1017s
+  [1786045035_338139] ply 103/142 graded=48 879s
+[jp_e4] 1786329790_523563: profile=fixed_v1 graded=57 flips={'s1_d0p25': 3, 's1_d0p5': 4, 's1_d1p0': 8, 's1_d2p0': 10} agree_archive=42/57 mean_secs_per_graded_ply=19.238 (1096.7s)
+  [1785984310_1698417952] ply 99/142 graded=48 837s
+  [1786074812_935815] ply 114/142 graded=48 932s
+[jp_e4] 1786501074_943197: profile=fixed_v1 graded=63 flips={'s1_d0p25': 4, 's1_d0p5': 5, 's1_d1p0': 8, 's1_d2p0': 8} agree_archive=42/63 mean_secs_per_graded_ply=22.898 (1442.8s)
+  [1785982194_705585] ply 118/142 graded=48 797s
+  [1785466497_161583] ply 107/144 graded=48 756s
+  [1786325073_523563] ply 99/142 graded=48 1084s
+  [1785975832_66810] ply 98/142 graded=48 820s
+  [1786403231_207028] ply 122/142 graded=56 1264s
+  [1786367787_389099] ply 126/142 graded=56 1227s
+  [1786142936_703591] ply 131/142 graded=56 1106s
+[jp_e4] 1786142936_703591: profile=fixed_v1 graded=57 flips={'s1_d0p25': 5, 's1_d0p5': 5, 's1_d1p0': 9, 's1_d2p0': 9} agree_archive=46/57 mean_secs_per_graded_ply=19.748 (1125.7s)
+[jp_e4] 1786367787_389099: profile=fixed_v1 graded=58 flips={'s1_d0p25': 3, 's1_d0p5': 3, 's1_d1p0': 4, 's1_d2p0': 7} agree_archive=45/58 mean_secs_per_graded_ply=21.923 (1271.7s)
+  [1785205383_867966] ply 114/144 graded=56 820s
+  [1786243458_1382293676] ply 114/142 graded=56 1149s
+  [1786116818_134510] ply 118/142 graded=56 1098s
+  [1786113542_627623] ply 115/141 graded=56 1090s
+  [1785466497_161583] ply 123/144 graded=56 883s
+[jp_e4] 1786242001_49628: profile=fixed_v1 graded=62 flips={'s1_d0p25': 6, 's1_d0p5': 6, 's1_d1p0': 7, 's1_d2p0': 9} agree_archive=48/62 mean_secs_per_graded_ply=18.795 (1165.4s)
+[jp_e4] 1786403231_207028: profile=fixed_v1 graded=59 flips={'s1_d0p25': 2, 's1_d0p5': 6, 's1_d1p0': 7, 's1_d2p0': 6} agree_archive=49/59 mean_secs_per_graded_ply=22.718 (1340.5s)
+[jp_e4] 1785982194_705585: profile=fixed_v1 graded=53 flips={'s1_d0p25': 4, 's1_d0p5': 5, 's1_d1p0': 7, 's1_d2p0': 7} agree_archive=38/53 mean_secs_per_graded_ply=17.598 (932.8s)
+  [1786076853_2116173857] ply 126/142 graded=56 1119s
+  [1786045035_338139] ply 134/142 graded=56 1064s
+[jp_e4] 1786045035_338139: profile=fixed_v1 graded=56 flips={'s1_d0p25': 2, 's1_d0p5': 4, 's1_d1p0': 10, 's1_d2p0': 9} agree_archive=41/56 mean_secs_per_graded_ply=19.002 (1064.2s)
+[jp_e4] 1786076853_2116173857: profile=fixed_v1 graded=58 flips={'s1_d0p25': 2, 's1_d0p5': 2, 's1_d1p0': 3, 's1_d2p0': 4} agree_archive=47/58 mean_secs_per_graded_ply=19.965 (1158.1s)
+  [1785986044_1911511187] ply 114/142 graded=56 1043s
+  [1786118143_1621601234] ply 132/141 graded=56 1202s
+[jp_e4] 1786118143_1621601234: profile=fixed_v1 graded=56 flips={'s1_d0p25': 2, 's1_d0p5': 3, 's1_d1p0': 5, 's1_d2p0': 6} agree_archive=39/56 mean_secs_per_graded_ply=21.46 (1201.9s)
+[jp_e4] 1786074812_935815: profile=fixed_v1 graded=55 flips={'s1_d0p25': 4, 's1_d0p5': 4, 's1_d1p0': 4, 's1_d2p0': 4} agree_archive=46/55 mean_secs_per_graded_ply=20.696 (1138.4s)
+  [1785984310_1698417952] ply 115/142 graded=56 1049s
+  [1786417055_68387] ply 134/142 graded=64 1487s
+[jp_e4] 1785466497_161583: profile=walled graded=62 flips={'s1_d0p25': 3, 's1_d0p5': 6, 's1_d1p0': 5, 's1_d2p0': 9} agree_archive=41/62 mean_secs_per_graded_ply=15.705 (973.8s)
+  [1785975832_66810] ply 123/142 graded=56 1006s
+[jp_e4] 1786417055_68387: profile=fixed_v1 graded=65 flips={'s1_d0p25': 3, 's1_d0p5': 3, 's1_d1p0': 4, 's1_d2p0': 9} agree_archive=50/65 mean_secs_per_graded_ply=23.29 (1514.0s)
+[jp_e4] 1786243458_1382293676: profile=fixed_v1 graded=63 flips={'s1_d0p25': 0, 's1_d0p5': 4, 's1_d1p0': 6, 's1_d2p0': 7} agree_archive=52/63 mean_secs_per_graded_ply=20.448 (1288.4s)
+  [1786325073_523563] ply 115/142 graded=56 1334s
+  [1786116818_134510] ply 134/142 graded=64 1257s
+[jp_e4] 1786116818_134510: profile=fixed_v1 graded=65 flips={'s1_d0p25': 4, 's1_d0p5': 5, 's1_d1p0': 6, 's1_d2p0': 5} agree_archive=49/65 mean_secs_per_graded_ply=19.741 (1283.3s)
+  [1785986044_1911511187] ply 134/142 graded=64 1200s
+[jp_e4] 1785986044_1911511187: profile=fixed_v1 graded=64 flips={'s1_d0p25': 2, 's1_d0p5': 3, 's1_d1p0': 2, 's1_d2p0': 8} agree_archive=47/64 mean_secs_per_graded_ply=18.752 (1200.3s)
+  [1785205383_867966] ply 135/144 graded=64 1064s
+[jp_e4] 1785205383_867966: profile=walled graded=64 flips={'s1_d0p25': 3, 's1_d0p5': 8, 's1_d1p0': 7, 's1_d2p0': 6} agree_archive=43/64 mean_secs_per_graded_ply=16.621 (1063.9s)
+[jp_e4] 1786113542_627623: profile=fixed_v1 graded=63 flips={'s1_d0p25': 3, 's1_d0p5': 1, 's1_d1p0': 1, 's1_d2p0': 4} agree_archive=51/63 mean_secs_per_graded_ply=21.027 (1324.9s)
+[jp_e4] 1785975832_66810: profile=app_aug2 graded=62 flips={'s1_d0p25': 3, 's1_d0p5': 3, 's1_d1p0': 4, 's1_d2p0': 7} agree_archive=41/62 mean_secs_per_graded_ply=18.352 (1137.9s)
+[jp_e4] 1785984310_1698417952: profile=fixed_v1 graded=63 flips={'s1_d0p25': 5, 's1_d0p5': 6, 's1_d1p0': 11, 's1_d2p0': 16} agree_archive=45/63 mean_secs_per_graded_ply=19.117 (1204.5s)
+[jp_e4] 1786325073_523563: profile=fixed_v1 graded=63 flips={'s1_d0p25': 0, 's1_d0p5': 1, 's1_d1p0': 2, 's1_d2p0': 4} agree_archive=49/63 mean_secs_per_graded_ply=23.412 (1475.1s)
+[jp_e4] s1_d0p25: E1 flips   166/3311  =   5.01% [ 4.32%,  5.81%]  E2 tv 0.0089 (n 3311)  tiles/meeples 114/52
+[jp_e4]  s1_d0p5: E1 flips   235/3311  =   7.10% [ 6.27%,  8.02%]  E2 tv 0.0133 (n 3311)  tiles/meeples 167/68
+[jp_e4]  s1_d1p0: E1 flips   322/3311  =   9.73% [ 8.76%, 10.78%]  E2 tv 0.0201 (n 3311)  tiles/meeples 245/77
+[jp_e4]  s1_d2p0: E1 flips   410/3311  =  12.38% [11.30%, 13.55%]  E2 tv 0.0294 (n 3311)  tiles/meeples 305/105
+[jp_e4] rollup: 56 games, 3311 graded plies, profiles={'walled': 2, 'app_aug2': 1, 'fixed_v1': 53}, masks=[31], all_replay_scores_match=True -> /home/doctor/projects/carcassone/measurement/s1_asymmetry_prep/g1_20260830/SUMMARY.json
+[jp_e4] NOTE: a flip is not an improvement, and per DESIGN §7/CL-080 a BIGGER flip rate is a bigger risk, not a bigger prize. No elo, no band, no governance write — read against CALIB_READ_RULE §3, nothing else.
+[g1] instrument exited rc=0; RUN_LIVE cleared

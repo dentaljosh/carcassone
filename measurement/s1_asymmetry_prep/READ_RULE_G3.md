@@ -1,5 +1,7 @@
 # READ_RULE — S1 GATE G3 (THE THREE-ARM DECOMPOSITION CELL)
 
+> ✅ **ADJUDICATED 2026-08-31: `S1-BOUNDED-NULL`** (P1 +0.76±0.55 z1.39; P2 +1.04±0.70 z1.48; all gates PASS on the G3-A1 amended read — frozen S1-VOID retained). Verdict: [G3_VERDICT.md](G3_VERDICT.md). Branch CLOSED per the frozen consequence.
+
 > # ⛔ COMMITTED BEFORE ANY G3 STATISTIC EXISTS
 >
 > **Status: PRE-OUTCOME.** At the moment this file was committed, `0` G3 games

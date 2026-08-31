@@ -1,0 +1,2058 @@
+{
+  "pair": [
+    "measurement/s1_asymmetry_prep/DESIGN.md \u00a76.4",
+    "measurement/s1_asymmetry_prep/READ_RULE_G3.md"
+  ],
+  "round_gates": [
+    {
+      "gate": "G-REV",
+      "ok": true,
+      "detail": {
+        "CELL_G3_ALL": {
+          "code_rev": "ec0e52bb7",
+          "role": "laptop",
+          "dirty": false,
+          "pin": "ec0e52bb7b7e53fc46adae008e707f817ffaab2d",
+          "why": "code_rev 'ec0e52bb7' is a prefix of the pinned 'ec0e52bb7b7e53fc46adae008e707f817ffaab2d'"
+        },
+        "CELL_G3_OPP": {
+          "code_rev": "ec0e52bb",
+          "role": "local",
+          "dirty": false,
+          "pin": "ec0e52bb7b7e53fc46adae008e707f817ffaab2d",
+          "why": "code_rev 'ec0e52bb' is a prefix of the pinned 'ec0e52bb7b7e53fc46adae008e707f817ffaab2d'"
+        },
+        "CELL_G3_OWN": {
+          "code_rev": "ec0e52bb7",
+          "role": "laptop",
+          "dirty": false,
+          "pin": "ec0e52bb7b7e53fc46adae008e707f817ffaab2d",
+          "why": "code_rev 'ec0e52bb7' is a prefix of the pinned 'ec0e52bb7b7e53fc46adae008e707f817ffaab2d'"
+        },
+        "_dirty_override": {
+          "applied": true,
+          "reason": "G3-A1: laptop dirt = untracked-only artifacts (0 tracked mods); local dirt = measurement/-only (watchdog logs + owner-ordered W conf change, DEVIATIONS G3-D2); SRC_CLEAN_G3.jsonl clean:true at pin before+after every cell both boxes; code_rev() helper counts untracked (chore filed)",
+          "amendment": "G3-A1",
+          "receipts": "SRC_CLEAN_G3.jsonl (both boxes, before+after every cell)"
+        }
+      },
+      "address": "manifest:code_rev vs PINNED_SRC_REV",
+      "why": "every arm ran one source rev and it is the pin its box recorded"
+    },
+    {
+      "gate": "G-CRN",
+      "ok": true,
+      "detail": {
+        "n_decks": {
+          "CELL_G3_OPP": 600,
+          "CELL_G3_OWN": 600,
+          "CELL_G3_ALL": 400
+        },
+        "shared_range": [
+          161000000000,
+          161000000599
+        ],
+        "problems": {}
+      },
+      "address": "records:seed (all arms)",
+      "why": "all three arms drew from ONE shared deck set; OPP and OWN are deck-identical and ALL is a prefix subset"
+    },
+    {
+      "gate": "G-ARMS",
+      "ok": true,
+      "detail": {
+        "doses": {
+          "CELL_G3_OPP": 0.25,
+          "CELL_G3_OWN": 0.25,
+          "CELL_G3_ALL": 0.25
+        },
+        "masks": {
+          "CELL_G3_OPP": 31,
+          "CELL_G3_OWN": 31,
+          "CELL_G3_ALL": 31
+        },
+        "scopes": {
+          "CELL_G3_OPP": "opp",
+          "CELL_G3_OWN": "own",
+          "CELL_G3_ALL": "all"
+        }
+      },
+      "address": "manifest:config.cand_jrules_prior (all arms)",
+      "why": "\u2b50 dose and mask are identical across the arms and SCOPE is the only mover \u2014 the decomposition's single variable"
+    }
+  ],
+  "round_gates_ok": true,
+  "cells": {
+    "CELL_G3_OPP": {
+      "cell": "CELL_G3_OPP",
+      "scope": "opp",
+      "role": "local",
+      "purpose": "\u2b50\u2b50 THE PRIMARY CANDIDATE \u2014 the anchor's J bundle as priors at OPPONENT-mover expansions only. Under `opp` the ROOT expansion is byte-identical to the champion's BY DESIGN, so every behavioural difference is SEARCH-MEDIATED. n=1,200 per SIZING \u00a74.1(b): at n=800 the design's own predicted +1 pt/deck reads z\u22481.6, i.e. `S1-BOUNDED-NULL` would be the modal outcome even if the effect is real.",
+      "seed_range": [
+        161000000000,
+        161000000599
+      ],
+      "frozen": {
+        "dose": 0.25,
+        "mask": 31,
+        "scope": "opp",
+        "n_games": 1200,
+        "n_decks": 600
+      },
+      "gates": [
+        {
+          "gate": "G-SCOPE",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "dose": 0.25,
+              "mask": 31,
+              "scope": "opp"
+            },
+            "frozen": {
+              "dose": 0.25,
+              "mask": 31,
+              "scope": "opp"
+            },
+            "opponent_jrules_prior": null,
+            "addresses": [
+              "manifest:config.cand_jrules_prior",
+              null
+            ]
+          },
+          "address": "manifest:config.cand_jrules_prior",
+          "why": "the candidate resolved dose 0.25 mask 31 scope 'opp' and the opponent carries no jrules prior"
+        },
+        {
+          "gate": "G-WITNESS",
+          "ok": true,
+          "detail": {
+            "candidate": {
+              "total": 1474661450,
+              "own_mover": 749687610,
+              "boosted": 724973840
+            },
+            "opponent": {
+              "total": 0,
+              "own_mover": 0,
+              "boosted": 0
+            },
+            "addresses": {
+              "candidate": "summary:jr_expansions.candidate",
+              "opponent": "summary:jr_expansions.opponent"
+            },
+            "scope_denominator": {
+              "scope": "opp",
+              "expr": "total - own_mover",
+              "value": 724973840
+            },
+            "coverage": 1.0,
+            "advisories": []
+          },
+          "address": "summary:jr_expansions.candidate",
+          "why": "\u2b50 the scope knob BOUND IN PLAY on the candidate (boosted > 0, inside the 'opp' scope) and did NOT bind on the opponent (boosted == 0; the unarmed side reads all zeros, which is the healthy shape)"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "k_dets": {
+              "champion": 16,
+              "opponent": 16,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.k_dets",
+                "manifest:config.opponent.k_dets"
+              ]
+            },
+            "sims_per_det": {
+              "champion": 1376,
+              "opponent": 1376,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.sims_per_det",
+                "manifest:config.opponent.sims_per_det"
+              ]
+            },
+            "total_sims": {
+              "champion": 22016,
+              "opponent": 22016,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.total_sims",
+                "manifest:config.opponent.total_sims"
+              ]
+            },
+            "c_puct": {
+              "champion": 1.5,
+              "opponent": 1.5,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.c_puct",
+                "manifest:config.opponent.champ_cfg.c_puct"
+              ]
+            },
+            "tau_p": {
+              "champion": 5.0,
+              "opponent": 5.0,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.tau_p",
+                "manifest:config.opponent.champ_cfg.tau_p"
+              ]
+            },
+            "leaf_quantize": {
+              "champion": "float",
+              "opponent": "float",
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.leaf_quantize",
+                "manifest:config.opponent.champ_cfg.leaf_quantize"
+              ]
+            },
+            "final_select": {
+              "champion": "visits",
+              "opponent": "visits",
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.final_select",
+                "manifest:config.opponent.champ_cfg.final_select"
+              ]
+            },
+            "value_norm": {
+              "champion": 15.0,
+              "opponent": 15.0,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.value_norm",
+                "manifest:config.opponent.champ_cfg.value_norm"
+              ]
+            },
+            "fpu_reduction": {
+              "champion": null,
+              "opponent": null,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.fpu_reduction",
+                "manifest:config.opponent.champ_cfg.fpu_reduction"
+              ]
+            }
+          },
+          "address": "manifest:config.champion.* vs manifest:config.opponent.champ_cfg.*",
+          "why": "the two sides agree on every shared search alias; the ONLY difference is the candidate's cand_jrules_prior block"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "cand_tiearb": {
+              "enabled": false,
+              "B": 16,
+              "J": 4,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1",
+              "eps": 0.0,
+              "phase_gate": "all"
+            },
+            "opponent_tiearb": null,
+            "addresses": [
+              "manifest:config.cand_tiearb",
+              null
+            ]
+          },
+          "address": "manifest:config.cand_tiearb",
+          "why": "the arbiter is OFF on both sides. \u26a0\ufe0f A DELIBERATE DEVIATION from the deployed champion (B=64) \u2014 deploy transfer is an assumption (DESIGN \u00a710.5)"
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "champion": "a36d2e15a3b3d71d",
+            "sense": "INVERTED (equality required)"
+          },
+          "address": "manifest:config.{cand_leaf_hash,opp_leaf_hash}",
+          "why": "both sides carry the champion leaf, unmoved"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent.champ_cfg}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion)"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest:config.backend.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-TOOL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+ec0e52bb7b7e+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "2ef38b5123514fc9",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest:carc_rs_*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "Doctor",
+            "frozen_role": "local"
+          },
+          "address": "manifest:host",
+          "why": "host 'doctor' is not the laptop, so it is the local box"
+        },
+        {
+          "gate": "G-PAIRED",
+          "ok": true,
+          "detail": {
+            "n_common": 600,
+            "frozen_n_decks": 600,
+            "seed_range": [
+              161000000000,
+              161000000599
+            ],
+            "n_seeds_seen": 600,
+            "summary_n_paired": 600,
+            "n_failed": 0,
+            "notes": []
+          },
+          "address": "summary:n_paired",
+          "why": "600 decks, both seatings, all inside [161000000000, 161000000599], 0 failed games"
+        },
+        {
+          "gate": "G-BLIND",
+          "ok": true,
+          "detail": {
+            "BLIND_COMMIT": "5c59967229ab4f5ba94d951cdecea2c131e07f74"
+          },
+          "address": "manifest:config.stamps.BLIND_COMMIT",
+          "why": "the arm is stamped with a 40-hex blind commit"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "summary": 0.7633333333333333,
+              "recomputed": 0.7633333333333333,
+              "ok": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "summary": 1.3934500023647833,
+              "recomputed": 1.3934500023647833,
+              "ok": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "summary": 600,
+              "recomputed": 600,
+              "ok": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "summary": 0.4995833333333333,
+              "recomputed": 0.4995833333333333,
+              "ok": true,
+              "address": "summary:winrate"
+            },
+            "avg_diff": {
+              "summary": 0.7633333333333333,
+              "recomputed": 0.7633333333333333,
+              "ok": true,
+              "address": "summary:avg_diff"
+            }
+          },
+          "address": "summary:* vs records/*",
+          "why": "the summary reproduces from the raw records"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "margin": {
+        "mean_pts_per_deck": 0.7633333333333333,
+        "z": 1.3934500023647833,
+        "se": 0.5478010205159156,
+        "n_decks": 600,
+        "footing": "deck-paired, per-deck mean over both seatings"
+      },
+      "elo_companion": {
+        "n": 1200,
+        "W": 585,
+        "D": 29,
+        "L": 586,
+        "winrate": 0.4995833333333333,
+        "elo": -0.2895297216229761,
+        "elo_sig_1sigma_paired": 7.092001654296667,
+        "elo_sig_1sigma_unpaired": 10.029604923878773,
+        "elo_footing": "deck-paired",
+        "elo_pairing_factor": 0.7071067811865475,
+        "avg_diff": 0.7633333333333333
+      },
+      "se_anomaly": {
+        "realized": 0.5478010205159156,
+        "modelled": 0.5143928459844674,
+        "ratio": 1.064946810190391,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "saturation": {
+        "winrate": 0.4995833333333333,
+        "band": [
+          0.35,
+          0.65
+        ],
+        "flagged": false,
+        "note": "\u26d4 COMPANION RAIL, never a branch input. Outside the band the deck-paired margin is compressed by the ceiling and the elo companion is unreliable."
+      },
+      "n4_cost": {
+        "ms_ratio_cand_over_opp": 1.0981885007339482,
+        "fired": false,
+        "trigger": 1.2,
+        "cand_ms_per_move": 3022.6044898748246,
+        "opp_ms_per_move": 2752.3548897614014,
+        "addresses": [
+          "summary:champ_prefix_ms_per_move",
+          "summary:rung_ms_per_move"
+        ],
+        "predicted": "1.078\u20131.085 (SIZING \u00a73)",
+        "note": "under the trigger; the arm is not budget-confounded"
+      }
+    },
+    "CELL_G3_OWN": {
+      "cell": "CELL_G3_OWN",
+      "scope": "own",
+      "role": "laptop",
+      "purpose": "\u2b50 THE DECOMPOSITION CONTROL \u2014 the same bundle at the ROOT PLAYER's own expansions, i.e. the complement of `opp`. It is NOT optional (DESIGN \u00a74.2): without it a null on `opp` alone cannot distinguish 'no asymmetry effect' from 'both components \u2248 0'. It is also \u00a75.4's ruler probe \u2014 if its G-DENY rises, the control arm has produced the exploit-expressing opponent CL-083 needs.",
+      "seed_range": [
+        161000000000,
+        161000000599
+      ],
+      "frozen": {
+        "dose": 0.25,
+        "mask": 31,
+        "scope": "own",
+        "n_games": 1200,
+        "n_decks": 600
+      },
+      "gates": [
+        {
+          "gate": "G-SCOPE",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "dose": 0.25,
+              "mask": 31,
+              "scope": "own"
+            },
+            "frozen": {
+              "dose": 0.25,
+              "mask": 31,
+              "scope": "own"
+            },
+            "opponent_jrules_prior": null,
+            "addresses": [
+              "manifest:config.cand_jrules_prior",
+              null
+            ]
+          },
+          "address": "manifest:config.cand_jrules_prior",
+          "why": "the candidate resolved dose 0.25 mask 31 scope 'own' and the opponent carries no jrules prior"
+        },
+        {
+          "gate": "G-WITNESS",
+          "ok": true,
+          "detail": {
+            "candidate": {
+              "total": 1473537643,
+              "own_mover": 748177616,
+              "boosted": 748177616
+            },
+            "opponent": {
+              "total": 0,
+              "own_mover": 0,
+              "boosted": 0
+            },
+            "addresses": {
+              "candidate": "summary:jr_expansions.candidate",
+              "opponent": "summary:jr_expansions.opponent"
+            },
+            "scope_denominator": {
+              "scope": "own",
+              "expr": "own_mover",
+              "value": 748177616
+            },
+            "coverage": 1.0,
+            "advisories": []
+          },
+          "address": "summary:jr_expansions.candidate",
+          "why": "\u2b50 the scope knob BOUND IN PLAY on the candidate (boosted > 0, inside the 'own' scope) and did NOT bind on the opponent (boosted == 0; the unarmed side reads all zeros, which is the healthy shape)"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "k_dets": {
+              "champion": 16,
+              "opponent": 16,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.k_dets",
+                "manifest:config.opponent.k_dets"
+              ]
+            },
+            "sims_per_det": {
+              "champion": 1376,
+              "opponent": 1376,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.sims_per_det",
+                "manifest:config.opponent.sims_per_det"
+              ]
+            },
+            "total_sims": {
+              "champion": 22016,
+              "opponent": 22016,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.total_sims",
+                "manifest:config.opponent.total_sims"
+              ]
+            },
+            "c_puct": {
+              "champion": 1.5,
+              "opponent": 1.5,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.c_puct",
+                "manifest:config.opponent.champ_cfg.c_puct"
+              ]
+            },
+            "tau_p": {
+              "champion": 5.0,
+              "opponent": 5.0,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.tau_p",
+                "manifest:config.opponent.champ_cfg.tau_p"
+              ]
+            },
+            "leaf_quantize": {
+              "champion": "float",
+              "opponent": "float",
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.leaf_quantize",
+                "manifest:config.opponent.champ_cfg.leaf_quantize"
+              ]
+            },
+            "final_select": {
+              "champion": "visits",
+              "opponent": "visits",
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.final_select",
+                "manifest:config.opponent.champ_cfg.final_select"
+              ]
+            },
+            "value_norm": {
+              "champion": 15.0,
+              "opponent": 15.0,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.value_norm",
+                "manifest:config.opponent.champ_cfg.value_norm"
+              ]
+            },
+            "fpu_reduction": {
+              "champion": null,
+              "opponent": null,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.fpu_reduction",
+                "manifest:config.opponent.champ_cfg.fpu_reduction"
+              ]
+            }
+          },
+          "address": "manifest:config.champion.* vs manifest:config.opponent.champ_cfg.*",
+          "why": "the two sides agree on every shared search alias; the ONLY difference is the candidate's cand_jrules_prior block"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "cand_tiearb": {
+              "enabled": false,
+              "B": 16,
+              "J": 4,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1",
+              "eps": 0.0,
+              "phase_gate": "all"
+            },
+            "opponent_tiearb": null,
+            "addresses": [
+              "manifest:config.cand_tiearb",
+              null
+            ]
+          },
+          "address": "manifest:config.cand_tiearb",
+          "why": "the arbiter is OFF on both sides. \u26a0\ufe0f A DELIBERATE DEVIATION from the deployed champion (B=64) \u2014 deploy transfer is an assumption (DESIGN \u00a710.5)"
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "champion": "a36d2e15a3b3d71d",
+            "sense": "INVERTED (equality required)"
+          },
+          "address": "manifest:config.{cand_leaf_hash,opp_leaf_hash}",
+          "why": "both sides carry the champion leaf, unmoved"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent.champ_cfg}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion)"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest:config.backend.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-TOOL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+ec0e52bb7b7e+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "2ef38b5123514fc9",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest:carc_rs_*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "laptop-wsl",
+            "frozen_role": "laptop"
+          },
+          "address": "manifest:host",
+          "why": "host 'laptop-wsl' is the laptop"
+        },
+        {
+          "gate": "G-PAIRED",
+          "ok": true,
+          "detail": {
+            "n_common": 600,
+            "frozen_n_decks": 600,
+            "seed_range": [
+              161000000000,
+              161000000599
+            ],
+            "n_seeds_seen": 600,
+            "summary_n_paired": 600,
+            "n_failed": 0,
+            "notes": []
+          },
+          "address": "summary:n_paired",
+          "why": "600 decks, both seatings, all inside [161000000000, 161000000599], 0 failed games"
+        },
+        {
+          "gate": "G-BLIND",
+          "ok": true,
+          "detail": {
+            "BLIND_COMMIT": "5c59967229ab4f5ba94d951cdecea2c131e07f74"
+          },
+          "address": "manifest:config.stamps.BLIND_COMMIT",
+          "why": "the arm is stamped with a 40-hex blind commit"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "summary": -0.2783333333333333,
+              "recomputed": -0.2783333333333333,
+              "ok": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "summary": -0.5172205753590688,
+              "recomputed": -0.5172205753590688,
+              "ok": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "summary": 600,
+              "recomputed": 600,
+              "ok": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "summary": 0.4845833333333333,
+              "recomputed": 0.4845833333333333,
+              "ok": true,
+              "address": "summary:winrate"
+            },
+            "avg_diff": {
+              "summary": -0.2783333333333333,
+              "recomputed": -0.2783333333333333,
+              "ok": true,
+              "address": "summary:avg_diff"
+            }
+          },
+          "address": "summary:* vs records/*",
+          "why": "the summary reproduces from the raw records"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "margin": {
+        "mean_pts_per_deck": -0.2783333333333333,
+        "z": -0.5172205753590688,
+        "se": 0.5381327553338469,
+        "n_decks": 600,
+        "footing": "deck-paired, per-deck mean over both seatings"
+      },
+      "elo_companion": {
+        "n": 1200,
+        "W": 571,
+        "D": 21,
+        "L": 608,
+        "winrate": 0.4845833333333333,
+        "elo": -10.7159939602689,
+        "elo_sig_1sigma_paired": 7.095372759526223,
+        "elo_sig_1sigma_unpaired": 10.034372386614598,
+        "elo_footing": "deck-paired",
+        "elo_pairing_factor": 0.7071067811865475,
+        "avg_diff": -0.2783333333333333
+      },
+      "se_anomaly": {
+        "realized": 0.5381327553338469,
+        "modelled": 0.5143928459844674,
+        "ratio": 1.0461513209888154,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "saturation": {
+        "winrate": 0.4845833333333333,
+        "band": [
+          0.35,
+          0.65
+        ],
+        "flagged": false,
+        "note": "\u26d4 COMPANION RAIL, never a branch input. Outside the band the deck-paired margin is compressed by the ceiling and the elo companion is unreliable."
+      },
+      "n4_cost": {
+        "ms_ratio_cand_over_opp": 1.107147033526315,
+        "fired": false,
+        "trigger": 1.2,
+        "cand_ms_per_move": 3484.437715970326,
+        "opp_ms_per_move": 3147.222194031654,
+        "addresses": [
+          "summary:champ_prefix_ms_per_move",
+          "summary:rung_ms_per_move"
+        ],
+        "predicted": "1.078\u20131.085 (SIZING \u00a73)",
+        "note": "under the trigger; the arm is not budget-confounded"
+      }
+    },
+    "CELL_G3_ALL": {
+      "cell": "CELL_G3_ALL",
+      "scope": "all",
+      "role": "laptop",
+      "purpose": "\u2b50 THE IN-BAND SYMMETRIC CONTROL \u2014 the 'is this just another dose?' arm the design owes. The banked surface-B `all` null sits on a RETIRED band at the SUPERSEDED 11008 budget, and CL-068 forbids differencing it (DESIGN \u00a74.3), so `all` is re-measured IN-BAND at 22016. n=800: the control only needs to reproduce a known null, and 2\u03c3 = \u00b11.26 does that.",
+      "seed_range": [
+        161000000000,
+        161000000399
+      ],
+      "frozen": {
+        "dose": 0.25,
+        "mask": 31,
+        "scope": "all",
+        "n_games": 800,
+        "n_decks": 400
+      },
+      "gates": [
+        {
+          "gate": "G-SCOPE",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "dose": 0.25,
+              "mask": 31,
+              "scope": "all"
+            },
+            "frozen": {
+              "dose": 0.25,
+              "mask": 31,
+              "scope": "all"
+            },
+            "opponent_jrules_prior": null,
+            "addresses": [
+              "manifest:config.cand_jrules_prior",
+              null
+            ]
+          },
+          "address": "manifest:config.cand_jrules_prior",
+          "why": "the candidate resolved dose 0.25 mask 31 scope 'all' and the opponent carries no jrules prior"
+        },
+        {
+          "gate": "G-WITNESS",
+          "ok": true,
+          "detail": {
+            "candidate": {
+              "total": 982035890,
+              "own_mover": 496215186,
+              "boosted": 982035890
+            },
+            "opponent": {
+              "total": 0,
+              "own_mover": 0,
+              "boosted": 0
+            },
+            "addresses": {
+              "candidate": "summary:jr_expansions.candidate",
+              "opponent": "summary:jr_expansions.opponent"
+            },
+            "scope_denominator": {
+              "scope": "all",
+              "expr": "total",
+              "value": 982035890
+            },
+            "coverage": 1.0,
+            "advisories": []
+          },
+          "address": "summary:jr_expansions.candidate",
+          "why": "\u2b50 the scope knob BOUND IN PLAY on the candidate (boosted > 0, inside the 'all' scope) and did NOT bind on the opponent (boosted == 0; the unarmed side reads all zeros, which is the healthy shape)"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "k_dets": {
+              "champion": 16,
+              "opponent": 16,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.k_dets",
+                "manifest:config.opponent.k_dets"
+              ]
+            },
+            "sims_per_det": {
+              "champion": 1376,
+              "opponent": 1376,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.sims_per_det",
+                "manifest:config.opponent.sims_per_det"
+              ]
+            },
+            "total_sims": {
+              "champion": 22016,
+              "opponent": 22016,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.total_sims",
+                "manifest:config.opponent.total_sims"
+              ]
+            },
+            "c_puct": {
+              "champion": 1.5,
+              "opponent": 1.5,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.c_puct",
+                "manifest:config.opponent.champ_cfg.c_puct"
+              ]
+            },
+            "tau_p": {
+              "champion": 5.0,
+              "opponent": 5.0,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.tau_p",
+                "manifest:config.opponent.champ_cfg.tau_p"
+              ]
+            },
+            "leaf_quantize": {
+              "champion": "float",
+              "opponent": "float",
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.leaf_quantize",
+                "manifest:config.opponent.champ_cfg.leaf_quantize"
+              ]
+            },
+            "final_select": {
+              "champion": "visits",
+              "opponent": "visits",
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.final_select",
+                "manifest:config.opponent.champ_cfg.final_select"
+              ]
+            },
+            "value_norm": {
+              "champion": 15.0,
+              "opponent": 15.0,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.value_norm",
+                "manifest:config.opponent.champ_cfg.value_norm"
+              ]
+            },
+            "fpu_reduction": {
+              "champion": null,
+              "opponent": null,
+              "champion_absent": false,
+              "opponent_absent": false,
+              "addresses": [
+                "manifest:config.champion.fpu_reduction",
+                "manifest:config.opponent.champ_cfg.fpu_reduction"
+              ]
+            }
+          },
+          "address": "manifest:config.champion.* vs manifest:config.opponent.champ_cfg.*",
+          "why": "the two sides agree on every shared search alias; the ONLY difference is the candidate's cand_jrules_prior block"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "cand_tiearb": {
+              "enabled": false,
+              "B": 16,
+              "J": 4,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1",
+              "eps": 0.0,
+              "phase_gate": "all"
+            },
+            "opponent_tiearb": null,
+            "addresses": [
+              "manifest:config.cand_tiearb",
+              null
+            ]
+          },
+          "address": "manifest:config.cand_tiearb",
+          "why": "the arbiter is OFF on both sides. \u26a0\ufe0f A DELIBERATE DEVIATION from the deployed champion (B=64) \u2014 deploy transfer is an assumption (DESIGN \u00a710.5)"
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "champion": "a36d2e15a3b3d71d",
+            "sense": "INVERTED (equality required)"
+          },
+          "address": "manifest:config.{cand_leaf_hash,opp_leaf_hash}",
+          "why": "both sides carry the champion leaf, unmoved"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent.champ_cfg}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion)"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest:config.backend.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-TOOL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+ec0e52bb7b7e+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "2ef38b5123514fc9",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest:carc_rs_*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "laptop-wsl",
+            "frozen_role": "laptop"
+          },
+          "address": "manifest:host",
+          "why": "host 'laptop-wsl' is the laptop"
+        },
+        {
+          "gate": "G-PAIRED",
+          "ok": true,
+          "detail": {
+            "n_common": 400,
+            "frozen_n_decks": 400,
+            "seed_range": [
+              161000000000,
+              161000000399
+            ],
+            "n_seeds_seen": 400,
+            "summary_n_paired": 400,
+            "n_failed": 0,
+            "notes": []
+          },
+          "address": "summary:n_paired",
+          "why": "400 decks, both seatings, all inside [161000000000, 161000000399], 0 failed games"
+        },
+        {
+          "gate": "G-BLIND",
+          "ok": true,
+          "detail": {
+            "BLIND_COMMIT": "5c59967229ab4f5ba94d951cdecea2c131e07f74"
+          },
+          "address": "manifest:config.stamps.BLIND_COMMIT",
+          "why": "the arm is stamped with a 40-hex blind commit"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "summary": 0.21875,
+              "recomputed": 0.21875,
+              "ok": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "summary": 0.34049346037387435,
+              "recomputed": 0.34049346037387435,
+              "ok": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "summary": 400,
+              "recomputed": 400,
+              "ok": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "summary": 0.49875,
+              "recomputed": 0.49875,
+              "ok": true,
+              "address": "summary:winrate"
+            },
+            "avg_diff": {
+              "summary": 0.21875,
+              "recomputed": 0.21875,
+              "ok": true,
+              "address": "summary:avg_diff"
+            }
+          },
+          "address": "summary:* vs records/*",
+          "why": "the summary reproduces from the raw records"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "margin": {
+        "mean_pts_per_deck": 0.21875,
+        "z": 0.34049346037387435,
+        "se": 0.6424499306383284,
+        "n_decks": 400,
+        "footing": "deck-paired, per-deck mean over both seatings"
+      },
+      "elo_companion": {
+        "n": 800,
+        "W": 389,
+        "D": 20,
+        "L": 391,
+        "winrate": 0.49875,
+        "elo": -0.8685907733736153,
+        "elo_sig_1sigma_paired": 8.685916781597392,
+        "elo_sig_1sigma_unpaired": 12.283741314179096,
+        "elo_footing": "deck-paired",
+        "elo_pairing_factor": 0.7071067811865475,
+        "avg_diff": 0.21875
+      },
+      "se_anomaly": {
+        "realized": 0.6424499306383284,
+        "modelled": 0.63,
+        "ratio": 1.0197617946640134,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "saturation": {
+        "winrate": 0.49875,
+        "band": [
+          0.35,
+          0.65
+        ],
+        "flagged": false,
+        "note": "\u26d4 COMPANION RAIL, never a branch input. Outside the band the deck-paired margin is compressed by the ceiling and the elo companion is unreliable."
+      },
+      "n4_cost": {
+        "ms_ratio_cand_over_opp": 1.2041626479761456,
+        "fired": true,
+        "trigger": 1.2,
+        "cand_ms_per_move": 3833.295759333092,
+        "opp_ms_per_move": 3183.370424066691,
+        "addresses": [
+          "summary:champ_prefix_ms_per_move",
+          "summary:rung_ms_per_move"
+        ],
+        "predicted": "1.078\u20131.085 (SIZING \u00a73)",
+        "note": "\u26d4 N4 FIRED \u2014 any loss on this arm is CONFOUNDED BY BUDGET and must be reported as surface A's was."
+      }
+    }
+  },
+  "cells_gates_ok": true,
+  "gates_ok": true,
+  "primary": {
+    "P1": {
+      "what": "margin(OPP vs the unmodified champion), pts/deck, deck-paired",
+      "mean_pts_per_deck": 0.7633333333333333,
+      "z": 1.3934500023647833,
+      "se": 0.5478010205159156,
+      "n_decks": 600,
+      "footing": "deck-paired, per-deck mean over both seatings"
+    },
+    "P2": {
+      "what": "D = margin(OPP) \u2212 margin(OWN), PER DECK on the shared set (CRN preserved)",
+      "D": 1.0416666666666667,
+      "z": 1.483877849597511,
+      "se": 0.7019894979557851,
+      "n_common": 600,
+      "rho_realized": 0.16432659320264573,
+      "per_deck": [
+        -2.0,
+        -20.5,
+        19.0,
+        3.5,
+        11.5,
+        8.5,
+        -5.5,
+        -33.0,
+        20.5,
+        3.5,
+        19.5,
+        -21.5,
+        2.0,
+        -15.5,
+        -22.5,
+        -23.0,
+        9.0,
+        -7.0,
+        -15.0,
+        -13.5,
+        5.5,
+        -5.5,
+        16.5,
+        15.0,
+        7.0,
+        20.5,
+        -4.0,
+        30.5,
+        -29.5,
+        -3.5,
+        7.0,
+        -3.0,
+        1.5,
+        7.0,
+        -1.5,
+        4.0,
+        16.0,
+        14.0,
+        -7.0,
+        19.0,
+        -11.5,
+        -7.5,
+        41.0,
+        20.5,
+        19.0,
+        -45.0,
+        16.5,
+        -6.0,
+        28.0,
+        18.0,
+        16.0,
+        1.5,
+        16.0,
+        15.0,
+        3.5,
+        -29.5,
+        12.0,
+        -24.5,
+        -34.5,
+        11.0,
+        13.0,
+        -24.0,
+        -13.5,
+        22.0,
+        15.0,
+        17.5,
+        -9.0,
+        11.0,
+        20.5,
+        -2.5,
+        -15.5,
+        16.0,
+        -1.5,
+        -28.5,
+        1.5,
+        -10.0,
+        -23.5,
+        -4.0,
+        4.5,
+        9.0,
+        -6.5,
+        -17.0,
+        -1.0,
+        12.0,
+        -37.0,
+        -14.5,
+        -10.0,
+        -5.0,
+        -20.0,
+        -20.0,
+        7.0,
+        10.0,
+        6.0,
+        -4.5,
+        21.0,
+        -8.0,
+        3.5,
+        -15.0,
+        0.0,
+        -4.0,
+        -0.5,
+        8.0,
+        16.0,
+        3.0,
+        -24.0,
+        1.0,
+        -5.0,
+        35.5,
+        -44.5,
+        -11.0,
+        11.5,
+        -7.5,
+        5.0,
+        24.0,
+        7.0,
+        22.0,
+        -3.0,
+        -10.5,
+        -9.0,
+        23.5,
+        11.5,
+        -2.5,
+        20.5,
+        8.5,
+        -13.0,
+        -3.5,
+        9.5,
+        -3.0,
+        25.0,
+        17.0,
+        0.5,
+        3.5,
+        2.5,
+        6.0,
+        -19.5,
+        22.0,
+        28.0,
+        -10.0,
+        3.5,
+        46.5,
+        -8.0,
+        13.0,
+        -4.5,
+        1.5,
+        19.0,
+        13.5,
+        -10.5,
+        20.5,
+        -17.5,
+        -15.5,
+        0.0,
+        -26.5,
+        14.5,
+        -3.0,
+        17.5,
+        2.5,
+        21.5,
+        -7.5,
+        -15.5,
+        -1.5,
+        16.5,
+        21.0,
+        -4.5,
+        2.5,
+        -28.5,
+        -32.5,
+        14.5,
+        58.0,
+        2.5,
+        3.5,
+        -6.0,
+        -6.5,
+        8.5,
+        1.0,
+        -10.5,
+        -9.5,
+        -17.5,
+        -10.0,
+        -4.0,
+        19.0,
+        -2.0,
+        22.0,
+        -34.0,
+        -17.0,
+        -9.5,
+        -2.0,
+        7.0,
+        -0.5,
+        11.0,
+        -21.0,
+        4.0,
+        10.0,
+        25.5,
+        7.0,
+        14.0,
+        -29.0,
+        -15.5,
+        -18.5,
+        -6.5,
+        -48.0,
+        -9.5,
+        4.0,
+        27.5,
+        -1.0,
+        6.5,
+        14.5,
+        5.0,
+        -3.0,
+        -5.5,
+        -29.5,
+        1.5,
+        13.0,
+        11.5,
+        7.0,
+        8.0,
+        -1.0,
+        -9.0,
+        -6.5,
+        -6.0,
+        -9.0,
+        0.0,
+        10.0,
+        5.0,
+        -20.5,
+        -5.5,
+        -17.5,
+        13.0,
+        -15.5,
+        23.5,
+        20.5,
+        -16.5,
+        7.5,
+        -6.5,
+        10.0,
+        0.5,
+        -26.0,
+        -8.5,
+        -17.5,
+        26.5,
+        -28.0,
+        2.0,
+        -5.5,
+        -14.0,
+        -2.5,
+        -1.5,
+        -9.0,
+        5.5,
+        17.5,
+        3.5,
+        -13.0,
+        14.5,
+        7.5,
+        17.0,
+        8.5,
+        5.5,
+        7.0,
+        24.5,
+        29.0,
+        -6.0,
+        5.0,
+        -2.0,
+        28.0,
+        15.0,
+        6.5,
+        10.0,
+        -0.5,
+        8.5,
+        -7.0,
+        1.0,
+        -18.0,
+        -11.0,
+        -0.5,
+        -14.0,
+        -6.5,
+        32.5,
+        5.5,
+        14.5,
+        -13.5,
+        3.0,
+        -10.5,
+        -10.0,
+        0.0,
+        -31.0,
+        -16.0,
+        -18.0,
+        2.0,
+        7.0,
+        34.0,
+        3.5,
+        -10.5,
+        60.5,
+        -6.5,
+        -25.5,
+        -0.5,
+        -7.0,
+        -30.5,
+        8.5,
+        0.0,
+        -13.0,
+        26.0,
+        -12.5,
+        -9.0,
+        -1.5,
+        -10.5,
+        31.0,
+        10.5,
+        11.5,
+        9.0,
+        -15.5,
+        28.5,
+        11.5,
+        -10.0,
+        -1.5,
+        -18.0,
+        -3.5,
+        8.5,
+        -14.0,
+        35.5,
+        19.0,
+        10.0,
+        -14.0,
+        1.0,
+        -28.0,
+        -48.0,
+        5.5,
+        27.0,
+        23.0,
+        19.0,
+        12.0,
+        5.0,
+        24.0,
+        -6.5,
+        -32.5,
+        -29.0,
+        -27.5,
+        4.0,
+        -27.5,
+        -16.0,
+        -2.5,
+        6.0,
+        -3.0,
+        -5.0,
+        21.0,
+        -8.5,
+        -10.0,
+        16.5,
+        -11.0,
+        32.5,
+        -29.5,
+        -43.0,
+        13.5,
+        2.0,
+        25.0,
+        5.5,
+        -49.5,
+        1.0,
+        24.0,
+        -9.0,
+        3.5,
+        -1.5,
+        -1.5,
+        26.0,
+        19.5,
+        -7.0,
+        -19.0,
+        -20.0,
+        -1.0,
+        17.5,
+        5.0,
+        -13.5,
+        13.5,
+        -18.5,
+        20.5,
+        -27.5,
+        31.0,
+        -0.5,
+        44.5,
+        -5.5,
+        -21.5,
+        8.5,
+        6.0,
+        23.0,
+        0.0,
+        0.0,
+        -38.5,
+        -21.0,
+        -9.5,
+        18.0,
+        32.5,
+        8.0,
+        -2.0,
+        -3.5,
+        -0.5,
+        -25.5,
+        -5.0,
+        7.5,
+        -31.0,
+        15.0,
+        -3.0,
+        -12.5,
+        7.5,
+        8.5,
+        22.0,
+        -20.5,
+        22.0,
+        -1.5,
+        -20.0,
+        -7.5,
+        24.5,
+        -21.5,
+        -6.5,
+        -13.0,
+        12.5,
+        0.0,
+        -6.0,
+        -12.5,
+        -5.0,
+        -7.5,
+        15.5,
+        48.5,
+        6.5,
+        19.5,
+        10.0,
+        -24.0,
+        1.0,
+        21.0,
+        18.0,
+        -30.0,
+        4.5,
+        -10.5,
+        42.0,
+        9.5,
+        -2.0,
+        3.5,
+        16.0,
+        6.0,
+        -9.0,
+        -13.0,
+        -29.5,
+        1.5,
+        27.0,
+        -9.0,
+        7.5,
+        -8.5,
+        -16.0,
+        23.5,
+        -9.0,
+        9.5,
+        8.0,
+        6.5,
+        21.5,
+        -6.5,
+        1.5,
+        -1.0,
+        25.5,
+        14.5,
+        -11.5,
+        12.0,
+        -22.0,
+        26.0,
+        -25.5,
+        2.5,
+        -12.0,
+        19.0,
+        -23.0,
+        -1.0,
+        29.5,
+        4.5,
+        30.5,
+        12.0,
+        -9.0,
+        26.0,
+        -4.5,
+        -19.0,
+        -13.5,
+        -11.0,
+        18.0,
+        26.5,
+        -5.5,
+        -8.0,
+        4.5,
+        17.5,
+        -7.5,
+        -6.0,
+        12.0,
+        -5.0,
+        -0.5,
+        -22.5,
+        33.0,
+        8.0,
+        -13.0,
+        21.5,
+        -7.0,
+        9.5,
+        14.5,
+        12.5,
+        -14.5,
+        7.5,
+        15.5,
+        10.0,
+        8.5,
+        4.5,
+        -0.5,
+        22.0,
+        -22.5,
+        10.5,
+        -23.0,
+        -1.5,
+        17.0,
+        39.5,
+        28.5,
+        -11.5,
+        -17.0,
+        1.5,
+        -1.5,
+        -7.5,
+        19.0,
+        10.0,
+        -8.5,
+        28.5,
+        23.0,
+        14.5,
+        4.0,
+        -24.0,
+        4.5,
+        11.0,
+        -8.5,
+        -1.5,
+        32.5,
+        -10.0,
+        19.0,
+        11.0,
+        -5.0,
+        8.5,
+        -6.0,
+        -3.0,
+        -30.0,
+        -25.0,
+        2.0,
+        15.0,
+        1.0,
+        -19.0,
+        -0.5,
+        1.0,
+        0.0,
+        -16.0,
+        -20.0,
+        42.5,
+        41.0,
+        5.0,
+        -2.0,
+        24.0,
+        -33.0,
+        56.0,
+        12.5,
+        -3.5,
+        16.0,
+        5.0,
+        -11.0,
+        -1.5,
+        -6.0,
+        -30.5,
+        31.0,
+        -0.5,
+        -2.5,
+        -10.5,
+        1.0,
+        5.0,
+        -12.0,
+        -10.0,
+        -21.5,
+        -7.0,
+        27.0,
+        18.0,
+        -1.0,
+        -9.5,
+        -5.5,
+        -21.0,
+        25.5,
+        -28.5,
+        1.5,
+        7.0,
+        -17.0,
+        0.0,
+        -14.0,
+        -17.5,
+        9.5,
+        0.0,
+        21.5,
+        -24.0,
+        -5.0,
+        -17.0,
+        -7.0,
+        6.0,
+        -0.5,
+        3.0,
+        14.5,
+        6.5,
+        4.0,
+        36.0
+      ],
+      "why": "per-deck OPP\u2212OWN on the shared deck set (CRN preserved)"
+    },
+    "holm": {
+      "legs": [
+        {
+          "leg": "P1",
+          "z": 1.3934500023647833,
+          "abs_z": 1.3934500023647833,
+          "holm_step": 2,
+          "holm_threshold": 1.96,
+          "clears_nominal_2sigma": false,
+          "clears": false,
+          "why": "the ladder STOPPED at an earlier step (Holm is step-down)"
+        },
+        {
+          "leg": "P2",
+          "z": 1.483877849597511,
+          "abs_z": 1.483877849597511,
+          "holm_step": 1,
+          "holm_threshold": 2.2414,
+          "clears_nominal_2sigma": false,
+          "clears": false,
+          "why": "|z| 1.4839 < 2.2414 (Holm step 1)"
+        }
+      ],
+      "P1_clears": false,
+      "P2_clears": false,
+      "family": "{P1 deployability, P2 asymmetry}",
+      "alpha": 0.05,
+      "thresholds": [
+        2.2414,
+        1.96
+      ],
+      "note": "\u26d4 the branch reads the HOLM ladder; DESIGN \u00a76.4's '\u2265 +2\u03c3' shorthand is the correction DESIGN itself names, and 2.0 sits inside the bracket [1.96, 2.2414]. The nominal 2\u03c3 verdict is reported per leg but is NOT the rule."
+    },
+    "modelled_se_for_reference": {
+      "P1": 0.5143928459844674,
+      "P2_at_rho_frozen": 0.7274613391789285,
+      "rho_frozen": 0.0,
+      "note": "\u26d4 POWER ARITHMETIC ONLY. Every branch above reads the REALIZED se, which prices the true correlation."
+    }
+  },
+  "control_ALL": {
+    "what": "the in-band symmetric control \u2014 'is this just another dose?'. \u26d4 OUTSIDE the Holm family; no branch reads it.",
+    "mean_pts_per_deck": 0.21875,
+    "z": 0.34049346037387435,
+    "se": 0.6424499306383284,
+    "n_decks": 400,
+    "footing": "deck-paired, per-deck mean over both seatings"
+  },
+  "g2_signature": {
+    "bar_met": null,
+    "note": "\u26d4 `None` == the census was UNAVAILABLE and can never read as met. `S1-FIRES` requires True (DESIGN \u00a76.3/\u00a76.4); without it the best reachable branch is S1-MARGIN-ONLY."
+  },
+  "branch": "S1-BOUNDED-NULL",
+  "consequence": "Neither leg cleared. RECORD THE BOUND and close the branch: re-opening needs a MECHANISM argument, not more n. \u26d4 `|z| < 2` is never 'refuted' (DESIGN \u00a710.3) \u2014 quote the bound, in pts/deck, on the realized SE.",
+  "riders": [
+    "\u26d4 A FLIP IS NOT AN IMPROVEMENT and d* is not 'the right dose'. G1 measured EXPRESSION at 5.01% and expression is not effect (READ_RULE_G1 \u00a76.1/\u00a76.5); the CL-080 anchor is 10.09% flip -> \u221253.8 elo.",
+    "\u26d4 NO CONTRAST WITH THE BANKED SURFACE-B `all` CELL IS A STATISTIC. Different band (1.30e11, retired), different budget (11008), and CL-068 prices cross-band contrasts at 1.8\u20132.2x over-dispersion. The IN-BAND ALL arm is the only differenceable control (DESIGN \u00a710.2).",
+    "\u26a0\ufe0f ARBITER-OFF BOTH SIDES is a deliberate deviation from the deployed champion (tiearb B=64). DEPLOY TRANSFER IS AN ASSUMPTION and rides on every branch (DESIGN \u00a710.5).",
+    "\u26d4 NOTHING HERE LICENSES A `PRODUCTION.yaml` CHANGE. A screen aims; it does not verdict (DESIGN \u00a710.6).",
+    "\u26d4 THE THREE ARMS' `jr_expansions` CENSUSES ARE NOT ADDITIVE ACROSS ARMS. `own` and `opp` boost disjoint sets whose union is `all`'s WITHIN ONE TREE (DESIGN \u00a79.2c) \u2014 three separate searches do not build the same trees, so `OWN.boosted + OPP.boosted \u2248 ALL.boosted` is NOT a check and must not be reported as one.",
+    "\u26d4 THE ALL ARM IS A CONTROL, NOT A THIRD PRIMARY. It is outside the Holm family by construction; no branch reads it and no bar is stated on it. It answers exactly one question: 'is this just another dose?'"
+  ],
+  "n4_fired_on": [
+    "CELL_G3_ALL"
+  ]
+}
