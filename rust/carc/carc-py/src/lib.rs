@@ -1213,6 +1213,127 @@ fn tier1_world_deck(
     Ok(world.unseen_deck().into_iter().map(|s| s.to_string()).collect())
 }
 
+// --------------------------------------------------------------------------
+// OM-M1 — refutation-priced arbitration, the first kill-gate's instrument
+// --------------------------------------------------------------------------
+
+/// ⛔ **INSTRUMENT ONLY.** One fired ply's MULTI-LEG arbitration, computed
+/// entirely in Rust. Spec of record:
+/// `measurement/omm1_refuter_gate_20260830/PREREG.md` §4.
+///
+/// Replays `Game(deck_seed)` forward by `prefix_actions[:ply]` (the `walled`
+/// root-replay contract `tier1_leg` uses), re-derives the **deployed** tie
+/// trigger and arm set (`arbitrate_decision_legs`: TILES phase, `n_legal >= 2`,
+/// `chain_values` + `detect_tie(eps)`, `build_arms(j, champ_pick)`), and then
+/// runs one arbitration per leg over ONE shared set of `b` CRN determinizations.
+///
+/// `legs` is a list of `(name, seed_suffix, refuter_leaf_or_None)`:
+///
+///   * `seed_suffix = []` and `refuter = None` -> the DEPLOYED leg. Its `means`
+///     are bit-identical to `carc_core::tiearb::arbitrate` (`G-BITEXACT`).
+///   * `seed_suffix = ["omm1-leg2"]`, `refuter = None` -> the PLACEBO leg.
+///   * same suffix with an invasion-armed `LeafConfigRs` -> a REFUTER leg; the
+///     invasion weights are applied to the OPPONENT of the arbiter's acting
+///     seat, inside the `tier1-greedy` continuation, in true game points.
+///
+/// Returns `None` when the trigger does not fire, else a dict with
+/// `arms`, `seat`, `k_remaining`, `state_digest`, `n_distinct_afterstates`,
+/// `capped`, `champ_appended`, `all_transposition`, `world_seeds`,
+/// `n_playouts`, and `legs` — a list of
+/// `{name, margins (b x arms), means, argmax_arm, worlds_completed}`.
+/// The RAW `margins` matrix is the artifact: every statistic in the prereg is
+/// computed from it Python-side, so the read rule can be re-run without
+/// re-running a playout.
+#[pyfunction]
+#[pyo3(signature = (deck_seed, prefix_actions, ply, champ_pick, leaf_cfg, legs,
+                    b = 64, j = 4, eps = 0.0,
+                    salt = carc_core::tiearb::TIEARB_SALT_OF_RECORD,
+                    max_plies = carc_core::tiearb::TIEARB_MAX_PLIES, threads = 1))]
+#[allow(clippy::too_many_arguments)]
+fn tiearb_arbitrate_legs<'py>(
+    py: Python<'py>,
+    deck_seed: &str,
+    prefix_actions: Vec<i32>,
+    ply: usize,
+    champ_pick: i32,
+    leaf_cfg: &PyLeafConfig,
+    legs: Vec<(String, Vec<String>, Option<PyLeafConfig>)>,
+    b: usize,
+    j: usize,
+    eps: f64,
+    salt: &str,
+    max_plies: usize,
+    threads: usize,
+) -> PyResult<Option<Bound<'py, PyDict>>> {
+    use carc_core::tiearb;
+    if ply > prefix_actions.len() {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "ply {ply} exceeds the {} supplied actions",
+            prefix_actions.len()
+        )));
+    }
+    if legs.is_empty() {
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "tiearb_arbitrate_legs needs at least one leg",
+        ));
+    }
+    let specs: Vec<tiearb::LegSpec> = legs
+        .into_iter()
+        .map(|(name, seed_suffix, refuter)| tiearb::LegSpec {
+            name,
+            seed_suffix,
+            refuter_leaf: refuter.map(|c| c.inner),
+        })
+        .collect();
+    let g = tier1::tier1_root(deck_seed, &prefix_actions[..ply])
+        .map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
+    let mut scratch = leaf::LeafScratch::new();
+    let fired = tiearb::arbitrate_decision_legs(
+        &g,
+        champ_pick,
+        &leaf_cfg.inner,
+        b,
+        j,
+        salt,
+        eps,
+        ply as i64,
+        max_plies,
+        threads,
+        &specs,
+        &mut scratch,
+    )
+    .map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
+    let (arms, out) = match fired {
+        None => return Ok(None),
+        Some(x) => x,
+    };
+    let d = PyDict::new(py);
+    d.set_item("arms", out.arms.clone())?;
+    d.set_item("seat", out.seat)?;
+    d.set_item("ply", ply)?;
+    d.set_item("k_remaining", carc_core::fair::k_remaining(&g))?;
+    d.set_item("phase_bucket", tiearb::phase_bucket(carc_core::fair::k_remaining(&g)))?;
+    d.set_item("state_digest", g.state_digest())?;
+    d.set_item("n_distinct_afterstates", arms.n_distinct_afterstates)?;
+    d.set_item("capped", arms.capped)?;
+    d.set_item("champ_appended", arms.champ_appended)?;
+    d.set_item("all_transposition", arms.all_transposition)?;
+    d.set_item("world_seeds", out.world_seeds.clone())?;
+    d.set_item("n_playouts", out.n_playouts)?;
+    let legs_out = pyo3::types::PyList::empty(py);
+    for leg in &out.legs {
+        let ld = PyDict::new(py);
+        ld.set_item("name", leg.name.clone())?;
+        ld.set_item("margins", leg.margins.clone())?;
+        ld.set_item("means", leg.means.clone())?;
+        ld.set_item("argmax_arm", leg.argmax_arm)?;
+        ld.set_item("worlds_completed", leg.worlds_completed)?;
+        legs_out.append(ld)?;
+    }
+    d.set_item("legs", legs_out)?;
+    Ok(Some(d))
+}
+
 /// `(source_sha256, semantic_digest)` compiled into `tiles/generated.rs` — the
 /// drift guard against `engine/.../base_deck.py`.
 #[pyfunction]
@@ -2922,6 +3043,7 @@ fn carc_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tile_data_digests, m)?)?;
     m.add_function(wrap_pyfunction!(tile_data_digest_r9, m)?)?;
     m.add_function(wrap_pyfunction!(r9_enabled, m)?)?;
+    m.add_function(wrap_pyfunction!(tiearb_arbitrate_legs, m)?)?;
     m.add_function(wrap_pyfunction!(tiearb_phase_bucket, m)?)?;
     m.add_function(wrap_pyfunction!(tiearb_phase_gate_fires_at, m)?)?;
     m.add_function(wrap_pyfunction!(farm_table, m)?)?;

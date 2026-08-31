@@ -1,0 +1,9 @@
+{
+ "n": 20,
+ "n_failed": 0,
+ "n_paired": 10,
+ "paired_mean_margin": 0.9999999999999998,
+ "paired_z": 1.0540925533894596,
+ "winrate": 0.5,
+ "elo": 0.0
+}

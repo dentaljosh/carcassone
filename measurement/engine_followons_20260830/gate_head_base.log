@@ -1,0 +1,5 @@
+[flat-play-gate] r9=false n_games=250
+  arm engine : 35984 plies, 597373 legal entries -> 683f7dec30671b025171eab7d7791a05378d3fbeec73c07af3fb170cab078d19
+  arm tier1  : 71964 plies, 1157954 scored candidates -> 5c82d04a3ee03cb6439826e9482802e0a6a398c7e0d42a3c31fc5dcc6251c0b7
+  border_fallbacks (expect 0): 0
+  combined   : badb8f39ce3d712455ad1991fd06963b77d3d7db73682541d9420ad5dfc64167   [15.4s]

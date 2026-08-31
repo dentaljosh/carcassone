@@ -1,0 +1,118 @@
+{
+ "kind": "eval_fair_puct",
+ "host": "laptop-wsl",
+ "code_rev": "aaaaaaaaa",
+ "BLIND_COMMIT": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+ "carc_rs_build": "carc_rs-0.1.0+aaaaaaaaaaaa+rustc1.96.0",
+ "carc_rs_version": "0.1.0",
+ "carc_rs_binary_sha": "2222222222222222",
+ "mixed_builds": false,
+ "n_failed": 0,
+ "cand_tiearb": {
+  "enabled": false,
+  "B": 16,
+  "J": 4,
+  "mode": "argmax",
+  "salt": "tiearb2-deploy-v1",
+  "eps": 0.0,
+  "phase_gate": "all"
+ },
+ "rules_profile": {
+  "name": "fixed_v1",
+  "r9_env_ok": true,
+  "r9_env_observed": true,
+  "grid_rule": "centered18",
+  "start_rule": "retail"
+ },
+ "config": {
+  "cand_search": {
+   "fpu_reduction": 0.15,
+   "c_puct": null,
+   "shared_c_puct": 1.5
+  },
+  "cand_tiearb": {
+   "enabled": false,
+   "B": 16,
+   "J": 4,
+   "mode": "argmax",
+   "salt": "tiearb2-deploy-v1",
+   "eps": 0.0,
+   "phase_gate": "all"
+  },
+  "cand_leaf_hash": "a36d2e15a3b3d71d",
+  "opp_leaf_hash": "a36d2e15a3b3d71d",
+  "cand_leaf_cfg": {
+   "v29_meeple_curve": [
+    -10.0,
+    -5.0,
+    -1.25,
+    0.0,
+    2.5,
+    3.75,
+    5.0,
+    6.25
+   ],
+   "bonus_cap": 8.0,
+   "meeple_k": 2.0
+  },
+  "band_seed_start": 167999999200,
+  "n_decks": 10,
+  "seatings_per_deck": 2,
+  "paired": true,
+  "n": 20,
+  "seed_start": 167999999200,
+  "champion": {
+   "agent": "FairHeuristicPriorAgent",
+   "k_dets": 16,
+   "sims_per_det": 1376,
+   "total_sims": 22016,
+   "c_puct": 1.5,
+   "tau_p": 5.0,
+   "value_norm": 15.0,
+   "leaf_quantize": "float",
+   "final_select": "visits",
+   "fpu_reduction": 0.15,
+   "jrules_prior_dose": 0.0,
+   "jrules_filter_mask": 0,
+   "tiearb_enabled": false,
+   "tiearb_b": 16,
+   "tiearb_phase_gate": "all"
+  },
+  "opponent": {
+   "agent": "FairHeuristicPriorAgent",
+   "champ_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "value_norm": 15.0,
+    "leaf_quantize": "float",
+    "final_select": "visits",
+    "fpu_reduction": null
+   },
+   "k_dets": 16,
+   "sims": 1376,
+   "sims_per_det": 1376,
+   "total_sims": 22016,
+   "tiearb_enabled": false,
+   "leaf_hash": "a36d2e15a3b3d71d",
+   "label": "fair-champion",
+   "mode": "fair-champion"
+  },
+  "endgame": {
+   "mode": "marginalized",
+   "exact_k": 2,
+   "exact_budget": 2000000,
+   "shared_by_both_arms": true
+  },
+  "backend": {
+   "name": "rust",
+   "requested": "rust",
+   "default": "python",
+   "rust_threads": 1,
+   "mixed_builds": false,
+   "converted_sides": [
+    "candidate",
+    "opponent"
+   ]
+  }
+ }
+}

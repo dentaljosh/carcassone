@@ -86,7 +86,7 @@ use crate::compat::mt19937::MT19937;
 use crate::engine::{GameState, Phase, BOARD_COLS, BOARD_ROWS};
 use crate::fair::reshuffled_determinization;
 use crate::game::{deck_from_seed, Game};
-use crate::leaf::{decompose_into, flat_base_score, Decomp, Scratch};
+use crate::leaf::{decompose_into, flat_base_score, invasion, Decomp, LeafConfig, Scratch};
 use crate::repr_key::string_representation;
 
 // ---------------------------------------------------------------------------
@@ -301,9 +301,107 @@ impl LegalMaskCache {
     }
 }
 
+/// ⛔ **INSTRUMENT ONLY — OM-M1's refuter leg. NEVER PRODUCTION.**
+///
+/// Makes ONE seat inside a [`tier1_playout`] play an *exploit-expressing*
+/// continuation instead of plain `tier1-greedy`, so the arbiter can price a
+/// tied root candidate against an INVADING opponent rather than against a copy
+/// of itself. Spec of record:
+/// `measurement/omm1_refuter_gate_20260830/PREREG.md` §4.
+///
+/// The construct is asymmetric by design (it invades and never defends) and is
+/// governed by
+/// `measurement/invasion_screen_r3_prep/screen_lib.SHAPE_B_IS_AN_INSTRUMENT_NOT_A_CANDIDATE`
+/// — the same status the shape-B invader leaf it reuses already carries. It
+/// must not reach `governance/PRODUCTION.yaml`, `CHECKPOINT_LINEAGE.csv` or any
+/// adoption chain.
+///
+/// ## Why the armed path scores in f64 while the disarmed path stays int64
+///
+/// [`RuleBasedPlayer`]'s per-candidate score is the **int64 base** terminal-score
+/// differential ([`candidate_leaf`] -> [`flat_base_score`]), NOT the v2.9
+/// `LeafConfig` leaf. The invasion terms are f64 potentials whose deployed dose
+/// (`invasion_alpha = 0.09` at `invasion_alpha_cap = 11.0`) contributes at most
+/// `0.99` points, so rounding the bonus back to an integer would silently
+/// swallow the entire signal and make a kill uninterpretable. The armed path
+/// therefore argmaxes `base as f64 + Sigma w*T` in f64, with the identical
+/// exact-`==` tie set and the identical `rng.randbelow(n_best)` draw.
+///
+/// **The disarmed path is byte-for-byte the pre-change code.** `refuter: None`
+/// is an early branch at every call site — never a "multiply by 1.0", never an
+/// f64 round-trip of the int64 score. Pinned by
+/// [`tests::refuter_none_is_bit_identical_to_the_pre_change_playout`] and
+/// [`tests::refuter_with_zero_weights_is_bit_identical_to_plain_greedy`].
+#[derive(Clone, Debug)]
+pub struct RefuterConfig {
+    /// The seat that plays the refuter continuation. The OTHER seat keeps plain
+    /// `tier1-greedy`. In OM-M1 this is `1 - root_player`, i.e. the opponent of
+    /// the arbiter's acting seat.
+    pub refuter_seat: usize,
+    /// Carries the armed invasion weights (`invasion_alpha` / `invasion_beta` /
+    /// `invasion_gamma` / `invasion_delta_farm` and their caps). Every OTHER
+    /// field is ignored: the refuter adds invasion potentials to the base
+    /// terminal-score differential and does not otherwise become the v2.9 leaf.
+    pub leaf: LeafConfig,
+}
+
+impl RefuterConfig {
+    /// `true` iff every invasion weight is `0.0` — the inert configuration,
+    /// which must reproduce plain `tier1-greedy` bit-for-bit (`G-INERT`).
+    pub fn is_inert(&self) -> bool {
+        self.leaf.invasion_alpha == 0.0
+            && self.leaf.invasion_beta == 0.0
+            && self.leaf.invasion_gamma == 0.0
+            && self.leaf.invasion_delta_farm == 0.0
+    }
+}
+
+/// The refuter's per-candidate score: the deployed int64 base, PLUS the armed
+/// invasion potentials, in f64.
+///
+/// Sign discipline is [`crate::leaf::leaf_terms_with`]'s, verbatim: A / B / D
+/// are ADDED, C is SUBTRACTED, each behind its own `!= 0.0` early branch in the
+/// fixed order A, B, C, D (f64 addition is not associative, so a fused
+/// expression would not be a pure superset of the gated form).
+///
+/// ⚠️ At the wrapping border [`candidate_leaf`] takes the legacy engine route
+/// and never builds a `Decomp`, so no invasion term can be computed there. The
+/// refuter is INERT on those candidates and returns the base unchanged — a
+/// documented, counted gap (`border_fallbacks`), not a silent one.
+fn candidate_leaf_refuter(
+    after: &mut GameState,
+    player: usize,
+    bufs: &mut ScorerBufs,
+    cfg: &LeafConfig,
+) -> f64 {
+    if border_wrap_hazard(after) {
+        BORDER_FALLBACKS.fetch_add(1, Ordering::Relaxed);
+        after.count_final_scores();
+        return (after.scores[player] - after.scores[1 - player]) as f64;
+    }
+    decompose_into(after, &mut bufs.decomp, &mut bufs.scratch);
+    let mut score = flat_base_score(after, player, &bufs.decomp) as f64;
+    if cfg.invasion_beta != 0.0 {
+        score += cfg.invasion_beta * invasion::shape_a_term(after, player, &bufs.decomp, cfg);
+    }
+    if cfg.invasion_alpha != 0.0 {
+        score += cfg.invasion_alpha * invasion::shape_b_term(after, player, &bufs.decomp, cfg);
+    }
+    if cfg.invasion_gamma != 0.0 {
+        score -= cfg.invasion_gamma * invasion::shape_c_term(after, player, &bufs.decomp, cfg);
+    }
+    if cfg.invasion_delta_farm != 0.0 {
+        score += cfg.invasion_delta_farm * invasion::shape_d_term(after, player, &bufs.decomp, cfg);
+    }
+    score
+}
+
 /// `RuleBasedPlayer(seed=...)` — one RNG stream, driving BOTH seats.
 pub struct RuleBasedPlayer {
     rng: MT19937,
+    /// ⛔ INSTRUMENT ONLY. `None` (the default, and everything production ever
+    /// constructs) is the pre-change player byte for byte.
+    refuter: Option<RefuterConfig>,
 }
 
 impl RuleBasedPlayer {
@@ -312,6 +410,16 @@ impl RuleBasedPlayer {
     pub fn new(seed: i64) -> Self {
         RuleBasedPlayer {
             rng: MT19937::from_py_int_seed_i64(seed),
+            refuter: None,
+        }
+    }
+
+    /// ⛔ INSTRUMENT ONLY (OM-M1). [`RuleBasedPlayer::new`] with one seat's
+    /// candidate scorer swapped for [`candidate_leaf_refuter`].
+    pub fn new_with_refuter(seed: i64, refuter: Option<RefuterConfig>) -> Self {
+        RuleBasedPlayer {
+            rng: MT19937::from_py_int_seed_i64(seed),
+            refuter,
         }
     }
 
@@ -434,6 +542,22 @@ impl RuleBasedPlayer {
         let opp = 1 - player;
         let last_tile_coord = g.state.last_tile_action.map(|lta| lta.coord);
 
+        // ⛔ OM-M1 INSTRUMENT BRANCH. Taken only when a refuter is armed AND
+        // this decision belongs to the refuter's seat. `None` — everything
+        // production ever constructs — falls straight through to the
+        // pre-change int64 body below, with no f64 round-trip and no
+        // multiply-by-one. `is_inert()` (all weights 0.0) also falls through,
+        // which is what makes `G-INERT` a BIT-identity and not merely an
+        // equality.
+        let armed_here = self
+            .refuter
+            .as_ref()
+            .is_some_and(|r| r.refuter_seat == player && !r.is_inert());
+        if armed_here {
+            let cfg = self.refuter.as_ref().expect("armed_here").leaf.clone();
+            return self.best_by_refuter_score(g, legal, candidates, &cfg);
+        }
+
         // The route is read ONCE per decision, not per candidate: it cannot
         // change inside a decision, and production never sets it at all.
         let force_legacy = FORCE_LEGACY.with(|c| c.get());
@@ -487,6 +611,80 @@ impl RuleBasedPlayer {
             legal,
             candidates,
             scores,
+            player,
+        })
+    }
+
+    /// ⛔ **INSTRUMENT ONLY (OM-M1).** [`Self::best_by_virtual_score`] with the
+    /// per-candidate score replaced by [`candidate_leaf_refuter`].
+    ///
+    /// Structurally identical to its twin above and deliberately so: same
+    /// per-candidate `scratch = state.clone(); apply_action`, same argmax with
+    /// the exact-`==` best set over the candidate list in ascending order, same
+    /// `rng.randbelow(best_local.len())` draw (which ALWAYS draws, `len == 1`
+    /// included). The ONLY difference is the score's type — f64 instead of i64
+    /// — for the reason [`RefuterConfig`] documents.
+    ///
+    /// `Decision::scores` is `Vec<i64>` and is left **EMPTY** here rather than
+    /// filled with a rounded f64: rounding is exactly the information loss this
+    /// path exists to avoid, and a probe that silently read quantized refuter
+    /// scores would mis-report the tie set. A refuter-side divergence probe
+    /// must read the f64 scores from this function directly.
+    ///
+    /// ⚠️ `FORCE_LEGACY` ([`with_legacy_scorer`]) is NOT honoured on this path.
+    /// That knob exists so an identity gate can contrast the two int64 scorer
+    /// routes; the refuter is not part of any such identity and needs the
+    /// `Decomp` the legacy route never builds.
+    fn best_by_refuter_score(
+        &mut self,
+        g: &Game,
+        legal: Vec<i32>,
+        candidates: Vec<i32>,
+        cfg: &LeafConfig,
+    ) -> Result<Decision, String> {
+        let player = g.state.current_player;
+        let last_tile_coord = g.state.last_tile_action.map(|lta| lta.coord);
+        let mut scores: Vec<f64> = Vec::with_capacity(candidates.len());
+        SCORER_BUFS.with(|cell| -> Result<(), String> {
+            let bufs = &mut *cell.borrow_mut();
+            for &action_idx in &candidates {
+                let action = decode(
+                    action_idx,
+                    &g.offset,
+                    g.state.phase,
+                    g.state.next_tile,
+                    last_tile_coord,
+                )
+                .map_err(|e| format!("decode({action_idx}) failed: {e:?}"))?;
+                let mut scratch = g.state.clone();
+                scratch.apply_action(action);
+                scores.push(candidate_leaf_refuter(&mut scratch, player, bufs, cfg));
+            }
+            Ok(())
+        })?;
+
+        // f64 has no `Ord`; the fold reproduces `max()`'s "keep the first of an
+        // equal run" semantics with a strict `>`, which is what the i64 twin's
+        // `iter().max()` + exact-`==` membership test does.
+        let mut best = scores[0];
+        for &s in scores.iter().skip(1) {
+            if s > best {
+                best = s;
+            }
+        }
+        let best_local: Vec<usize> = scores
+            .iter()
+            .enumerate()
+            .filter(|&(_, &s)| s == best)
+            .map(|(i, _)| i)
+            .collect();
+        let choice = self.rng.randbelow(best_local.len() as u64) as usize;
+        let action = candidates[best_local[choice]];
+        Ok(Decision {
+            action,
+            legal,
+            candidates,
+            scores: Vec::new(),
             player,
         })
     }
@@ -568,14 +766,48 @@ pub fn tier1_playout(
     root_player: usize,
     playout_seed: i64,
     max_plies: usize,
+    cache: Option<&mut LegalMaskCache>,
+) -> Result<(f64, usize), String> {
+    tier1_playout_with(world, pick, root_player, playout_seed, max_plies, cache, None)
+}
+
+/// ⛔ **INSTRUMENT ONLY (OM-M1).** [`tier1_playout`] with an optional
+/// [`RefuterConfig`] driving ONE seat's candidate scorer.
+///
+/// `refuter = None` is [`tier1_playout`] byte for byte — the same
+/// [`RuleBasedPlayer`] construction, the same RNG stream, the same moves, the
+/// same terminal — and `tier1_playout` is now literally a call to this with
+/// `None`, so the two cannot drift apart. Pinned by
+/// [`tests::refuter_none_is_bit_identical_to_the_pre_change_playout`].
+///
+/// A refuter with all-zero invasion weights is ALSO bit-identical (the seat
+/// branch checks [`RefuterConfig::is_inert`]) — that is `G-INERT`, the gate
+/// that proves an armed-but-zero leg is a true placebo rather than a
+/// coincidentally-equal one.
+#[allow(clippy::too_many_arguments)]
+pub fn tier1_playout_with(
+    world: &Game,
+    pick: i32,
+    root_player: usize,
+    playout_seed: i64,
+    max_plies: usize,
     mut cache: Option<&mut LegalMaskCache>,
+    refuter: Option<RefuterConfig>,
 ) -> Result<(f64, usize), String> {
     if root_player > 1 {
         return Err(format!("root_player must be 0 or 1, got {root_player}"));
     }
+    if let Some(r) = refuter.as_ref() {
+        if r.refuter_seat > 1 {
+            return Err(format!(
+                "refuter_seat must be 0 or 1, got {}",
+                r.refuter_seat
+            ));
+        }
+    }
     let mut g = world.clone();
     g.advance(pick)?;
-    let mut agent = RuleBasedPlayer::new(playout_seed);
+    let mut agent = RuleBasedPlayer::new_with_refuter(playout_seed, refuter);
     let mut plies = 0usize;
     while !g.is_terminal() {
         if plies >= max_plies {
@@ -1239,5 +1471,115 @@ mod tests {
         assert_eq!((c.hits, c.misses), (1, 1));
         assert_eq!(first, again);
         assert!(c.map.contains_key(&string_representation(&root.state)));
+    }
+
+    // ---------------------------------------------------------------------
+    // OM-M1 — the refuter's disarmed-path identity gates
+    // ---------------------------------------------------------------------
+
+    /// ⭐ `G-INERT`, half 1. `tier1_playout_with(..., refuter = None)` is the
+    /// pre-change `tier1_playout` byte for byte — same RNG stream, same moves,
+    /// same terminal margin, same ply count. (Structurally guaranteed because
+    /// `tier1_playout` now IS that call; this pins the guarantee against a
+    /// future edit that splits them again.)
+    #[test]
+    fn refuter_none_is_bit_identical_to_the_pre_change_playout() {
+        let (root, _) = seeded_root("28100000001", 12);
+        for &ps in &[7i64, 991, 20260830] {
+            let pick = root.legal_actions()[0];
+            let (m0, p0) = tier1_playout(&root, pick, 0, ps, 400, None).unwrap();
+            let (m1, p1) = tier1_playout_with(&root, pick, 0, ps, 400, None, None).unwrap();
+            assert_eq!(m0.to_bits(), m1.to_bits(), "margin differs at seed {ps}");
+            assert_eq!(p0, p1, "ply count differs at seed {ps}");
+        }
+    }
+
+    /// ⭐ `G-INERT`, half 2. An ARMED-BUT-ZERO refuter is also bit-identical:
+    /// `RefuterConfig::is_inert` short-circuits before the f64 scorer, so the
+    /// all-zero configuration never takes the instrument path at all. This is
+    /// what makes "the placebo and a zero-dose refuter are the same leg" a
+    /// statement about the code rather than a numerical coincidence.
+    #[test]
+    fn refuter_with_zero_weights_takes_the_unchanged_int64_path() {
+        let (root, _) = seeded_root("28100000002", 14);
+        let inert = crate::leaf::LeafConfig::curve125();
+        assert_eq!(inert.invasion_alpha, 0.0);
+        assert_eq!(inert.invasion_beta, 0.0);
+        assert_eq!(inert.invasion_gamma, 0.0);
+        assert_eq!(inert.invasion_delta_farm, 0.0);
+        for seat in [0usize, 1] {
+            let cfg = RefuterConfig {
+                refuter_seat: seat,
+                leaf: inert.clone(),
+            };
+            assert!(cfg.is_inert());
+            let pick = root.legal_actions()[0];
+            let (m0, p0) = tier1_playout(&root, pick, 0, 4242, 400, None).unwrap();
+            let (m1, p1) =
+                tier1_playout_with(&root, pick, 0, 4242, 400, None, Some(cfg)).unwrap();
+            assert_eq!(m0.to_bits(), m1.to_bits(), "margin differs for seat {seat}");
+            assert_eq!(p0, p1);
+        }
+    }
+
+    /// The refuter is SEAT-GATED: arming seat `s` must leave the OTHER seat's
+    /// decisions untouched. Verified structurally — an armed refuter on a seat
+    /// changes the playout, and the change is not a global rescoring.
+    #[test]
+    fn an_armed_refuter_changes_the_playout_and_is_seat_gated() {
+        let mut armed = crate::leaf::LeafConfig::curve125();
+        armed.invasion_alpha = 1.0;
+        armed.invasion_alpha_cap = 11.0;
+        armed.invasion_beta = 1.0;
+
+        let mut changed_any = false;
+        for seed in ["28100000001", "28100000002", "28100000003", "28100000004"] {
+            let (root, _) = seeded_root(seed, 12);
+            let pick = root.legal_actions()[0];
+            let (base, _) = tier1_playout(&root, pick, 0, 31337, 400, None).unwrap();
+            let (a0, _) = tier1_playout_with(
+                &root,
+                pick,
+                0,
+                31337,
+                400,
+                None,
+                Some(RefuterConfig {
+                    refuter_seat: 1,
+                    leaf: armed.clone(),
+                }),
+            )
+            .unwrap();
+            if a0.to_bits() != base.to_bits() {
+                changed_any = true;
+            }
+        }
+        assert!(
+            changed_any,
+            "an armed R_max refuter changed no playout on 4 roots — the OM-M1 \
+             gate would report a structural zero"
+        );
+    }
+
+    /// Fail-closed on an out-of-range refuter seat, rather than silently never
+    /// firing (which would read as "the mechanism does nothing").
+    #[test]
+    fn an_out_of_range_refuter_seat_is_refused() {
+        let (root, _) = seeded_root("28100000001", 10);
+        let pick = root.legal_actions()[0];
+        let err = tier1_playout_with(
+            &root,
+            pick,
+            0,
+            1,
+            400,
+            None,
+            Some(RefuterConfig {
+                refuter_seat: 2,
+                leaf: crate::leaf::LeafConfig::curve125(),
+            }),
+        )
+        .unwrap_err();
+        assert!(err.contains("refuter_seat"), "unexpected error: {err}");
     }
 }

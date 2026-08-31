@@ -1,4 +1,4 @@
-"""The parked `_legal_cache` non-injective rotation-signature fix.
+"""The `_legal_cache` non-injective rotation-signature fix (DEFAULT-ON 2026-08-30).
 
 Background: `game_wrapper.Game._legal_cache` (and the MCTS transposition
 table, which reuses the same key) is keyed on `Game.string_representation`,
@@ -25,11 +25,17 @@ corpus).
 `CARCASSONNE_FIX_LEGAL_CACHE_KEY` (module global `game_wrapper.
 _FIX_LEGAL_CACHE_KEY`) makes the key injective on rotation by folding the
 rotating farm-slot geometry (`_farm_slot_signature`) into the per-tile
-signature. DEFAULT OFF -- see the flag's comment in game_wrapper.py for the
-full reasoning; in short, the historical (colliding) signature is what the
-banked Stage-1b corpus and its rust port are graded against, and that corpus
-is BURNED (cannot be regenerated), so flipping the default would silently
-invalidate every existing replay/analysis path with no way to re-verify.
+signature.
+
+**DEFAULT-ON since 2026-08-30** (owner: "promote."). A wrong mask is a
+correctness defect, not a rules variant, so R9's opt-in precedent does not
+apply; what legitimately needs the OLD behaviour is REPLAY of a corpus banked
+under it, and that declares itself with the rollback lever
+`CARCASSONNE_FIX_LEGAL_CACHE_KEY=0` (in-process: the `legacy_cache_key`
+pytest fixture). The rust `LegalMaskCache` that grades the BURNED Stage-1b
+bank carries its own key in rust and is unaffected by this flag. Full
+reasoning, dependency-set derivation and the gate battery:
+`measurement/legal_cache_key_20260830/FINDING.md`.
 """
 from __future__ import annotations
 
@@ -177,3 +183,91 @@ def test_legal_cache_wrong_mask_on_collision_then_correct_with_fix(monkeypatch) 
                 got_b, mask_a,
                 "FIX OFF: board_b is WRONGLY served board_a's cached mask "
                 "(the historical, default, documented behaviour)")
+
+
+# ---------------------------------------------------------------------------
+# The 2026-08-30 default flip: the flag's resolution rule, the SECOND banked
+# witness, and the byte-identity of the rollback.
+# ---------------------------------------------------------------------------
+
+def test_default_is_off_and_only_an_explicit_truthy_value_enables_the_fix() -> None:
+    """⛔ REVERTED to DEFAULT-OFF 2026-08-30 (was DEFAULT-ON for part of that
+    day). The fix is intact but must be ASKED for, because
+    `string_representation` is also the rust mirror's reconcile contract and
+    `carc_core` still emits the legacy 9-tuple — default-on raises
+    `MirrorDesync` at ply 0. This assertion is the tripwire: it fails the moment
+    someone re-promotes, which is exactly when the rust half must be shown to
+    have landed. See the flag comment in `game_wrapper`.
+
+    Tested through `resolve_fix_legal_cache_key` rather than the module global
+    so an ambient `CARCASSONNE_FIX_LEGAL_CACHE_KEY` in the developer's shell
+    cannot make this pass or fail for the wrong reason."""
+    assert gw.resolve_fix_legal_cache_key({}) is False, "unset must mean LEGACY"
+    for on in ("1", "true", "yes", "ON", " 1 "):
+        assert gw.resolve_fix_legal_cache_key({gw.FIX_LEGAL_CACHE_KEY_ENV_VAR: on}) is True
+    for off in ("0", "false", "no", "OFF", " 0 "):
+        assert gw.resolve_fix_legal_cache_key({gw.FIX_LEGAL_CACHE_KEY_ENV_VAR: off}) is False
+
+
+def test_straight_road_is_the_second_witness_and_its_farm_SLOTS_reorder(
+        monkeypatch) -> None:
+    """`straight_road` (the OM-D2 witness, 2026-08-30) is subtler than
+    `city_left_right`: its two farm REGIONS are the same two fields at rot 0
+    and rot 2 -- only their ORDER swaps. That still matters, because
+    `PossibleMoveFinder.__possible_farmer_position` emits
+    `farmer_positions[0]` as the placement Side, so the two rotations offer
+    DIFFERENT farmer action ids for the same physical field. A key that saw
+    only the regions would still collide."""
+    tile0 = base_tiles["straight_road"].turn(0)
+    tile2 = base_tiles["straight_road"].turn(2)
+
+    edges0 = tuple(tile0.get_type(s).value
+                   for s in (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT))
+    edges2 = tuple(tile2.get_type(s).value
+                   for s in (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT))
+    assert edges0 == edges2, "witness precondition: outer edges tie across rot 0/2"
+
+    farm0 = gw._farm_slot_signature(tile0)
+    farm2 = gw._farm_slot_signature(tile2)
+    assert farm0 != farm2, "the ordered farm-slot signature must separate them"
+    # ...and it is genuinely an ORDER difference, not a different region set.
+    assert sorted(map(sorted, (list(map(sorted, f)) for f in farm0))) == \
+        sorted(map(sorted, (list(map(sorted, f)) for f in farm2))), (
+            "precondition: the same slot data, permuted -- which is exactly why "
+            "an order-insensitive key would not have fixed this")
+
+    # ⚠️ The flag is set EXPLICITLY, not inherited from the default: this test
+    # asserts what THE FIX does, and the fix went default-OFF on 2026-08-30
+    # (the rust-mirror `MirrorDesync`; see the flag comment in `game_wrapper`).
+    # Reading the default here would silently retarget the assertion.
+    monkeypatch.setattr(gw, "_FIX_LEGAL_CACHE_KEY", True)
+    _reset_rot_sig_cache(tile0, tile2)
+    assert gw._tile_rotation_signature(tile0) != gw._tile_rotation_signature(tile2)
+    _reset_rot_sig_cache(tile0, tile2)
+
+
+def test_rollback_key_is_byte_identical_append_only(monkeypatch) -> None:
+    """`CARCASSONNE_FIX_LEGAL_CACHE_KEY=0` must reproduce the historical key
+    STRING, not merely an equivalent one -- the fixed components are appended
+    to the end of the key tuple. Proven structurally: the legacy repr, minus
+    its closing paren, is a literal prefix of the fixed repr."""
+    import random
+
+    monkeypatch.setattr(gw, "_FIX_LEGAL_CACHE_KEY", False)
+    gw.clear_rotation_signature_caches()
+    g = Game()
+    random.seed(4242)
+    b_off = g.get_init_board()
+    key_off = g.string_representation(b_off)
+
+    monkeypatch.setattr(gw, "_FIX_LEGAL_CACHE_KEY", True)
+    gw.clear_rotation_signature_caches()
+    random.seed(4242)
+    b_on = g.get_init_board()
+    key_on = g.string_representation(b_on)
+    gw.clear_rotation_signature_caches()
+
+    assert key_off != key_on, "the fix must actually change the key"
+    assert key_on.startswith(key_off[:-1] + ","), (
+        "the fixed key must be the legacy key with components APPENDED -- "
+        "otherwise the rollback is not byte-identical to history")

@@ -1,0 +1,14 @@
+{
+  "gate": "flat-play-action-identity",
+  "r9": false,
+  "n_games": 250,
+  "engine_plies": 35984,
+  "engine_legal_entries": 597373,
+  "tier1_plies": 71964,
+  "tier1_scored_candidates": 1157954,
+  "border_fallbacks": 0,
+  "sha256_engine": "683f7dec30671b025171eab7d7791a05378d3fbeec73c07af3fb170cab078d19",
+  "sha256_tier1": "5c82d04a3ee03cb6439826e9482802e0a6a398c7e0d42a3c31fc5dcc6251c0b7",
+  "sha256_combined": "badb8f39ce3d712455ad1991fd06963b77d3d7db73682541d9420ad5dfc64167",
+  "wall_secs": 16.233
+}

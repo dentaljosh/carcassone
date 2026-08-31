@@ -1,0 +1,38 @@
+[
+ {
+  "name": "CELL_FPU005",
+  "role": "local",
+  "knob": "fpu_reduction",
+  "value": 0.05,
+  "seed_start": 167999999000,
+  "n_decks": 12,
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a rung"
+ },
+ {
+  "name": "CELL_FPU010",
+  "role": "local",
+  "knob": "fpu_reduction",
+  "value": 0.1,
+  "seed_start": 167999999100,
+  "n_decks": 10,
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a rung"
+ },
+ {
+  "name": "CELL_FPU015",
+  "role": "laptop",
+  "knob": "fpu_reduction",
+  "value": 0.15,
+  "seed_start": 167999999200,
+  "n_decks": 10,
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a rung"
+ },
+ {
+  "name": "CELL_FPU030",
+  "role": "laptop",
+  "knob": "fpu_reduction",
+  "value": 0.3,
+  "seed_start": 167999999300,
+  "n_decks": 10,
+  "purpose": "SYNTHETIC FIXTURE \u2014 not a rung"
+ }
+]

@@ -35,6 +35,12 @@ _LEAF_ENV_KEYS = (
     # (feedback_bug_fix_shifts_optima) — and it is readable here even from the
     # harnesses that never resolve a rules profile.
     "CARCASSONNE_FIX_R9",
+    # 2026-08-30: the legal-mask-memo / MCTS-transposition key. DEFAULT ON
+    # (injective); `=0` is the legacy rollback that reproduces the historical
+    # 180-symmetric-tile collision. Captured here so a replay of a corpus
+    # banked under the old key is self-describing rather than dirname
+    # archaeology — same reason R9 rides in this block.
+    "CARCASSONNE_FIX_LEGAL_CACHE_KEY",
     "CARC_RUN",
 )
 

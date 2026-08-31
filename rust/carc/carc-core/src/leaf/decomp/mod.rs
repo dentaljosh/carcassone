@@ -25,8 +25,12 @@
 //! "D16 unclosable city" case). That is the walled-variant distortion; it is
 //! part of the measured champion and is reproduced exactly.
 
+pub mod refimpl;
+
+pub use refimpl::{decomp_diff, decompose_into_ref, decompose_ref, DECOMP_FIELDS};
+
 use crate::engine::{GameState, BOARD_COLS, BOARD_ROWS};
-use crate::tiles::{self, Side, TileId};
+use crate::tiles::{self, Side, TileId, FARMER_SIDE_DELTA, FARMER_SIDE_OPP};
 
 const N_CELLS: usize = (BOARD_ROWS * BOARD_COLS) as usize;
 
@@ -263,6 +267,11 @@ pub struct Scratch {
     city_empty_keys: Vec<u32>,
     road_empty_keys: Vec<u32>,
     parent: Vec<u32>,
+    /// `ordinal -> TileId`, filled by the enumeration pass.  The later passes
+    /// then reach the tile by index instead of re-running `state.get_tile`.
+    ord_tid: Vec<TileId>,
+    /// `farm node id -> ordinal of its cell`, likewise.
+    farm_node_ord: Vec<u32>,
 }
 
 /// The whole-board structural decomposition, allocation-free after warm-up.
@@ -319,6 +328,13 @@ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
         }
     };
 
+    // The flat tile table, hoisted ONCE.  Every per-tile read below is an index
+    // into this contiguous slice; `tiles::tile()` (two `OnceLock` loads plus a
+    // walk through `Vec<Vec<Side>>` / `Vec<FarmerConn>` heap allocations) is not
+    // called anywhere in this function any more.  Same data, same order — see
+    // `tiles::flatten` and `refimpl` for the bit-identity argument.
+    let freg = tiles::flat_registry();
+
     // ---- enumerate nodes + intra-tile edges -------------------------------- //
     fill(city_node_id, n_cells * 9, -1i32);
     city_nodes.clear();
@@ -332,23 +348,32 @@ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
 
     farm_node_rc.clear();
     farm_node_slot.clear();
+    sc.farm_node_ord.clear();
+    sc.ord_tid.clear();
+    sc.ord_tid.reserve(n_cells);
     fill(&mut sc.farm_side_to_node, n_cells * 8, -1i32);
+
+    const CENTER: u8 = Side::Center as u8;
 
     for (o, &(r, c)) in placed.iter().enumerate() {
         let tid: TileId = state
             .get_tile(r, c)
             .expect("placed_coords names an empty cell");
-        let tile = tiles::tile(tid);
+        sc.ord_tid.push(tid);
+        let tf = &freg[tid as usize];
 
         // cities: sides of one `tile.city` group are connected
-        for group in &tile.city {
+        let mut gstart = 0usize;
+        for gi in 0..tf.n_city_groups as usize {
+            let gend = tf.city_group_end[gi] as usize;
             let mut first: Option<u32> = None;
-            for &s in group {
+            for k in gstart..gend {
+                let s = tf.city_sides[k];
                 let key = o * 9 + s as usize;
                 let nid = if city_node_id[key] < 0 {
                     let nid = city_nodes.len() as u32;
                     city_node_id[key] = nid as i32;
-                    city_nodes.push((r, c, s as u8));
+                    city_nodes.push((r, c, s));
                     nid
                 } else {
                     city_node_id[key] as u32
@@ -361,23 +386,25 @@ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
                     }
                 }
             }
+            gstart = gend;
         }
 
         // roads: the two non-CENTER ends of a Connection are connected
-        for &(a, b) in &tile.road {
-            let mut mk = |s: Side| -> u32 {
+        for i in 0..tf.n_road as usize {
+            let mut mk = |s: u8| -> u32 {
                 let key = o * 9 + s as usize;
                 if road_node_id[key] < 0 {
                     let nid = road_nodes.len() as u32;
                     road_node_id[key] = nid as i32;
-                    road_nodes.push((r, c, s as u8));
+                    road_nodes.push((r, c, s));
                     nid
                 } else {
                     road_node_id[key] as u32
                 }
             };
-            let ida = if a == Side::Center { None } else { Some(mk(a)) };
-            let idb = if b == Side::Center { None } else { Some(mk(b)) };
+            let (a, b) = (tf.road[2 * i], tf.road[2 * i + 1]);
+            let ida = if a == CENTER { None } else { Some(mk(a)) };
+            let idb = if b == CENTER { None } else { Some(mk(b)) };
             if let (Some(x), Some(y)) = (ida, idb) {
                 sc.road_eu.push(x);
                 sc.road_ev.push(y);
@@ -385,11 +412,12 @@ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
         }
 
         // farms: one node per FarmerConnection
-        for (slot, fc) in tile.farms.iter().enumerate() {
+        for slot in 0..tf.n_farms as usize {
             let nid = farm_node_rc.len() as i32;
             farm_node_rc.push((r, c));
             farm_node_slot.push(slot as u8);
-            for &fs in &fc.tile_connections {
+            sc.farm_node_ord.push(o as u32);
+            for &fs in tf.farms[slot].tconn() {
                 sc.farm_side_to_node[o * 8 + fs as usize] = nid;
             }
         }
@@ -428,18 +456,18 @@ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
     sc.farm_ev.clear();
     for nid in 0..farm_node_rc.len() {
         let (r, c) = farm_node_rc[nid];
-        let tid = state.get_tile(r, c).unwrap();
-        let conns = &tiles::tile(tid).farms[farm_node_slot[nid] as usize].tile_connections;
-        for &fs in conns {
-            let (dr, dc) = match fs.get_side() {
-                Side::Top => (-1, 0),
-                Side::Right => (0, 1),
-                Side::Bottom => (1, 0),
-                Side::Left => (0, -1),
-                other => panic!("farmer side on a non-cardinal edge {other:?}"),
-            };
-            if let Some(no) = ord_of(r + dr, c + dc) {
-                let neighbor = sc.farm_side_to_node[no * 8 + fs.opposite() as usize];
+        let o = sc.farm_node_ord[nid] as usize;
+        let fm = &freg[sc.ord_tid[o] as usize].farms[farm_node_slot[nid] as usize];
+        // `FARMER_SIDE_DELTA` is `get_side()`'s cardinal delta and
+        // `FARMER_SIDE_OPP` is `opposite()`, as const LUTs (gated in
+        // `tiles::tests::farmer_side_luts_match_the_functions`).  `get_side()`
+        // returns only cardinals, so the reference's non-cardinal `panic!` arm
+        // is unreachable and has no LUT entry.
+        for &fs in fm.tconn() {
+            let (dr, dc) = FARMER_SIDE_DELTA[fs as usize];
+            if let Some(no) = ord_of(r + dr as i32, c + dc as i32) {
+                let neighbor =
+                    sc.farm_side_to_node[no * 8 + FARMER_SIDE_OPP[fs as usize] as usize];
                 if neighbor >= 0 {
                     sc.farm_eu.push(nid as u32);
                     sc.farm_ev.push(neighbor as u32);
@@ -474,12 +502,14 @@ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
         let cell = r * BOARD_COLS + c;
         if sc.city_last_cell[root] != cell {
             sc.city_last_cell[root] = cell;
-            let tile = tiles::tile(state.get_tile(r, c).unwrap());
+            // `cell` is a placed cell, so `cell_ord_ro[cell] >= 0` and names the
+            // same tile `state.get_tile(r, c)` would return.
+            let tf = &freg[sc.ord_tid[cell_ord_ro[cell as usize] as usize] as usize];
             city_root_tiles[root] += 1;
-            if tile.shield {
+            if tf.shield {
                 city_root_shields[root] += 1;
             }
-            if !tile.inn.is_empty() {
+            if tf.has_inn {
                 city_root_cathedral[root] = true;
             }
         }
@@ -523,7 +553,7 @@ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
         if sc.road_last_cell[root] != cell {
             sc.road_last_cell[root] = cell;
             road_root_tiles[root] += 1;
-            if !tiles::tile(state.get_tile(r, c).unwrap()).inn.is_empty() {
+            if freg[sc.ord_tid[cell_ord_ro[cell as usize] as usize] as usize].has_inn {
                 road_root_inn[root] = true;
             }
         }
@@ -549,17 +579,15 @@ pub fn decompose_into(state: &GameState, out: &mut Decomp, sc: &mut Scratch) {
     farm_adj.clear();
     for nid in 0..nf {
         let root = farm_labels[nid] as usize;
-        let (r, c) = farm_node_rc[nid];
-        let o = ord_of(r, c).unwrap();
-        let tid = state.get_tile(r, c).unwrap();
-        let fc = &tiles::tile(tid).farms[farm_node_slot[nid] as usize];
-        if !fc.farmer_positions.is_empty() {
-            farm_pos0_root[o * 9 + fc.farmer_positions[0] as usize] = root as i32;
-            for &pos in &fc.farmer_positions {
+        let o = sc.farm_node_ord[nid] as usize;
+        let fc = &freg[sc.ord_tid[o] as usize].farms[farm_node_slot[nid] as usize];
+        if fc.n_fpos > 0 {
+            farm_pos0_root[o * 9 + fc.fpos[0] as usize] = root as i32;
+            for &pos in fc.fpos() {
                 farm_anypos_root[o * 9 + pos as usize] = root as i32;
             }
         }
-        for &cs in &fc.city_sides {
+        for &cs in fc.csides() {
             let cnid = city_node_id[o * 9 + cs as usize];
             if cnid >= 0 {
                 farm_adj.push(((root as u64) << 32) | city_labels[cnid as usize] as u64);
@@ -582,4 +610,78 @@ pub fn decompose(state: &GameState) -> Decomp {
     let mut sc = Scratch::default();
     decompose_into(state, &mut d, &mut sc);
     d
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game::Game;
+
+    /// The in-suite arm of the registry-flattening gate: the flat-registry
+    /// `decompose_into` must equal the frozen object-registry
+    /// `decompose_into_ref` on all 25 `Decomp` fields at every ply.
+    ///
+    /// The full corpus (500 randomized games x both registry flag states,
+    /// ~150k positions and ~300k leaf values) lives in
+    /// `examples/registry_flat_gate.rs`; this keeps a fast deterministic slice
+    /// inside `cargo test` so a regression cannot land silently.
+    #[test]
+    fn flat_registry_decomposition_is_bit_identical_to_the_object_path() {
+        let mut a = Decomp::default();
+        let mut b = Decomp::default();
+        let (mut sa, mut sb) = (Scratch::default(), Scratch::default());
+        let mut positions = 0usize;
+        for seed in ["1", "2", "17", "99"] {
+            for policy in 0..3usize {
+                let mut g = Game::from_seed(seed);
+                let mut ply = 0usize;
+                while !g.is_terminal() && ply < 200 {
+                    decompose_into(&g.state, &mut a, &mut sa);
+                    decompose_into_ref(&g.state, &mut b, &mut sb);
+                    positions += 1;
+                    if let Err(field) = decomp_diff(&a, &b) {
+                        panic!("seed {seed} policy {policy} ply {ply}: field {field} differs");
+                    }
+                    let legal = g.legal_actions();
+                    if legal.is_empty() {
+                        break;
+                    }
+                    let i = match policy {
+                        0 => 0,
+                        1 => legal.len() / 2,
+                        _ => legal.len() - 1,
+                    };
+                    g.advance(legal[i]).unwrap();
+                    ply += 1;
+                }
+            }
+        }
+        assert!(positions >= 252, "corpus too small: {positions}");
+    }
+
+    /// `Scratch` is reused across calls with different board sizes; the flat
+    /// path added two more reused buffers (`ord_tid`, `farm_node_ord`), so
+    /// prove a shrinking board cannot read a stale tail.
+    #[test]
+    fn scratch_reuse_across_shrinking_boards_is_clean() {
+        let mut sc = Scratch::default();
+        let mut d = Decomp::default();
+        let mut states = Vec::new();
+        let mut g = Game::from_seed("31337");
+        for _ in 0..120 {
+            let legal = g.legal_actions();
+            if legal.is_empty() {
+                break;
+            }
+            g.advance(legal[0]).unwrap();
+            states.push(g.state.clone());
+        }
+        // big -> small -> big, against a fresh-Scratch oracle each time
+        for i in [119usize, 3, 80, 1, 60] {
+            let s = &states[i.min(states.len() - 1)];
+            decompose_into(s, &mut d, &mut sc);
+            let fresh = decompose_ref(s);
+            assert!(decomp_diff(&d, &fresh).is_ok(), "stale scratch at index {i}");
+        }
+    }
 }

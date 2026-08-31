@@ -1,0 +1,42 @@
+# gate battery summary (rebuilt from the per-cell JSON artifacts)
+# NOTE: the live stdout log was lost mid-run (a `git stash` during a baseline
+# check unlinked the file the running shell held open); every number below is
+# read back off the per-cell JSON the gate itself wrote, which is the artifact
+# of record. Nothing was re-run or edited.
+
+== GATE_fixed_r9off.json ==
+   mode=fixed r9=False games=300 secs=290.7
+   compared=701953 sibling_children=680386 tile_plies=21600 meeple_plies=21567
+   n_mismatch=0  colliding_tiles=[]
+   coverage_missing=[]  witness_placements={'city_left_right': 18504, 'straight_road': 69156}
+   cache hit_rate=0.0656 hits=48873 misses=696247
+   gates={'G-COVER': True, 'G-MASK': True}  PASS=True
+
+== GATE_fixed_r9on.json ==
+   mode=fixed r9=True games=300 secs=291.6
+   compared=702097 sibling_children=680530 tile_plies=21600 meeple_plies=21567
+   n_mismatch=0  colliding_tiles=[]
+   coverage_missing=[]  witness_placements={'city_left_right': 18504, 'straight_road': 69174}
+   cache hit_rate=0.0656 hits=48867 misses=696397
+   gates={'G-COVER': True, 'G-MASK': True}  PASS=True
+
+== GATE_legacy_r9off.json ==
+   mode=legacy r9=False games=300 secs=226.5
+   compared=701578 sibling_children=680011 tile_plies=21600 meeple_plies=21567
+   n_mismatch=12712  colliding_tiles=['chapel', 'city_left_right', 'straight_road']
+   coverage_missing=[]  witness_placements={'city_left_right': 18588, 'straight_road': 68986}
+   cache hit_rate=0.2070 hits=154135 misses=590610
+   gates={'G-COVER': True, 'G-WITNESS-fires': True, 'G-WITNESS-tiles': True}  PASS=True
+
+== GATE_legacy_r9on.json ==
+   mode=legacy r9=True games=60 secs=45.2
+   compared=141577 sibling_children=137262 tile_plies=4320 meeple_plies=4315
+   n_mismatch=2747  colliding_tiles=['chapel', 'city_left_right', 'straight_road']
+   coverage_missing=[]  witness_placements={'city_left_right': 3726, 'straight_road': 14066}
+   cache hit_rate=0.2052 hits=30830 misses=119382
+   gates={'G-COVER': True, 'G-WITNESS-fires': True, 'G-WITNESS-tiles': True}  PASS=True
+
+== CACHE_fixed.json ==  {"entries": 898, "fix_legal_cache_key": true, "hit_rate": 0.664925, "hits": 1782, "mean_key_bytes": 5001, "misses": 898, "plies_played": 40, "secs": 4.87, "seed": 880777001, "sims": 32}
+== CACHE_legacy.json ==  {"entries": 745, "fix_legal_cache_key": false, "hit_rate": 0.668299, "hits": 1501, "mean_key_bytes": 2232, "misses": 745, "plies_played": 40, "secs": 4.52, "seed": 880777001, "sims": 32}
+
+== GATE BATTERY DONE ==

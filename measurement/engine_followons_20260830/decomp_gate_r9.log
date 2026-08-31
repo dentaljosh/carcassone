@@ -1,0 +1,9 @@
+    Finished `release` profile [optimized] target(s) in 0.02s
+     Running `rust/carc/target/release/examples/registry_flat_gate`
+== registry flattening — bit-identity gates ==
+registry: R9 override ON
+Decomp fields compared per position: 25 (19 structural + 6 city root arrays)
+GATE 0 (fresh game / empty-ish board): PASS
+GATE 1 (deterministic corpus): 2591 positions, 5182 leaf values, PASS
+GATE 2 (500 random games): 71959 positions, 143918 leaf values, PASS
+TOTAL: 74550 positions / 149100 leaf values / ALL PASS

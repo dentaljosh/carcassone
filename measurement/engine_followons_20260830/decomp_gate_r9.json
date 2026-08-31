@@ -1,0 +1,15 @@
+{
+  "r9": true,
+  "decomp_fields": 25,
+  "gate0_pass": true,
+  "gate1_positions": 2591,
+  "gate1_leaf_values": 5182,
+  "gate1_pass": true,
+  "gate2_games": 500,
+  "gate2_positions": 71959,
+  "gate2_leaf_values": 143918,
+  "gate2_pass": true,
+  "total_positions": 74550,
+  "total_leaf_values": 149100,
+  "all_pass": true
+}

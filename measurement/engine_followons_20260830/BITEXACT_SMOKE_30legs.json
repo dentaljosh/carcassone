@@ -1,0 +1,176 @@
+{
+  "gate": "G-BITEXACT-SMOKE",
+  "smoke": true,
+  "smoke_legs_limit": 30,
+  "smoke_pass": true,
+  "design": "measurement/tiearb2_stage2_20260817/PHASE_A.md#3",
+  "generated_utc": "2026-08-30T23:40:21Z",
+  "pass": false,
+  "n_legs_expected": 240,
+  "n_legs_found": 30,
+  "n_playouts_expected": 15360,
+  "n_playouts_compared": 1920,
+  "n_value_bit_identical": 1920,
+  "n_value_mismatch": 0,
+  "n_plies_identical": 1920,
+  "n_plies_mismatch": 0,
+  "n_seed_witness_ok": 30,
+  "sha256_values_rust": "ac0c5326e014cc7c32c2c669a8f47d55d84423a4ef48ef5e732a35b1deac15c6",
+  "sha256_values_python": "ac0c5326e014cc7c32c2c669a8f47d55d84423a4ef48ef5e732a35b1deac15c6",
+  "digests_equal": true,
+  "sample_seed": 20260817,
+  "sample_per_cell": 15,
+  "m_expected": 32,
+  "max_plies": 400,
+  "legal_mask_cache": true,
+  "legal_mask_cache_note": "Reproduces game_wrapper.Game._legal_cache, the per-record legal-mask memo the banked judge ran with, INCLUDING its string_representation key collisions (a 180-degree-symmetric tile's rotation signature is rotation-blind while its farm slots are not). Without it the port computes the honest mask and misses 57/15360 banked values; see BITEXACT_DIVERGENCE.json.",
+  "cache_hits_total": 3051,
+  "cache_misses_total": 160408,
+  "world_seed_salt": "tiletie-v1",
+  "rids": [
+    "tt_sp_28100000012_p44",
+    "tt_sp_28100000045_p26",
+    "tt_sp_28100000064_p100",
+    "tt_sp_28100000075_p4",
+    "tt_sp_28100000077_p45",
+    "tt_sp_28100000087_p94",
+    "tt_sp_28100000087_p94",
+    "tt_sp_28100000100_p6",
+    "tt_sp_28100000108_p130",
+    "tt_sp_28100000135_p26",
+    "tt_sp_28100000138_p46",
+    "tt_sp_28100000138_p46",
+    "tt_sp_28100000145_p10",
+    "tt_sp_28100000170_p76",
+    "tt_sp_28100000217_p12",
+    "tt_sp_28100000220_p110",
+    "tt_sp_28100000300_p108",
+    "tt_sp_28100000305_p2",
+    "tt_sp_28100000427_p140",
+    "tt_sp_28100000532_p50",
+    "tt_sp_28100000532_p50",
+    "tt_sp_28100000532_p50",
+    "tt_sp_28100000540_p18",
+    "tt_sp_28100000569_p78",
+    "tt_sp_28100000576_p38",
+    "tt_sp_28100000653_p52",
+    "tt_sp_28100000659_p38",
+    "tt_sp_28100000670_p50",
+    "tt_sp_28100000701_p36",
+    "tt_sp_28100000734_p74",
+    "tt_sp_28100000740_p82",
+    "tt_sp_28100000772_p90",
+    "tt_sp_28100000772_p90",
+    "tt_sp_28100000804_p76",
+    "tt_sp_28100000804_p76",
+    "tt_sp_28100000818_p72"
+  ],
+  "per_cell": {
+    "chunk1_leg1": {
+      "n_legs": 15,
+      "n_playouts": 960,
+      "n_value_bit_identical": 960,
+      "n_plies_identical": 960
+    },
+    "chunk1_leg2": {
+      "n_legs": 15,
+      "n_playouts": 960,
+      "n_value_bit_identical": 960,
+      "n_plies_identical": 960
+    },
+    "chunk1_leg3": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk1_leg4": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk2_leg1": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk2_leg2": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk2_leg3": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk2_leg4": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk3_leg1": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk3_leg2": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk3_leg3": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk3_leg4": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk4_leg1": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk4_leg2": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk4_leg3": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    },
+    "chunk4_leg4": {
+      "n_legs": 0,
+      "n_playouts": 0,
+      "n_value_bit_identical": 0,
+      "n_plies_identical": 0
+    }
+  },
+  "mismatches": [],
+  "errors": [],
+  "carc_rs_version": "0.1.0",
+  "carc_rs_file": "/tmp/g_bitexact_followon_b/shadow/carc_rs/__init__.py",
+  "git_rev": "35569f38d4abb5981c3b6287766941a3c8bcf3db",
+  "workers": 30,
+  "wall_secs": 4.408936977386475,
+  "records_root": "/mnt/c/carc-shared/tiearb2_20260816/main",
+  "note": "Counts only. The two sha256 digests are over the little-endian f64 bytes of (values_a + values_b) concatenated in sorted-rid order; a digest is not a value and is not invertible, so no adjudicated per-leg value leaves this gate.",
+  "out_path": "/tmp/g_bitexact_followon_b/BITEXACT_smoke.json"
+}

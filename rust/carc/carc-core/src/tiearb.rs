@@ -104,7 +104,7 @@ use crate::game::Game;
 use crate::leaf::{LeafConfig, LeafScratch};
 use crate::repr_key::string_representation;
 use crate::sha256::sha256_bytes;
-use crate::tier1::tier1_playout;
+use crate::tier1::{tier1_playout, tier1_playout_with, RefuterConfig};
 
 /// The salt of record (DESIGN §2). Any other value is a different experiment.
 pub const TIEARB_SALT_OF_RECORD: &str = "tiearb2-deploy-v1";
@@ -747,6 +747,287 @@ pub fn arbitrate_decision(
     }
     let out = arbitrate(
         g, seat, &arms.arms, b, salt, &digest, ply, mode, max_plies, threads,
+    )?;
+    Ok(Some((arms, out)))
+}
+
+// ===========================================================================
+// OM-M1 — REFUTATION-PRICED ARBITRATION (the first kill-gate's instrument)
+// ===========================================================================
+//
+// ⛔ INSTRUMENT ONLY. Spec of record:
+// `measurement/omm1_refuter_gate_20260830/PREREG.md`. Nothing below is
+// reachable from `arbitrate` / `arbitrate_decision` / any shipped agent — the
+// deployed arbiter is untouched, and `G-BITEXACT` (below) is the proof.
+
+/// One leg of a multi-leg arbitration.
+///
+/// A leg is a (playout-seed stream, continuation policy) pair evaluated over
+/// the SAME `B` CRN determinizations as every other leg. `world_seed(j)` is a
+/// pure function of `(salt, digest, ply, j)` and does NOT depend on the leg, so
+/// all legs are world-paired by construction (`G-CRN`).
+#[derive(Clone, Debug)]
+pub struct LegSpec {
+    /// Reported label. Never enters a seed.
+    pub name: String,
+    /// Parts appended to the deployed playout-seed parts
+    /// `[salt, digest, ply, j, "playout"]`. **EMPTY == the deployed seed
+    /// exactly**, which is what makes a leg reproduce [`arbitrate`] bit for bit.
+    pub seed_suffix: Vec<String>,
+    /// `None` == symmetric: plain `tier1-greedy` on BOTH seats, i.e. the
+    /// deployed continuation. `Some(cfg)` arms the OPPONENT of `seat` with
+    /// `cfg`'s invasion weights (see [`RefuterConfig`]).
+    pub refuter_leaf: Option<LeafConfig>,
+}
+
+impl LegSpec {
+    /// The deployed leg: deployed seed, symmetric continuation. Its `means` are
+    /// bit-identical to [`arbitrate`]'s at the same `(g, seat, arms, b, salt,
+    /// digest, ply, max_plies)`.
+    pub fn symmetric(name: &str) -> Self {
+        LegSpec {
+            name: name.to_string(),
+            seed_suffix: Vec::new(),
+            refuter_leaf: None,
+        }
+    }
+
+    /// A leg on its OWN playout-seed stream. With `refuter_leaf = None` this is
+    /// the PLACEBO of the OM-M1 prereg: same policy class, same cost, same CRN
+    /// worlds, differing from the symmetric leg by nothing but the tie-break
+    /// stream — the null that separates "the refuter re-ranked" from "half the
+    /// worlds were re-rolled".
+    pub fn restreamed(name: &str, seed_suffix: &[&str], refuter_leaf: Option<LeafConfig>) -> Self {
+        LegSpec {
+            name: name.to_string(),
+            seed_suffix: seed_suffix.iter().map(|s| s.to_string()).collect(),
+            refuter_leaf,
+        }
+    }
+}
+
+/// One leg's raw result. The `margins` matrix is the ONLY thing the harness
+/// persists; every statistic in the prereg (`§4.4`) is computed from it in
+/// Python, so the read rule can be re-run without re-running a playout.
+#[derive(Clone, Debug)]
+pub struct LegMatrix {
+    pub name: String,
+    /// `margins[j][i]` — world `j`, arm `arms[i]`, terminal margin from `seat`.
+    pub margins: Vec<Vec<f64>>,
+    /// Mean over the `B` worlds, folded in ascending `j` then ascending arm —
+    /// the identical order [`arbitrate`] folds in, because f64 addition is not
+    /// associative and any other order is a different number.
+    pub means: Vec<f64>,
+    pub argmax_arm: i32,
+    /// Always `b` on an `Ok` return (the whole-ply revert). Exposed so the
+    /// caller can ASSERT it (`G-COMPLETE`) rather than assume it.
+    pub worlds_completed: usize,
+}
+
+/// Every leg's result over one fired ply's shared CRN worlds.
+#[derive(Clone, Debug)]
+pub struct LegsOutcome {
+    pub arms: Vec<i32>,
+    pub seat: usize,
+    /// The `B` world seeds, identical for every leg. Emitted so `G-CRN` is a
+    /// checkable fact and not a claim about the code.
+    pub world_seeds: Vec<i64>,
+    pub legs: Vec<LegMatrix>,
+    pub n_playouts: usize,
+}
+
+/// ⛔ **INSTRUMENT ONLY (OM-M1).** [`arbitrate`], run once per leg over ONE
+/// shared set of `B` determinizations.
+///
+/// Contract, in order of importance:
+///
+/// 1. **`G-BITEXACT`.** A [`LegSpec::symmetric`] leg's `margins`, `means` and
+///    `argmax_arm` are bit-identical to [`arbitrate`]'s at the same arguments —
+///    same world seeds, same playout seeds, same fold order, same strict-`>`
+///    argmax that keeps the earliest arm on a tie. Pinned by
+///    [`tests::symmetric_leg_is_bit_identical_to_the_deployed_arbiter`].
+/// 2. **`G-CRN`.** `world_seed(j) = seed_i64(salt|digest|ply|j)` for every leg;
+///    the determinization is rebuilt per leg from that seed, so legs are paired
+///    world-for-world. The seeds are returned for assertion.
+/// 3. **`G-COMPLETE`.** The first failing `(leg, j, arm)` propagates with `?`.
+///    There is deliberately no "average the survivors" path: a partial world set
+///    breaks the CRN pairing the entire comparison rests on.
+///
+/// `threads` splits the `B` worlds of ONE leg across `min(b, threads)` scoped
+/// OS threads (arms inner, legs outer), exactly as [`arbitrate_core`] does, and
+/// is a LATENCY knob only — the fold happens after the join, on one thread, in
+/// ascending `j`.
+#[allow(clippy::too_many_arguments)]
+pub fn arbitrate_legs(
+    g: &Game,
+    seat: usize,
+    arms: &[i32],
+    b: usize,
+    salt: &str,
+    digest: &str,
+    ply: i64,
+    max_plies: usize,
+    threads: usize,
+    legs: &[LegSpec],
+) -> Result<LegsOutcome, String> {
+    if arms.is_empty() {
+        return Err("arbitrate_legs called with an empty arm set".to_string());
+    }
+    if legs.is_empty() {
+        return Err("arbitrate_legs called with no legs".to_string());
+    }
+    if seat > 1 {
+        return Err(format!("seat must be 0 or 1, got {seat}"));
+    }
+    let n_arms = arms.len();
+    let ply_s = ply.to_string();
+    let world_seeds: Vec<i64> = (0..b)
+        .map(|j| seed_i64(&[salt, digest, &ply_s, &j.to_string()]))
+        .collect();
+
+    let mut out_legs = Vec::with_capacity(legs.len());
+    let mut n_playouts = 0usize;
+    for leg in legs {
+        // The refuter always sits on the OPPONENT of the arbiter's acting seat:
+        // OM-M1 asks what a tied candidate is worth against an INVADING
+        // opponent, so the invasion must be on the other side of the board.
+        let refuter = leg.refuter_leaf.as_ref().map(|cfg| RefuterConfig {
+            refuter_seat: 1 - seat,
+            leaf: cfg.clone(),
+        });
+        let world_row = |j: usize| -> Result<Vec<f64>, String> {
+            let js = j.to_string();
+            // The playout seed's DEPLOYED parts, then the leg's suffix. An
+            // empty suffix reproduces `arbitrate`'s seed exactly.
+            let mut parts: Vec<&str> = vec![salt, digest, &ply_s, &js, "playout"];
+            for s in &leg.seed_suffix {
+                parts.push(s.as_str());
+            }
+            let playout_seed = seed_i64(&parts);
+            let mut rng = MT19937::from_py_int_seed_i64(world_seeds[j]);
+            let world = reshuffled_determinization(g, &mut rng)?;
+            let mut row = Vec::with_capacity(n_arms);
+            for &a in arms.iter() {
+                // cache = None: the HONEST legal mask, matching `arbitrate`.
+                let (margin, _plies) = tier1_playout_with(
+                    &world,
+                    a,
+                    seat,
+                    playout_seed,
+                    max_plies,
+                    None,
+                    refuter.clone(),
+                )?;
+                row.push(margin);
+            }
+            Ok(row)
+        };
+
+        let n_workers = threads.clamp(1, b.max(1));
+        let mut rows: Vec<Result<Vec<f64>, String>> = Vec::with_capacity(b);
+        if n_workers <= 1 {
+            for j in 0..b {
+                rows.push(Ok(world_row(j)?));
+            }
+        } else {
+            rows.resize_with(b, || Ok(Vec::new()));
+            let per = b.div_ceil(n_workers);
+            let world_row = &world_row;
+            std::thread::scope(|s| {
+                let mut base = 0usize;
+                for chunk in rows.chunks_mut(per) {
+                    let start = base;
+                    base += chunk.len();
+                    s.spawn(move || {
+                        for (off, slot) in chunk.iter_mut().enumerate() {
+                            *slot = world_row(start + off);
+                        }
+                    });
+                }
+            });
+        }
+
+        // The fold: ascending `j`, ascending arm — `arbitrate_core`'s order.
+        let mut sums = vec![0.0f64; n_arms];
+        let mut margins: Vec<Vec<f64>> = Vec::with_capacity(b);
+        let mut worlds_completed = 0usize;
+        for row in rows {
+            let row = row?;
+            for (i, margin) in row.iter().enumerate() {
+                sums[i] += *margin;
+                n_playouts += 1;
+            }
+            margins.push(row);
+            worlds_completed += 1;
+        }
+        let denom = b.max(1) as f64;
+        let means: Vec<f64> = sums.iter().map(|s| s / denom).collect();
+        let mut best = 0usize;
+        for i in 1..n_arms {
+            if means[i] > means[best] {
+                best = i;
+            }
+        }
+        out_legs.push(LegMatrix {
+            name: leg.name.clone(),
+            margins,
+            means,
+            argmax_arm: arms[best],
+            worlds_completed,
+        });
+    }
+
+    Ok(LegsOutcome {
+        arms: arms.to_vec(),
+        seat,
+        world_seeds,
+        legs: out_legs,
+        n_playouts,
+    })
+}
+
+/// ⛔ **INSTRUMENT ONLY (OM-M1).** [`arbitrate_decision`]'s trigger + arm set,
+/// then [`arbitrate_legs`] instead of [`arbitrate`].
+///
+/// The trigger, the arm build, the cap, the champion-pick append and the
+/// "fewer than 2 arms after dedupe ⇒ NOT fired" rule are the DEPLOYED ones,
+/// re-used rather than re-implemented — the whole point of the gate is that its
+/// fire set is the arbiter's own.
+#[allow(clippy::too_many_arguments)]
+pub fn arbitrate_decision_legs(
+    g: &Game,
+    champ_pick: i32,
+    leaf_cfg: &LeafConfig,
+    b: usize,
+    j: usize,
+    salt: &str,
+    eps: f64,
+    ply: i64,
+    max_plies: usize,
+    threads: usize,
+    legs: &[LegSpec],
+    scratch: &mut LeafScratch,
+) -> Result<Option<(ArmSet, LegsOutcome)>, String> {
+    if g.state.phase != Phase::Tiles {
+        return Ok(None);
+    }
+    let legal = g.legal_actions();
+    if legal.len() < 2 {
+        return Ok(None);
+    }
+    let seat = g.state.current_player;
+    let values = chain_values(g, seat, leaf_cfg, scratch)?;
+    let det = match detect_tie(&values, eps) {
+        None => return Ok(None),
+        Some(d) => d,
+    };
+    let digest = g.state_digest();
+    let arms = build_arms(g, &det.tie_actions, j, Some(champ_pick), salt, &digest, ply)?;
+    if arms.arms.len() < 2 {
+        return Ok(None);
+    }
+    let out = arbitrate_legs(
+        g, seat, &arms.arms, b, salt, &digest, ply, max_plies, threads, legs,
     )?;
     Ok(Some((arms, out)))
 }
@@ -1581,5 +1862,407 @@ mod tests {
                 "arbitrate_decision differs at threads={t}"
             );
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // OM-M1 — the refuter-leg instrument's golden gates
+    // ---------------------------------------------------------------------
+
+    /// The OM-M1 `R_max` (ceiling) refuter leaf.
+    fn refuter_max() -> LeafConfig {
+        let mut c = LeafConfig::curve125();
+        c.invasion_alpha = 1.0;
+        c.invasion_alpha_cap = 11.0;
+        c.invasion_beta = 1.0;
+        c
+    }
+
+    /// The `R_ref` dose: the shape-B invader OPPONENT OF RECORD
+    /// (`measurement/invasion_screen_r3_prep/DESIGN.md`, `alpha 0.09 @ cap 11.0`).
+    fn refuter_of_record() -> LeafConfig {
+        let mut c = LeafConfig::curve125();
+        c.invasion_alpha = 0.09;
+        c.invasion_alpha_cap = 11.0;
+        c
+    }
+
+    fn leg_bits(l: &LegMatrix) -> (Vec<Vec<u64>>, Vec<u64>, i32, usize) {
+        (
+            l.margins
+                .iter()
+                .map(|r| r.iter().map(|v| v.to_bits()).collect())
+                .collect(),
+            l.means.iter().map(|m| m.to_bits()).collect(),
+            l.argmax_arm,
+            l.worlds_completed,
+        )
+    }
+
+    /// ⭐ `G-BITEXACT` — the instrument's symmetric leg IS the deployed
+    /// arbiter, to the bit. If this ever fails, every flip rate the gate
+    /// reports is measuring the harness instead of the mechanism.
+    #[test]
+    fn symmetric_leg_is_bit_identical_to_the_deployed_arbiter() {
+        let g = tiles_root("28000000000", 40);
+        let seat = g.state.current_player;
+        let arms: Vec<i32> = g.legal_actions().into_iter().take(3).collect();
+        let digest = g.state_digest();
+        let b = 6usize;
+        for &threads in &[1usize, 3] {
+            let want = arbitrate(
+                &g,
+                seat,
+                &arms,
+                b,
+                TIEARB_SALT_OF_RECORD,
+                &digest,
+                17,
+                TiearbMode::Argmax,
+                TIEARB_MAX_PLIES,
+                threads,
+            )
+            .unwrap();
+            let got = arbitrate_legs(
+                &g,
+                seat,
+                &arms,
+                b,
+                TIEARB_SALT_OF_RECORD,
+                &digest,
+                17,
+                TIEARB_MAX_PLIES,
+                threads,
+                &[LegSpec::symmetric("S")],
+            )
+            .unwrap();
+            let leg = &got.legs[0];
+            assert_eq!(
+                leg.means.iter().map(|m| m.to_bits()).collect::<Vec<_>>(),
+                want.means.iter().map(|m| m.to_bits()).collect::<Vec<_>>(),
+                "G-BITEXACT: symmetric-leg means differ from arbitrate at threads={threads}"
+            );
+            assert_eq!(leg.argmax_arm, want.argmax_arm, "G-BITEXACT: argmax differs");
+            assert_eq!(leg.worlds_completed, b, "G-COMPLETE");
+            assert_eq!(got.arms, want.arms);
+            for j in 0..b {
+                assert_eq!(
+                    got.world_seeds[j],
+                    seed_i64(&[TIEARB_SALT_OF_RECORD, &digest, "17", &j.to_string()]),
+                    "G-CRN: world seed {j}"
+                );
+            }
+        }
+    }
+
+    /// ⭐ `G-INERT` — a refuter leg whose invasion weights are all `0.0` is the
+    /// PLACEBO leg to the bit, not merely equal to it. This is what licenses
+    /// reading `R − P` as "the policy change alone": if the armed-but-zero path
+    /// diverged, the two legs would differ by an unpriced code path as well.
+    #[test]
+    fn refuter_with_zero_weights_is_bit_identical_to_plain_greedy() {
+        let g = tiles_root("28000000001", 40);
+        let seat = g.state.current_player;
+        let arms: Vec<i32> = g.legal_actions().into_iter().take(3).collect();
+        let digest = g.state_digest();
+        let inert = LeafConfig::curve125(); // every invasion weight defaults to 0.0
+        assert!(RefuterConfig {
+            refuter_seat: 1 - seat,
+            leaf: inert.clone()
+        }
+        .is_inert());
+        let out = arbitrate_legs(
+            &g,
+            seat,
+            &arms,
+            5,
+            TIEARB_SALT_OF_RECORD,
+            &digest,
+            9,
+            TIEARB_MAX_PLIES,
+            1,
+            &[
+                LegSpec::restreamed("P", &["omm1-leg2"], None),
+                LegSpec::restreamed("R0", &["omm1-leg2"], Some(inert)),
+            ],
+        )
+        .unwrap();
+        assert_eq!(
+            leg_bits(&out.legs[1]),
+            leg_bits(&out.legs[0]),
+            "G-INERT: an all-zero refuter must be the placebo leg bit for bit"
+        );
+    }
+
+    /// The placebo leg is a REAL null: same policy, same worlds, DIFFERENT
+    /// stream.
+    #[test]
+    fn the_placebo_leg_shares_worlds_but_not_the_playout_stream() {
+        let g = tiles_root("28000000002", 40);
+        let seat = g.state.current_player;
+        let arms: Vec<i32> = g.legal_actions().into_iter().take(3).collect();
+        let digest = g.state_digest();
+        let out = arbitrate_legs(
+            &g,
+            seat,
+            &arms,
+            8,
+            TIEARB_SALT_OF_RECORD,
+            &digest,
+            21,
+            TIEARB_MAX_PLIES,
+            1,
+            &[
+                LegSpec::symmetric("S"),
+                LegSpec::restreamed("P", &["omm1-leg2"], None),
+            ],
+        )
+        .unwrap();
+        assert_eq!(out.legs[0].margins.len(), out.legs[1].margins.len());
+        assert_eq!(out.world_seeds.len(), 8);
+        assert_ne!(
+            seed_i64(&[TIEARB_SALT_OF_RECORD, &digest, "21", "0", "playout"]),
+            seed_i64(&[
+                TIEARB_SALT_OF_RECORD,
+                &digest,
+                "21",
+                "0",
+                "playout",
+                "omm1-leg2"
+            ]),
+            "the placebo must not reuse the deployed playout seed"
+        );
+    }
+
+    /// An armed leg is genuinely a different computation — otherwise the gate
+    /// would report a structural zero no matter what the mechanism does.
+    #[test]
+    fn an_armed_refuter_leg_actually_changes_something() {
+        let mut any_change = false;
+        for seed in ["28000000000", "28000000001", "28000000002", "28000000003"] {
+            let g = tiles_root(seed, 40);
+            let seat = g.state.current_player;
+            let arms: Vec<i32> = g.legal_actions().into_iter().take(3).collect();
+            if arms.len() < 2 {
+                continue;
+            }
+            let digest = g.state_digest();
+            let out = arbitrate_legs(
+                &g,
+                seat,
+                &arms,
+                8,
+                TIEARB_SALT_OF_RECORD,
+                &digest,
+                31,
+                TIEARB_MAX_PLIES,
+                1,
+                &[
+                    LegSpec::restreamed("P", &["omm1-leg2"], None),
+                    LegSpec::restreamed("Rmax", &["omm1-leg2"], Some(refuter_max())),
+                    LegSpec::restreamed("Rref", &["omm1-leg2"], Some(refuter_of_record())),
+                ],
+            )
+            .unwrap();
+            if leg_bits(&out.legs[1]) != leg_bits(&out.legs[0]) {
+                any_change = true;
+            }
+            assert_eq!(out.legs[2].worlds_completed, 8, "G-COMPLETE on the R_ref leg");
+        }
+        assert!(
+            any_change,
+            "an armed R_max refuter changed no margin on any of 4 positions x 8 \
+             worlds x 3 arms — the instrument would report a structural zero"
+        );
+    }
+
+    /// Threading is a latency knob on the multi-leg path too.
+    #[test]
+    fn arbitrate_legs_is_thread_count_invariant() {
+        let g = tiles_root("28000000004", 40);
+        let seat = g.state.current_player;
+        let arms: Vec<i32> = g.legal_actions().into_iter().take(2).collect();
+        let digest = g.state_digest();
+        let specs = [
+            LegSpec::symmetric("S"),
+            LegSpec::restreamed("Rmax", &["omm1-leg2"], Some(refuter_max())),
+        ];
+        let want = arbitrate_legs(
+            &g, seat, &arms, 6, TIEARB_SALT_OF_RECORD, &digest, 5, TIEARB_MAX_PLIES, 1, &specs,
+        )
+        .unwrap();
+        for t in [2usize, 4, 6] {
+            let got = arbitrate_legs(
+                &g, seat, &arms, 6, TIEARB_SALT_OF_RECORD, &digest, 5, TIEARB_MAX_PLIES, t, &specs,
+            )
+            .unwrap();
+            for (a, b) in got.legs.iter().zip(want.legs.iter()) {
+                assert_eq!(
+                    leg_bits(a),
+                    leg_bits(b),
+                    "leg {} differs at threads={t}",
+                    a.name
+                );
+            }
+            assert_eq!(got.world_seeds, want.world_seeds);
+        }
+    }
+
+    /// The deployed `B = 16` arbitration is the first 16 worlds of a `B = 64`
+    /// run, bit for bit — the world seed does not depend on `B`. The prereg
+    /// leans on this to recover the deployed pick for free.
+    #[test]
+    fn a_wider_run_contains_the_narrower_one_world_for_world() {
+        let g = tiles_root("28000000005", 40);
+        let seat = g.state.current_player;
+        let arms: Vec<i32> = g.legal_actions().into_iter().take(2).collect();
+        let digest = g.state_digest();
+        let narrow = arbitrate_legs(
+            &g,
+            seat,
+            &arms,
+            4,
+            TIEARB_SALT_OF_RECORD,
+            &digest,
+            11,
+            TIEARB_MAX_PLIES,
+            1,
+            &[LegSpec::symmetric("S")],
+        )
+        .unwrap();
+        let wide = arbitrate_legs(
+            &g,
+            seat,
+            &arms,
+            12,
+            TIEARB_SALT_OF_RECORD,
+            &digest,
+            11,
+            TIEARB_MAX_PLIES,
+            1,
+            &[LegSpec::symmetric("S")],
+        )
+        .unwrap();
+        assert_eq!(narrow.world_seeds, wide.world_seeds[..4]);
+        for j in 0..4 {
+            assert_eq!(
+                narrow.legs[0].margins[j]
+                    .iter()
+                    .map(|v| v.to_bits())
+                    .collect::<Vec<_>>(),
+                wide.legs[0].margins[j]
+                    .iter()
+                    .map(|v| v.to_bits())
+                    .collect::<Vec<_>>(),
+                "world {j} must be identical at B=4 and B=12"
+            );
+        }
+    }
+
+    /// `arbitrate_decision_legs` fires on exactly the plies `arbitrate_decision`
+    /// fires on, with exactly the same arm set — the gate's population IS the
+    /// deployed arbiter's.
+    #[test]
+    fn the_multi_leg_decision_fires_on_the_deployed_trigger() {
+        let cfg = LeafConfig::curve125();
+        let mut s = LeafScratch::new();
+        let mut g = tiles_root("28000000000", 120);
+        let mut checked = 0usize;
+        for _ in 0..25 {
+            let champ = g.legal_actions()[0];
+            let want = arbitrate_decision(
+                &g,
+                champ,
+                &cfg,
+                3,
+                4,
+                TIEARB_SALT_OF_RECORD,
+                0.0,
+                13,
+                TiearbMode::Argmax,
+                TIEARB_MAX_PLIES,
+                1,
+                &mut s,
+            )
+            .unwrap();
+            let got = arbitrate_decision_legs(
+                &g,
+                champ,
+                &cfg,
+                3,
+                4,
+                TIEARB_SALT_OF_RECORD,
+                0.0,
+                13,
+                TIEARB_MAX_PLIES,
+                1,
+                &[LegSpec::symmetric("S")],
+                &mut s,
+            )
+            .unwrap();
+            assert_eq!(
+                want.is_some(),
+                got.is_some(),
+                "the two decision paths must agree on FIRED"
+            );
+            if let (Some((wa, wo)), Some((ga, go))) = (want, got) {
+                assert_eq!(wa.arms, ga.arms, "arm sets must be identical");
+                assert_eq!(
+                    go.legs[0]
+                        .means
+                        .iter()
+                        .map(|m| m.to_bits())
+                        .collect::<Vec<_>>(),
+                    wo.means.iter().map(|m| m.to_bits()).collect::<Vec<_>>(),
+                );
+                assert_eq!(go.legs[0].argmax_arm, wo.argmax_arm);
+                checked += 1;
+            }
+            let l = g.legal_actions();
+            g.advance(l[l.len() / 2]).unwrap();
+            while !g.is_terminal() && (g.state.phase != Phase::Tiles || g.legal_actions().len() < 2)
+            {
+                let l = g.legal_actions();
+                g.advance(l[l.len() / 2]).unwrap();
+            }
+            if g.is_terminal() {
+                break;
+            }
+        }
+        assert!(checked > 0, "the trigger never fired — the test is vacuous");
+    }
+
+    /// Fail-closed on the two shapes a caller can get wrong.
+    #[test]
+    fn arbitrate_legs_refuses_an_empty_arm_set_or_no_legs() {
+        let g = tiles_root("28000000000", 30);
+        let seat = g.state.current_player;
+        let arms: Vec<i32> = g.legal_actions().into_iter().take(2).collect();
+        let d = g.state_digest();
+        assert!(arbitrate_legs(
+            &g,
+            seat,
+            &[],
+            2,
+            TIEARB_SALT_OF_RECORD,
+            &d,
+            0,
+            TIEARB_MAX_PLIES,
+            1,
+            &[LegSpec::symmetric("S")]
+        )
+        .is_err());
+        assert!(arbitrate_legs(
+            &g,
+            seat,
+            &arms,
+            2,
+            TIEARB_SALT_OF_RECORD,
+            &d,
+            0,
+            TIEARB_MAX_PLIES,
+            1,
+            &[]
+        )
+        .is_err());
     }
 }

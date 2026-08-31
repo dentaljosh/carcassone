@@ -68,10 +68,18 @@ def bank_roots():
 # 1. FIDELITY — chain_census.chain_values must be bit-identical to
 #    mine_disagreements.chain_values(..., ply_class="TILE") on real positions.
 # --------------------------------------------------------------------------- #
-def test_chain_values_bit_identical_to_mine_disagreements(bank_roots, leaf):
+def test_chain_values_bit_identical_to_mine_disagreements(bank_roots, leaf, legacy_cache_key):
     """Imports `mine_disagreements` locally (heavy import-time side effects are
     fine inside a test; production code under scripts/tiletie/ never imports
-    it — see chain_census.py's module docstring)."""
+    it — see chain_census.py's module docstring).
+
+    ⚠️ Pinned to the LEGACY key (`legacy_cache_key`): the bank's `checksum` field
+    IS a literal `Game.string_representation` string, banked before the 2026-08-30
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` default flip. The replay-identity assertion
+    below therefore has to speak the key the bank was written in. This is a
+    BANKED-ARTIFACT pin, not a statement that the old key is right — the census
+    that produced this bank is on the re-run list
+    (`measurement/legal_cache_key_20260830/FINDING.md` §6)."""
     import mine_disagreements as MD
 
     n_compared = 0
@@ -232,7 +240,9 @@ def test_census_ply_deterministic(bank_roots, leaf):
 # 4. schema — every emitted row has the full documented key set and             #
 #    JSON-serialises                                                             #
 # --------------------------------------------------------------------------- #
-def test_census_ply_schema(bank_roots, leaf):
+def test_census_ply_schema(bank_roots, leaf, legacy_cache_key):
+    # ⚠️ LEGACY-key pinned for the same reason as the fidelity test above: the row's
+    # `checksum` is a `string_representation` string compared against the bank's.
     for rec in bank_roots:
         game, board = RR.replay_actions(int(rec["deck_seed"]), rec["actions"], int(rec["ply"]))
         seat = int(board.state.current_player)

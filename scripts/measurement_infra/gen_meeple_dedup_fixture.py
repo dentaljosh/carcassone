@@ -6,7 +6,14 @@ replays exactly this scenario with the flag OFF (the default) and demands the sa
 action sequence and the same root visit counts. That is the guard that the champion's
 search is byte-for-byte unchanged when ``CARCASSONNE_MEEPLE_DEDUP`` is not set.
 
-    .venv/bin/python scripts/measurement_infra/gen_meeple_dedup_fixture.py
+    CARCASSONNE_FIX_LEGAL_CACHE_KEY=0 \
+      .venv/bin/python scripts/measurement_infra/gen_meeple_dedup_fixture.py
+
+⚠️ The banked golden (which pins a literal `final_key`) predates the 2026-08-30
+`CARCASSONNE_FIX_LEGAL_CACHE_KEY` default flip, and `string_representation` IS that
+key, so the replaying test is pinned to the legacy key (`legacy_cache_key` fixture).
+Regenerate with `CARCASSONNE_FIX_LEGAL_CACHE_KEY=0` to stay comparable, or re-pin the
+test to the new key and regenerate WITHOUT it — but do not mix the two.
 
 Deliberately tiny (sims=24, k_dets=2, 40 plies) so the test costs seconds; bit-exactness
 is budget-independent. The leaf env below is the frozen-v2.9 preamble
