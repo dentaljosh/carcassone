@@ -280,6 +280,105 @@ def test_prod_knobs_match_the_argparse_defaults():
     assert any("k_dets" in d for d in dev) and any("sims" in d for d in dev)
 
 
+def _yaml_champion_knobs():
+    """governance/PRODUCTION.yaml, parsed INDEPENDENTLY of champion_factory, at the exact
+    addresses PROD_KNOB_YAML_ADDRESSES documents. Deliberately not routed through the
+    loader under test — otherwise the assertion would be a tautology."""
+    import pathlib
+
+    import yaml
+
+    repo = pathlib.Path(efp.__file__).resolve().parents[2]
+    doc = yaml.safe_load((repo / "governance" / "PRODUCTION.yaml")
+                         .read_text(encoding="utf-8"))
+    champ = doc["champion"]
+    return {"c_puct": float(champ["agent_knobs"]["c_puct"]),
+            "tau_p": float(champ["agent_knobs"]["tau_p"]),
+            "leaf_quantize": str(champ["agent_knobs"]["leaf_quantize"]),
+            "value_norm": float(champ["agent_knobs"]["value_norm"]),
+            "k_dets": int(champ["fair_deploy"]["k_dets"]),
+            "sims": int(champ["fair_deploy"]["sims_per_det"])}
+
+
+def test_prod_knobs_are_loaded_from_production_yaml_not_restated():
+    """⭐ THE REGRESSION TEST for the 2026-08-31 stale-restatement fix.
+
+    PROD_KNOBS used to be a hard-coded dict. It went stale TWICE — the 2026-07-30 banner
+    inversion, then the 2026-08-30 k16x1376 promotion, which made every TRUE-champion cell
+    print a spurious deviation warning AND stamp a FALSE
+    `production_config_deviations: ['k_dets=16 (production 8)']` into a healthy manifest.
+    A copy cannot be kept in sync by discipline, so this test asserts there IS no copy:
+    every knob equals the YAML read independently, at the documented address."""
+    want = _yaml_champion_knobs()
+    assert efp.PROD_KNOBS == want, \
+        "PROD_KNOBS drifted from governance/PRODUCTION.yaml — it must be LOADED, not typed"
+    assert set(efp.PROD_KNOB_YAML_ADDRESSES) == set(want)
+
+
+def test_prod_deviations_is_empty_at_exactly_the_yaml_champion_config():
+    """An args object built from the YAML's own numbers is BY CONSTRUCTION the shipped
+    champion, so the banner must stay silent; move any ONE knob and it must fire, naming
+    that knob and the YAML's value."""
+    class A:
+        pass
+
+    yaml_knobs = _yaml_champion_knobs()
+    a = A()
+    for k, v in yaml_knobs.items():
+        setattr(a, k, v)
+    assert efp._prod_deviations(a) == []
+
+    for k, moved in (("k_dets", yaml_knobs["k_dets"] * 2),
+                     ("sims", yaml_knobs["sims"] + 1),
+                     ("c_puct", yaml_knobs["c_puct"] + 0.5),
+                     ("tau_p", yaml_knobs["tau_p"] + 1.0),
+                     ("value_norm", yaml_knobs["value_norm"] + 1.0),
+                     ("leaf_quantize", "int")):
+        off = A()
+        for kk, vv in yaml_knobs.items():
+            setattr(off, kk, vv)
+        setattr(off, k, moved)
+        dev = efp._prod_deviations(off)
+        assert len(dev) == 1 and dev[0].startswith(f"{k}="), (k, dev)
+        # ... and it quotes the YAML as the authority, not a constant.
+        assert "production" in dev[0]
+
+
+def test_unreadable_production_yaml_disables_the_banner_loudly():
+    """⛔ FAIL LOUD, NEVER FALL BACK. If the YAML cannot be read the loader must say so on
+    stderr and return an EMPTY knob set (banner disabled) — never silently substitute
+    constants, which is the exact failure mode the loader replaces."""
+    import io
+    from contextlib import redirect_stderr
+
+    def _boom(*a, **kw):
+        raise FileNotFoundError("governance/PRODUCTION.yaml")
+
+    orig = efp.champion_factory.load_production_spec
+    efp.champion_factory.load_production_spec = _boom
+    try:
+        err = io.StringIO()
+        with redirect_stderr(err):
+            knobs = efp._load_prod_knobs()
+    finally:
+        efp.champion_factory.load_production_spec = orig
+
+    assert knobs == {}
+    msg = err.getvalue()
+    assert "PRODUCTION.yaml" in msg and "DISABLED" in msg
+    assert "FileNotFoundError" in msg
+    # The loader is the ONLY source, so a disabled banner reports nothing rather than
+    # asserting a deviation it cannot know about.
+    class A:
+        pass
+    a = A()
+    saved, efp.PROD_KNOBS = efp.PROD_KNOBS, knobs
+    try:
+        assert efp._prod_deviations(a) == []
+    finally:
+        efp.PROD_KNOBS = saved
+
+
 # --------------------------------------------------------------------------- #
 # (f) result semantics
 # --------------------------------------------------------------------------- #
@@ -411,8 +510,18 @@ def test_cl060_h2h_is_expressible_only_with_both_flags():
     dev_opp = efp._prod_deviations(a, sims_override=efp._opp_eff_sims(a),
                                    k_dets_override=efp._opp_eff_k_dets(a))
     assert any("k_dets=4" in d for d in dev_opp) and any("sims=688" in d for d in dev_opp)
-    # the CANDIDATE is literally the shipped champion on both budget axes
-    assert efp._prod_deviations(a) == []
+    # A candidate at the SHIPPED budget is literally the champion on both budget axes.
+    # ⚠️ 2026-08-31: this used to read `_prod_deviations(a) == []` on the k8x1376 candidate
+    # — true only while k8x1376 WAS production. The 2026-08-30 k16x1376 promotion falsified
+    # it: the audit-F9 stale-restatement class, in test form, for the SECOND time (see this
+    # test's own docstring). The budget now comes from PROD_KNOBS, which eval_fair_puct
+    # loads from governance/PRODUCTION.yaml, so no promotion can strand it again.
+    champ = _Args(sims=efp.PROD_KNOBS["sims"], k_dets=efp.PROD_KNOBS["k_dets"],
+                  opp_sims=688, opp_k_dets=4)
+    assert efp._prod_deviations(champ) == []
+    # ... and the CL-060-era k8 candidate reads as a deviation whenever it is not shipped.
+    if efp.PROD_KNOBS["k_dets"] != 8:
+        assert any("k_dets=8" in d for d in efp._prod_deviations(a))
 
 
 def test_h800_rung_ignores_opp_k_dets():
@@ -443,10 +552,14 @@ def test_opp_label_reports_the_opponents_own_budget():
 
 
 def test_prod_deviations_k_dets_override_mirrors_sims_override():
-    a = _Args(sims=1376, k_dets=4)
-    assert any("k_dets=4" in d for d in efp._prod_deviations(a))
+    # The candidate's k_dets is deliberately OFF the shipped one; the production value is
+    # READ (PROD_KNOBS <- governance/PRODUCTION.yaml), never typed here.
+    prod_k, prod_sims = efp.PROD_KNOBS["k_dets"], efp.PROD_KNOBS["sims"]
+    off_k = 4 if prod_k != 4 else 2
+    a = _Args(sims=prod_sims, k_dets=off_k)
+    assert any(f"k_dets={off_k}" in d for d in efp._prod_deviations(a))
     # the OPPONENT block substitutes ITS own k_dets -> production, no deviation
-    assert efp._prod_deviations(a, k_dets_override=8) == []
+    assert efp._prod_deviations(a, k_dets_override=prod_k) == []
 
 
 def test_summary_asymmetry_block_is_absent_when_symmetric():

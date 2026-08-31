@@ -3,6 +3,7 @@ and its hash constants agree with the authoritative harness/snapshot dialects (n
 no copy divergence). The factory is the R1/R7-class runtime guard for the classical
 champion; if it can be spoofed the whole audit is worthless."""
 import json
+import pathlib
 
 import pytest
 
@@ -10,15 +11,43 @@ from carcassonne_ai import champion_factory as cf
 from carcassonne_ai import eval_provenance as ep
 
 
+def _yaml_doc():
+    """governance/PRODUCTION.yaml parsed INDEPENDENTLY of champion_factory.
+
+    ⚠️ 2026-08-31: the budget expectations in this file used to be LITERALS (k8x1376 /
+    11008). The 2026-08-30 k16x1376 desktop promotion made five tests here fail against a
+    perfectly healthy factory — the same stale-restatement defect that put a FALSE
+    `production_config_deviations: ['k_dets=16 (production 8)']` into eval_fair_puct
+    manifests. The budget is the OWNER's to move; what this suite owns is that the factory
+    reads whatever the YAML says, at the right address. So: read the YAML here (raw, not
+    through the loader under test) and compare the factory against IT.
+
+    What is still asserted as a literal is what is NOT a budget: the champion id, the
+    search knobs the promotions never touch, and the three verified leaf hashes — those
+    are IDENTITY, and a silent change to them is exactly what this suite must catch."""
+    import yaml
+
+    p = pathlib.Path(cf.__file__).resolve().parents[2] / "governance" / "PRODUCTION.yaml"
+    return yaml.safe_load(p.read_text(encoding="utf-8"))
+
+
+def _yaml_fair_budget():
+    """(k_dets, sims_per_det, total) at champion.fair_deploy — the budget of record."""
+    fair = _yaml_doc()["champion"]["fair_deploy"]
+    k, s = int(fair["k_dets"]), int(fair["sims_per_det"])
+    return k, s, k * s
+
+
 def test_spec_matches_production_yaml():
     spec = cf.load_production_spec()
     assert spec.champion_id == "puct_priors_v29_bmild_cap8"
     assert (spec.c_puct, spec.tau_p, spec.value_norm) == (1.5, 5.0, 15.0)
     assert spec.leaf_quantize == "float" and spec.final_select == "visits"
-    # PROMOTED 2026-07-29 (Joshua): fair deploy k4x688=2752 -> k8x1376=11008 on the CL-060
-    # head-to-head (+49.85, paired z 3.48), made clock-legal by the behavior-identical
-    # 8-way k-parallel split. Same agent/leaf/priors/endgame; budget + execution only.
-    assert (spec.k_dets, spec.sims_per_det) == (8, 1376)
+    # The fair deploy budget is READ, not restated (see _yaml_doc). It has moved three
+    # times — k4x688=2752 (2026-07-13), k8x1376=11008 (2026-07-29, CL-060), k16x1376=22016
+    # (2026-08-30 owner ruling) — and each move used to break this assertion.
+    k, s, _total = _yaml_fair_budget()
+    assert (spec.k_dets, spec.sims_per_det) == (k, s)
     assert spec.exact_max_k == 2
     assert tuple(spec.curve) == cf.CURVE125
     assert (spec.bonus_cap, spec.opp_bonus_cap) == (8.0, 8.0)
@@ -46,7 +75,8 @@ def test_deploy_profiles_and_the_mobile_unpin():
     desktop = cf.deploy_profile("desktop", spec)
     assert desktop["found"] is True
     assert (desktop["k_dets"], desktop["sims_per_det"]) == (spec.k_dets, spec.sims_per_det)
-    assert desktop["total_sims"] == 11008 and desktop["parallel_workers"] == 8
+    assert desktop["total_sims"] == spec.k_dets * spec.sims_per_det
+    assert desktop["parallel_workers"] == 8
     assert desktop["backend"] == "rust"
 
     mobile = cf.deploy_profile("mobile", spec)
@@ -71,9 +101,10 @@ def test_deploy_profiles_and_the_mobile_unpin():
 
 def test_fair_manifest_matches_intent():
     m = cf.resolved_manifest("fair")
+    k, s, total = _yaml_fair_budget()
     assert m["agent_class"] == "FairHeuristicPriorAgent"
     assert m["fair_deploy"] == {
-        "k_dets": 8, "sims_per_det": 1376, "total_sims": 11008, "exact_max_k": 2,
+        "k_dets": k, "sims_per_det": s, "total_sims": total, "exact_max_k": 2,
         "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"}
     assert m["leaf"]["curve125"] == list(cf.CURVE125)
     assert m["leaf"]["bonus_cap"] == 8.0 and m["leaf"]["value_blend"] == 0.0
@@ -361,8 +392,9 @@ def test_fair_agent_is_the_production_shape():
                                     else "FairHeuristicPriorAgent")
     py = cf.make_production_champion("fair", seed=101, backend="python")
     assert type(py).__name__ == "FairHeuristicPriorAgent"
+    k, s, _total = _yaml_fair_budget()
     for a in (agent, py):
-        assert a._sims == 1376 and a._k_dets == 8 and a._exact_max_k == 2
+        assert a._sims == s and a._k_dets == k and a._exact_max_k == 2
         assert a._exact_endgame is True
         assert hasattr(a, "manifest")
 
@@ -377,12 +409,14 @@ def test_clairvoyant_agent_uses_reuse_tree():
     agent = cf.make_production_champion("clairvoyant", seed=5)
     assert type(agent).__name__ == "HeuristicPriorAgent"
     assert "backend" not in agent.manifest
-    # A sims-less clairvoyant build derives its budget as k_dets * sims_per_det, so the
-    # 2026-07-29 fair-deploy promotion moved this default 2752 -> 11008. Every REAL
-    # clairvoyant caller (oracle_score_pilot, gate_b_depth_transfer, eval_fair_puct's
-    # prefix agent) passes explicit sims and is unaffected; a clairvoyant RULER
-    # reproduction must pass sims=2752 explicitly (PRODUCTION.yaml champion.sims).
-    assert agent.simulations == 11008
+    # A sims-less clairvoyant build derives its budget as k_dets * sims_per_det, so EVERY
+    # fair-deploy budget promotion moves this default (2752 -> 11008 on 2026-07-29 ->
+    # 22016 on 2026-08-30). Every REAL clairvoyant caller (oracle_score_pilot,
+    # gate_b_depth_transfer, eval_fair_puct's prefix agent) passes explicit sims and is
+    # unaffected; a clairvoyant RULER reproduction must pass sims=2752 explicitly
+    # (PRODUCTION.yaml champion.sims). The derivation is what is asserted here, not a
+    # number — see _yaml_doc.
+    assert agent.simulations == _yaml_fair_budget()[2]
     assert agent._reuse_tree is True   # YAML reuse_tree=true is live in clairvoyant mode
     assert agent.manifest["mode"] == "clairvoyant"
 
