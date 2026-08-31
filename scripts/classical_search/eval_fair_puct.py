@@ -1412,8 +1412,25 @@ _NET_OPPONENTS = ("net", _BARE_NET)
 def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
                    opp_leaf_cfg=None, net=None, handles=None, sighted_game=None,
                    rep=None, opp_sims=None, opp_k_dets=None,
-                   backend="python", rust_threads=None, wc_tiebreak=False):
+                   backend="python", rust_threads=None, wc_tiebreak=False,
+                   tiearb=None):
     """Build the OPPONENT side.
+
+    ``tiearb`` (measurement/opp_tiearb plumbing, 2026-08-31) is THE TIE ARBITER on
+    the OPPONENT seat — the symmetric twin of the candidate's `--cand-tiearb-*`.
+    `None` (every historical caller, and every unarmed run) passes NOTHING down and
+    is byte-identical to the pre-plumbing build; a dict {enabled, B, J, mode, salt,
+    eps, phase_gate} reaches the head-to-head opponent's `_cfg_from_dict` exactly the
+    way the candidate's reaches `_play_one_inner`'s. ⛔ WHY THIS COULD NOT RIDE
+    `cfg_dict`: `_cfg_from_dict` reads FIVE keys by name and drops the rest, so an
+    injected `tiearb` key there is silently inert — and `cfg_dict` is SHARED with the
+    candidate anyway, so it could never express a one-sided arm. The absence of this
+    parameter is what made an ARB-ON-both-sides cell inexpressible and distorted
+    three designs (phasegate's B16 contortion, G3's arb-off constraint, and the
+    2026-08-30 H2H prereg). RUST-ONLY and `fair-champion`-only, like the candidate's:
+    the arbiter binds at carc_core's pooled_q_argmax root hook, so a LEAFLESS RUNG or
+    a python opponent cannot host it and an armed one raises here rather than playing
+    an unarmed seat under an armed cell's name.
 
     ``wc_tiebreak`` (rule of the MATCH; see `_make_champion`'s docstring) reaches
     ONLY the head-to-head modes (`fair-champion`/`net`), which own an exact-endgame
@@ -1460,6 +1477,15 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
     whole-config A/B like CL-060's k8x1376 candidate vs the k4x688 DEPLOY champion)
     rather than an equal-budget swap. None -> symmetric (uses `sims`/`k_dets`).
     """
+    _tiearb_on = bool(tiearb) and bool(tiearb.get("enabled"))
+    if _tiearb_on and opponent != "fair-champion":
+        # Fail LOUD. A silently-unarmed opponent on an armed cell is the J13 shape:
+        # it plays the champion, passes every other gate, and grades a one-sided
+        # cell wearing a both-sides name.
+        raise ValueError(
+            f"the OPPONENT tie arbiter is armed but --opponent is {opponent!r}: only "
+            "the `fair-champion` head-to-head is the production PIMC agent that can "
+            "host it (the rungs are frozen rulers and stay python)")
     if opponent == _GREEDY:
         # tier1 / the L2 ladder's `greedy` rung. No budget knobs at all (rejected at the
         # CLI); `seed + 1` keeps the two sides off a shared stream, as for every other
@@ -1486,7 +1512,10 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
                                        handles=handles)
     if opponent not in _HEAD_TO_HEAD:
         raise ValueError(f"unknown opponent mode {opponent!r}")
-    opp_cfg = _cfg_from_dict(cfg_dict, opp_leaf_cfg)
+    # `tiearb=` is the ONLY per-side knob injected here: everything else rides the
+    # SHARED `cfg_dict`, which is what makes a head-to-head a clean single-variable
+    # swap. `None` -> `_cfg_from_dict`'s pre-plumbing default, byte-identical.
+    opp_cfg = _cfg_from_dict(cfg_dict, opp_leaf_cfg, tiearb=tiearb)
     info = "fair" if opponent == "fair-champion" else "fair-netprior"
     # --opp-sims / --opp-k-dets: the head-to-head opponent may run an ASYMMETRIC
     # per-determinization budget AND/OR determinization count (the equal-wall-clock
@@ -1683,6 +1712,15 @@ class GameResult:
     # READ_RULE §2's `phi`: a cell whose sum is 0 never fired the surface and
     # `G-FIRE` VOIDS it — it must NOT be read as a null.
     cand_tiearb: dict | None = None
+    # TIE ARBITER (OPPONENT side): the SAME per-game block for the opponent seat,
+    # read off ITS FairAgentRs.stats() at game end (2026-08-31 opponent-side
+    # plumbing). None for every unarmed opponent — i.e. for every cell ever played
+    # before the `--opp-tiearb-*` flags existed — so `opp_tiearb: null` is the
+    # positive "this seat was not armed" statement, exactly as `cand_tiearb: null`
+    # is on the candidate. ⚠️ On a BOTH-SIDES cell the two blocks are read
+    # TOGETHER: a cell whose opponent sum of `fired_plies` is 0 did not arbitrate
+    # on that seat and is NOT a symmetric cell, whatever its manifest says.
+    opp_tiearb: dict | None = None
     # ⭐ S1 §9.2(c) `R7`: the J-RULES PRIOR expansion census for THIS game, per
     # side — {"total", "own_mover", "boosted"} read off FairAgentRs.stats() at
     # game end (see _jr_expansions_telemetry for why a config echo is not
@@ -1954,7 +1992,7 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
                  netprior_backend=None, backend="python", rust_threads=None,
                  simsplit=None, cand_jrules_prior=None, cand_jrules_filter=None,
                  cand_exact_objective=None, cand_tiearb=None, wc_tiebreak=False,
-                 cand_search=None):
+                 cand_search=None, opp_tiearb=None):
     _W["info"] = info
     # CANDIDATE-ONLY PUCT KNOBS (measurement/fpu_resurrection_prep). A RESOLVED
     # dict {fpu_reduction, c_puct} from main(); reaches the CANDIDATE's
@@ -1972,6 +2010,15 @@ def _worker_init(info, champ_cfg_dict, sims, k_dets, exact_k, rung_sims,
     # {enabled, B, J, mode, salt, eps} from main(); `enabled=False` (or None) is
     # OFF and byte-identical to every historical cell.
     _W["cand_tiearb"] = cand_tiearb
+    # THE TIE ARBITER, OPPONENT side (2026-08-31 plumbing). A RESOLVED dict from
+    # main() when `--opp-tiearb-enabled` was passed, else None — and None is what
+    # every historical cell carries, so an unarmed opponent is built exactly as
+    # before. ⚠️ Unlike `cand_tiearb` (which main() ALWAYS resolves, even OFF,
+    # because G-J4 makes an absent `config.cand_tiearb` a FAIL) this one is None
+    # when unarmed BY DESIGN: the established gate vocabulary — phasegate's
+    # G-TIEARB-ARM — asserts "no tiearb container on the opponent", and an
+    # always-present opp block would fail every healthy legacy-shaped cell.
+    _W["opp_tiearb"] = opp_tiearb
     # E1 exact-K WIN objective (CANDIDATE side ONLY, rust-only; None = OFF =
     # margin = byte-identical). Resolved once in main().
     _W["cand_exact_objective"] = cand_exact_objective
@@ -2283,7 +2330,8 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
         opp_sims=_W.get("opp_sims"), opp_k_dets=_W.get("opp_k_dets"),
         backend=_W.get("backend", "python"),
         rust_threads=_W.get("rust_threads"),
-        wc_tiebreak=_W.get("wc_tiebreak", False))
+        wc_tiebreak=_W.get("wc_tiebreak", False),
+        tiearb=_W.get("opp_tiearb"))
 
     # Seat any Rust mirror on the REAL initial board before the first decision, and
     # advance it on EVERY applied action of BOTH seats below. No-op for python agents.
@@ -2324,6 +2372,9 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
         latch_k=champ.latch_k,
         cand_jf=_cand_jf_telemetry(champ),
         cand_tiearb=_cand_tiearb_telemetry(champ),
+        # THE TIE ARBITER, opponent seat — the play-derived witness that a
+        # both-sides cell REALLY was both-sides (None on every unarmed opponent).
+        opp_tiearb=_opp_tiearb_telemetry(rung),
         # S1 §9.2(c) `R7` — the play-derived J-rules-prior witness, BOTH sides.
         # The opponent is never armed (there is no --opp-jrules-prior knob), so
         # its census is the zero control that makes the candidate's readable.
@@ -2368,6 +2419,107 @@ def _cand_jf_telemetry(champ) -> dict | None:
     }
 
 
+def _tiearb_stats_block(s) -> dict:
+    """The per-game TIE-ARBITER block for the OPPONENT seat, read off ITS
+    `FairAgentRs.stats()`.
+
+    ⛔ WHY THIS IS A COPY OF `_cand_tiearb_telemetry`'s dict RATHER THAN A SHARED
+    HELPER THE CANDIDATE ALSO CALLS. The candidate's literal
+    `s["tiearb_phase_gate"]` / `s["tiearb_fired_early"]` subscripts inside that
+    function's own body are asserted BY SOURCE TEXT
+    (tests/test_tiearb_phase_gate.py::test_the_telemetry_subscripts_the_counters_so_a_stale_wheel_raises,
+    which slices the file at `def _cand_tiearb_telemetry`): that guard is the
+    house's anti-drift mechanism for a knob whose absence reads as a legitimate
+    zero, and factoring the body out silently disarms it. So the candidate keeps
+    its literal body and this is the opponent's.
+    ⚠️ THE TWO MUST NOT DRIFT: `tests/test_opp_tiearb_plumbing.py::
+    test_armed_opponent_block_is_schema_identical_to_the_candidates` feeds ONE
+    stats mapping to BOTH readers and asserts the dicts are EQUAL, so a key added
+    or renamed on one side fails immediately."""
+    return {
+        "tile_plies": int(s["tiearb_tile_plies"]),
+        # `fires` and `fired_plies` are THE SAME NUMBER under two names, on
+        # purpose: the adjudicator's `G-FIRE` reads `cand_tiearb.fires`
+        # fail-closed (an absent witness is a FAIL), while `fired_plies` is the
+        # name this harness's own summary block aggregates. Emitting one and not
+        # the other would void a perfectly good cell on a key spelling.
+        "fires": int(s["tiearb_fired_plies"]),
+        "fired_plies": int(s["tiearb_fired_plies"]),
+        "pickchanges": int(s["tiearb_pickchanges"]),
+        "arms_total": int(s["tiearb_arms_total"]),
+        "playouts_total": int(s["tiearb_playouts_total"]),
+        "secs": float(s["tiearb_secs"]),
+        # FAIL-SOFT counter. A tier1 continuation can hit the engine's window
+        # refusal or the ply ceiling deep in a determinized world; that falls
+        # back to the champion's own pick rather than killing the GAME (a
+        # candidate-correlated exclusion is invisible in the elo — the capoff
+        # pattern). Nonzero is REPORTABLE, not fatal, and it must never be
+        # invisible.
+        "errors": int(s.get("tiearb_errors") or 0),
+        "first_error": s.get("tiearb_first_error"),
+        # READ_RULE §0.F `G-PLY`: plies where an argmax was taken over FEWER
+        # than B completed worlds. 0 by construction — a playout failure aborts
+        # the WHOLE ply and reverts to the champion's own pick, because a
+        # partial world set would break the CRN pairing across arms, which is
+        # the entire basis of the ARB-vs-RND comparison. Emitted so that is
+        # WITNESSED in the cells that actually played, not asserted in prose.
+        # ⚠️ Non-zero OR ABSENT => U-UNREADABLE (absent is unknown-not-zero).
+        "partial_argmax": int(s.get("tiearb_partial_argmax") or 0),
+        "max_plies": int(s.get("tiearb_max_plies") or 0),
+        "mode": str(s["tiearb_mode"]),
+        "B": int(s["tiearb_b"]), "J": int(s["tiearb_j"]),
+        # ⭐⭐ THE PHASE FIRE-GATE and its per-phase fire counters
+        # (measurement/phasegate_prep/READ_RULE.md §4, `G-GATE` + `G-PHI`).
+        # ⛔ SUBSCRIPTED, NOT `.get()`: an ABSENT key means a STALE WHEEL that
+        # predates the gate, i.e. a side whose arbiter ran UNGATED — which
+        # on an `ARB_EARLY` cell is `ARB_FULL` wearing the primary's name and
+        # passes every other gate looking healthy. Fail LOUD here rather than
+        # bank 1,200 decks of a guaranteed-meaningless duplicate.
+        #
+        # `G-GATE` reads `phase_gate` (the knob was SET); `G-PHI` reads the
+        # three fired_* counters (the knob BOUND, witnessed by PLAY). Two
+        # independent witnesses, on purpose.
+        "phase_gate": str(s["tiearb_phase_gate"]),
+        "fired_early": int(s["tiearb_fired_early"]),
+        "fired_mid": int(s["tiearb_fired_mid"]),
+        "fired_late": int(s["tiearb_fired_late"]),
+        "pickchanges_early": int(s["tiearb_pickchanges_early"]),
+        "pickchanges_mid": int(s["tiearb_pickchanges_mid"]),
+        "pickchanges_late": int(s["tiearb_pickchanges_late"]),
+    }
+
+
+def _opp_tiearb_telemetry(rung) -> dict | None:
+    """TIE-ARBITER per-game liveness read (OPPONENT side) — the exact mirror of
+    `_cand_tiearb_telemetry`, and byte-identical in SHAPE (`_tiearb_stats_block`).
+
+    None unless the worker was armed with an ENABLED `opp_tiearb`, so every
+    historical cell and every candidate-only cell stamps `opp_tiearb: null` — the
+    positive "this seat was NOT armed" statement the two-sided gates read.
+
+    ⛔ An armed opponent with no `FairAgentRs` RAISES rather than stamping None:
+    the opponent is reached through `_MarginalizedHandoff`, so the rust agent lives
+    at `._prefix` (hence `_fair_rs`, not `champ._rs`) — and a silent None there is
+    precisely the failure this plumbing exists to end, a cell CLAIMING both sides
+    armed while one seat played the plain champion."""
+    t = _W.get("opp_tiearb")
+    if not t or not bool(t.get("enabled")):
+        return None
+    rs = _fair_rs(rung)
+    if rs is None:
+        raise RuntimeError(
+            "opp_tiearb is armed but the opponent has no FairAgentRs (the tie "
+            "arbiter is rust-only, and only the fair-champion head-to-head can "
+            "host it) — it cannot have run")
+    s = rs.stats()
+    if not bool(s.get("tiearb_enabled")):
+        raise RuntimeError(
+            "opp_tiearb is armed but the OPPONENT's FairAgentRs.stats() reports "
+            "tiearb_enabled=False — the knob was dropped between main() and the "
+            "rust config (a STALE carc_rs wheel is the usual cause)")
+    return _tiearb_stats_block(s)
+
+
 def _cand_tiearb_telemetry(champ) -> dict | None:
     """TIE-ARBITER per-game liveness read (CANDIDATE side). None unless the
     worker was armed with an ENABLED cand_tiearb; an armed cell whose candidate
@@ -2393,6 +2545,10 @@ def _cand_tiearb_telemetry(champ) -> dict | None:
             "cand_tiearb is armed but FairAgentRs.stats() reports "
             "tiearb_enabled=False — the knob was dropped between main() and the "
             "rust config (a STALE carc_rs wheel is the usual cause)")
+    # ⚠️ THE OPPONENT SEAT READS THE SAME KEYS in `_tiearb_stats_block`. This body
+    # stays LITERAL (not a call into it) because the subscripts below are asserted
+    # by source text — see that function's docstring; the two are pinned EQUAL by
+    # tests/test_opp_tiearb_plumbing.py.
     return {
         "tile_plies": int(s["tiearb_tile_plies"]),
         # `fires` and `fired_plies` are THE SAME NUMBER under two names, on
@@ -2444,6 +2600,152 @@ def _cand_tiearb_telemetry(champ) -> dict | None:
         "pickchanges_mid": int(s["tiearb_pickchanges_mid"]),
         "pickchanges_late": int(s["tiearb_pickchanges_late"]),
     }
+
+
+# --------------------------------------------------------------------------- #
+# TIE-ARBITER cell-level aggregation, PER SEAT.                                #
+#                                                                             #
+# ⛔ THE KEY NAMES ARE A PUBLIC INTERFACE. The candidate's key set is UNCHANGED  #
+# and still written LITERALLY in `_summary` (`tiearb_games`, `tiearb_phi`, …):   #
+# banked adjudicators (scripts/tiletie/analyze_tiearb2_stage2.py,               #
+# analyze_b64_cell.py, analyze_b32v64_cell.py, the phasegate instrument) read    #
+# those spellings, and a rename would void live evidence. The opponent seat is   #
+# ADDITIVE under a DISTINCT prefix — never a rename, never a nesting change.     #
+# --------------------------------------------------------------------------- #
+TIEARB_CAND_PREFIX = "tiearb_"
+TIEARB_OPP_PREFIX = "opp_tiearb_"
+
+
+def _tiearb_side_summary(blocks, prefix: str) -> dict:
+    """Aggregate ONE seat's per-game arbiter blocks into the summary.json keys.
+
+    `blocks` is the list of per-game dicts for the games where THAT SEAT was
+    armed; `prefix` is `TIEARB_OPP_PREFIX` in production. ⛔ The CANDIDATE block
+    is NOT built here — `_summary` keeps its literal `"tiearb_games": …` dict,
+    because those spellings are asserted BY SOURCE TEXT
+    (tests/test_tiearb_phase_gate.py, tests/test_tiearb2_stage2.py's `G-PLY`) and
+    an f-string silently disarms that guard. The two are pinned key-for-key by
+    tests/test_opp_tiearb_plumbing.py, which compares the two seats' key sets
+    modulo the prefix."""
+    n = len(blocks)
+    _fired = sum(int(b["fired_plies"]) for b in blocks)
+    _tile = sum(int(b["tile_plies"]) for b in blocks)
+    _chg = sum(int(b["pickchanges"]) for b in blocks)
+    _arms = sum(int(b["arms_total"]) for b in blocks)
+    _pl = sum(int(b["playouts_total"]) for b in blocks)
+    _sec = sum(float(b["secs"]) for b in blocks)
+    _err = sum(int(b.get("errors") or 0) for b in blocks)
+    _err1 = next((b.get("first_error") for b in blocks if b.get("first_error")), None)
+    _partial = sum(int(b.get("partial_argmax") or 0) for b in blocks)
+    _modes = sorted({str(b["mode"]) for b in blocks})
+    # ⭐⭐ THE PHASE FIRE-GATE aggregates (measurement/phasegate_prep).
+    # ⛔ `.get(..., 0)` on the COUNTERS only — a record banked by a wheel
+    # predating the gate carries none, and summing it as 0 would silently
+    # short the totals. That case is caught upstream (the per-game
+    # telemetry SUBSCRIPTS the stats keys and raises), so a record here
+    # either has all of them or the run died before writing one. The
+    # `.get()` exists so `--resume` over a MIXED archive is diagnosable
+    # (`tiearb_phase_gates` would then read `["all", ""]`) rather than a
+    # traceback in the summary writer.
+    # ⛔ `tiearb_phase_gates` is a SET, printed as a sorted list: `G-GATE`
+    # is a per-CELL gate, so more than one value here means the cell mixed
+    # two configs and voids.
+    _gates = sorted({str(b.get("phase_gate", "")) for b in blocks})
+    _f_e = sum(int(b.get("fired_early") or 0) for b in blocks)
+    _f_m = sum(int(b.get("fired_mid") or 0) for b in blocks)
+    _f_l = sum(int(b.get("fired_late") or 0) for b in blocks)
+    _c_e = sum(int(b.get("pickchanges_early") or 0) for b in blocks)
+    _c_m = sum(int(b.get("pickchanges_mid") or 0) for b in blocks)
+    _c_l = sum(int(b.get("pickchanges_late") or 0) for b in blocks)
+    return {
+        f"{prefix}games": n,
+        f"{prefix}fired_plies_total": _fired,
+        f"{prefix}tile_plies_total": _tile,
+        f"{prefix}phi": _fired / max(1, n),
+        f"{prefix}fire_rate_on_tile_plies": _fired / max(1, _tile),
+        f"{prefix}pickchanges_total": _chg,
+        f"{prefix}pickchange_rate": _chg / max(1, _fired),
+        f"{prefix}mean_arms": _arms / max(1, _fired),
+        f"{prefix}playouts_total": _pl,
+        f"{prefix}secs_total": _sec,
+        f"{prefix}secs_per_game": _sec / max(1, n),
+        f"{prefix}modes": _modes,
+        f"{prefix}B": sorted({int(b["B"]) for b in blocks}),
+        f"{prefix}J": sorted({int(b["J"]) for b in blocks}),
+        f"{prefix}phi_offline_prior": 22.96,
+        f"{prefix}G_FIRE_floor": 1.0,
+        f"{prefix}G_FIRE_fired": bool(_fired / max(1, n) < 1.0),
+        # Fail-soft arbiter errors: the ply fell back to the champion's own
+        # pick and the game survived. Reported so a nonzero count is on the
+        # record; it is NOT a branch input anywhere.
+        f"{prefix}errors_total": _err,
+        f"{prefix}error_rate_on_fired": _err / max(1, _fired + _err),
+        f"{prefix}first_error": _err1,
+        # READ_RULE §0.F `G-PLY`. Expected 0; ABSENT or NON-ZERO voids the
+        # cell, so it is emitted unconditionally on every arbiter cell.
+        f"{prefix}partial_argmax_total": _partial,
+        # ⭐⭐ THE PHASE FIRE-GATE, in the STATISTICS document. `G-GATE`
+        # resolves `phase_gate` from `manifest:config.cand_tiearb`
+        # (config lives in the manifest — IS-D1) and `G-PHI` resolves the
+        # per-phase fires from HERE (statistics live in summary.json —
+        # IS-D1 again). `tiearb_phase_gates` is echoed for a one-document
+        # cross-check, never as `G-GATE`'s address.
+        f"{prefix}phase_gates": _gates,
+        f"{prefix}fired_early_total": _f_e,
+        f"{prefix}fired_mid_total": _f_m,
+        f"{prefix}fired_late_total": _f_l,
+        # ⭐ The PARTITION witness: on an ungated cell these three sum to
+        # `tiearb_fired_plies_total`. On a gated cell the two off-window
+        # totals are 0 — `G-PHI`'s window bit, derived from PLAY.
+        f"{prefix}fired_by_phase_sum": _f_e + _f_m + _f_l,
+        f"{prefix}pickchanges_early_total": _c_e,
+        f"{prefix}pickchanges_mid_total": _c_m,
+        f"{prefix}pickchanges_late_total": _c_l,
+        # ⭐ THE REALIZED per-phase fired SHARE — the number DESIGN §6.2
+        # could only proxy off `tile_gap_rows.jsonl` (0.3380 / 0.3059 /
+        # 0.3561, RAW exact-tie shares under a DIFFERENT rules epoch, with
+        # no repr-dedup column on disk). Meaningful ONLY on an ungated
+        # (`phase_gate == "all"`) cell; on a gated cell it is 1/0/0 by
+        # construction and says nothing.
+        f"{prefix}fired_share_early": _f_e / max(1, _f_e + _f_m + _f_l),
+        f"{prefix}fired_share_mid": _f_m / max(1, _f_e + _f_m + _f_l),
+        f"{prefix}fired_share_late": _f_l / max(1, _f_e + _f_m + _f_l),
+        f"{prefix}fired_share_proxy_note":
+            "DESIGN §6.2's proxy was 0.3380/0.3059/0.3561 (RAW exact-tie "
+            "shares, corpus champ449, rules_profile=walled/R9-off, NO "
+            "repr-dedup column). These shares are the DEDUPED runtime "
+            "split under this cell's own rules epoch and SUPERSEDE it for "
+            "sizing. Read only on a phase_gate=all cell.",
+        f"{prefix}max_plies": sorted({int(b.get("max_plies") or 0) for b in blocks}),
+    }
+
+
+def _shout_tiearb(block: dict, prefix: str, label: str) -> None:
+    """Print one seat's firing line + the two U-UNREADABLE shouts. Unchanged text
+    for the candidate seat (`label='tie-arbiter'`); the opponent seat says so."""
+    _n = block[f"{prefix}games"]
+    _fired = block[f"{prefix}fired_plies_total"]
+    _tile = block[f"{prefix}tile_plies_total"]
+    _err = block[f"{prefix}errors_total"]
+    _err1 = block[f"{prefix}first_error"]
+    _partial = block[f"{prefix}partial_argmax_total"]
+    print(f"{label}: {_n} games, mode(s) {'/'.join(block[f'{prefix}modes'])} — "
+          f"phi {block[f'{prefix}phi']:.2f} fired tile plies/game "
+          f"(offline prior 22.96; {_fired}/{_tile} of tile plies), "
+          f"pick-change {block[f'{prefix}pickchange_rate']:.3f}, "
+          f"mean arms {block[f'{prefix}mean_arms']:.2f}, "
+          f"{block[f'{prefix}playouts_total']} playouts, "
+          f"{block[f'{prefix}secs_per_game']:.1f}s/game"
+          + (f"  ⚠️ {_err} FAIL-SOFT arbiter errors (fell back to the "
+             f"champion's pick; first: {str(_err1)[:120]})" if _err else ""))
+    if _partial:
+        print(f"  ⛔ G-PLY: {_partial} plies took an argmax over FEWER than "
+              f"B completed worlds — the CRN pairing across arms is broken "
+              f"and this cell is U-UNREADABLE (READ_RULE §0.F).")
+    if block[f"{prefix}G_FIRE_fired"]:
+        print("  ⛔ G-FIRE: phi < 1.0 — THE ARBITRATION SURFACE IS EFFECTIVELY "
+              "INERT AND THIS CELL IS U-UNREADABLE (READ_RULE §3). Do NOT read "
+              "it as a null.")
 
 
 # --------------------------------------------------------------------------- #
@@ -2959,22 +3261,19 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
             "tiearb_max_plies": sorted({int(r.cand_tiearb.get("max_plies") or 0)
                                         for r in _ta}),
         }
-        print(f"tie-arbiter: {len(_ta)} games, mode(s) {'/'.join(_modes)} — "
-              f"phi {tiearb_summary['tiearb_phi']:.2f} fired tile plies/game "
-              f"(offline prior 22.96; {_fired}/{_tile} of tile plies), "
-              f"pick-change {tiearb_summary['tiearb_pickchange_rate']:.3f}, "
-              f"mean arms {tiearb_summary['tiearb_mean_arms']:.2f}, "
-              f"{_pl} playouts, {tiearb_summary['tiearb_secs_per_game']:.1f}s/game"
-              + (f"  ⚠️ {_err} FAIL-SOFT arbiter errors (fell back to the "
-                 f"champion's pick; first: {str(_err1)[:120]})" if _err else ""))
-        if _partial:
-            print(f"  ⛔ G-PLY: {_partial} plies took an argmax over FEWER than "
-                  f"B completed worlds — the CRN pairing across arms is broken "
-                  f"and this cell is U-UNREADABLE (READ_RULE §0.F).")
-        if tiearb_summary["tiearb_G_FIRE_fired"]:
-            print("  ⛔ G-FIRE: phi < 1.0 — THE ARBITRATION SURFACE IS EFFECTIVELY "
-                  "INERT AND THIS CELL IS U-UNREADABLE (READ_RULE §3). Do NOT read "
-                  "it as a null.")
+        _shout_tiearb(tiearb_summary, TIEARB_CAND_PREFIX, "tie-arbiter")
+    # ⭐⭐ THE OPPONENT SEAT (2026-08-31 plumbing). ADDITIVE and ABSENT unless the
+    # opponent was armed: every candidate-only cell's summary.json stays
+    # byte-identical, so the banked adjudicators — which read `tiearb_*` and
+    # nothing else — cannot see this block at all. On a BOTH-SIDES cell the two
+    # blocks are read TOGETHER, and `opp_tiearb_phi` is as load-bearing as
+    # `tiearb_phi`: a cell whose opponent never fired is a ONE-SIDED cell wearing
+    # a symmetric cell's name, which is the exact defect this plumbing ends.
+    _ta_opp = [r.opp_tiearb for r in results if getattr(r, "opp_tiearb", None)]
+    if _ta_opp:
+        _opp_ta = _tiearb_side_summary(_ta_opp, TIEARB_OPP_PREFIX)
+        _shout_tiearb(_opp_ta, TIEARB_OPP_PREFIX, "tie-arbiter [OPPONENT seat]")
+        tiearb_summary = {**tiearb_summary, **_opp_ta}
     # ⭐⭐ S1 §9.2(c) `R7` — THE J-RULES-PRIOR EXPANSION CENSUS, per side,
     # summed over the cell. UNCONDITIONALLY present (the same 3-state
     # "absent is unknown-not-zero" convention as wc_tiebreak below): a cell that
@@ -3057,7 +3356,7 @@ def _build_work(seed_start, n, paired):
 # --------------------------------------------------------------------------- #
 def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
            opp_label=None, cand_jrules_prior=None, cand_jrules_filter=None,
-           cand_tiearb=None, cand_search=None) -> int:
+           cand_tiearb=None, cand_search=None, opp_tiearb=None) -> int:
     """Single-process plumbing + fair-handoff-fires proof: play `games` paired
     games, print move/handoff counts, assert the fair marginalized endgame fired,
     and print an elo/z summary. Exits 0 on success.
@@ -3085,6 +3384,11 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
               f"(leaf hash does NOT move — the wiring gates are the manifest's "
               f"cand_tiearb dict, summary.json's tiearb_phi, and the two-sided "
               f"J13 positive control)")
+    if opp_tiearb is not None and opp_tiearb.get("enabled"):
+        print(f"[smoke] TIE ARBITER LIVE on the OPPONENT: {opp_tiearb} "
+              f"(the symmetric seat — the wiring gates are the manifest's "
+              f"opp_tiearb dict, summary.json's opp_tiearb_phi, and the "
+              f"per-game opp_tiearb telemetry)")
     if cand_jrules_prior is not None:
         print(f"[smoke] J-RULES PRIOR surface B LIVE on the candidate: "
               f"{cand_jrules_prior} (leaf hash does NOT move — check the dose)")
@@ -3219,7 +3523,8 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
             sighted_game=smoke_opp_game, rep=opp_rep, opp_sims=args.opp_sims,
             opp_k_dets=args.opp_k_dets, backend=args.backend,
             rust_threads=args.rust_threads,
-            wc_tiebreak=bool(getattr(args, "wc_tiebreak", False)))
+            wc_tiebreak=bool(getattr(args, "wc_tiebreak", False)),
+            tiearb=opp_tiearb)
         _start_mirrors(board, champ, rung)
         moves = 0
         rung_moves = 0
@@ -3372,7 +3677,7 @@ _STAMP_KEY_FORBIDDEN = frozenset(_run_manifest_reserved := (
     "failed_cells", "failed_by_seat", "failed_classes", "n_resolved_failures",
     "resolved_failed_cells",
     # the tie-arbiter + rust-provenance + end-timestamp patches at close-out
-    "cand_tiearb", "rust_toolchain", "carc_rs_build", "carc_rs_version",
+    "cand_tiearb", "opp_tiearb", "rust_toolchain", "carc_rs_build", "carc_rs_version",
     "carc_rs_binary_sha", "mixed_builds", "utc_end",
 ))
 del _run_manifest_reserved
@@ -3728,6 +4033,62 @@ def main(argv=None) -> int:
                     help="Tie membership tolerance on the outer chain value. 0.0 is "
                          "the COMMITTED setting — exact f64 equality, NOT a "
                          "tolerance (DESIGN §2).")
+    # --- THE TIE ARBITER, OPPONENT SEAT (2026-08-31 plumbing) ----------------
+    # ⭐⭐ WHY THIS EXISTS. Until today the arbiter could ONLY be armed on the
+    # candidate: `_make_opponent` took no `tiearb`, and `_cfg_from_dict` reads
+    # five keys by name, so the opponent seat was STRUCTURALLY disarmed. Three
+    # designs were bent around that hole rather than around the science —
+    # phasegate's B16 contortion, G3's arb-off constraint, and the 2026-08-30
+    # H2H prereg whose "ARB-ON both sides" leg was simply INEXPRESSIBLE (it
+    # would have shipped as a confounded arb+fpu cell claiming one variable).
+    # These flags mirror the `--cand-tiearb-*` set EXACTLY: same defaults, same
+    # refusals, same resolved-dict shape on the manifest.
+    # ⚠️ ABSENT-WHEN-UNARMED, on purpose and unlike `cand_tiearb`: an unarmed run
+    # emits NO `opp_tiearb` anywhere, so phasegate's `G-TIEARB-ARM` ("opponent:
+    # no tiearb container") and every banked adjudicator keep passing healthy
+    # cells unchanged.
+    ap.add_argument("--opp-tiearb-enabled", action="store_true",
+                    help="OPPONENT side, RUST-ONLY, `--opponent fair-champion` "
+                         "only: arm THE TIE ARBITER on the opponent seat too. "
+                         "The single honest way to express an ARB-ON-BOTH-SIDES "
+                         "head-to-head — without it, an `--cand-tiearb-enabled` "
+                         "h2h is a TWO-VARIABLE cell (candidate = champion + "
+                         "arbiter + whatever else it carries; opponent = plain "
+                         "champion). Wiring gates: the manifest's resolved "
+                         "`opp_tiearb` dict, summary.json's `opp_tiearb_phi`, "
+                         "and the per-game `opp_tiearb` telemetry.")
+    ap.add_argument("--opp-tiearb-b", type=int, default=16,
+                    help="B on the OPPONENT seat: CRN determinizations per fired "
+                         "ply. Same default (16) and same meaning as "
+                         "--cand-tiearb-b; a both-sides cell normally sets the "
+                         "two equal, and a gate that cares asserts it.")
+    ap.add_argument("--opp-tiearb-j", type=int, default=4,
+                    help="J on the OPPONENT seat: the cap on the afterstate-"
+                         "deduped tie set. Same default (4) and same meaning as "
+                         "--cand-tiearb-j.")
+    ap.add_argument("--opp-tiearb-mode", choices=("argmax", "random"),
+                    default="argmax",
+                    help="argmax = the opponent arbitrates for real; random = the "
+                         "matched-wall-clock control on the OPPONENT seat (same "
+                         "playouts, values discarded). Same choices/default as "
+                         "--cand-tiearb-mode.")
+    ap.add_argument("--opp-tiearb-salt", type=str, default="tiearb2-deploy-v1",
+                    help="World/selection seed salt on the OPPONENT seat. The salt "
+                         "of record is 'tiearb2-deploy-v1'; a different salt is a "
+                         "different experiment. ⚠️ The two seats share this default "
+                         "deliberately — the seats already differ by `seed + 1`, so "
+                         "an equal salt is NOT a shared world stream.")
+    ap.add_argument("--opp-tiearb-eps", type=float, default=0.0,
+                    help="Tie membership tolerance on the OPPONENT seat. 0.0 is the "
+                         "COMMITTED setting — exact f64 equality (DESIGN §2).")
+    ap.add_argument("--opp-tiearb-phase-gate",
+                    choices=("all", "early", "mid", "late", "none"), default="all",
+                    help="PHASE WINDOW on the OPPONENT arbiter's FIRE decision — "
+                         "the exact semantics of --cand-tiearb-phase-gate, applied "
+                         "to the other seat. ⛔ Refused WITHOUT "
+                         "--opp-tiearb-enabled, on the same ground: a gate with no "
+                         "arbiter to gate is a silent no-op wearing a gated cell's "
+                         "name.")
     # --- CANDIDATE-ONLY PUCT KNOBS (measurement/fpu_resurrection_prep) --------
     # ⚠️ Both are CANDIDATE-SIDE, deliberately mirroring --cand-jrules-* /
     # --cand-tiearb-*: they reach the candidate's `_cfg_from_dict` and NOTHING
@@ -4359,6 +4720,67 @@ def main(argv=None) -> int:
         print(f"[tiearb] TIE ARBITER LIVE on the candidate: {_cand_tiearb} "
               f"(leaf hash does NOT move; gates = manifest cand_tiearb + "
               f"summary tiearb_phi + the two-sided J13 control)", flush=True)
+    # ⭐⭐ THE TIE ARBITER, OPPONENT SEAT (2026-08-31 plumbing). Same resolve-once
+    # / fail-fast pattern as the candidate's — with ONE deliberate difference:
+    # this dict is None (not an `enabled=False` echo) when the flag was not
+    # passed, and NOTHING is stamped anywhere. `config.cand_tiearb` is always
+    # present because `G-J4` makes its ABSENCE a fail; the OPPONENT's established
+    # gate vocabulary says the opposite — phasegate's `G-TIEARB-ARM` requires
+    # "opponent: no tiearb container" — so an always-present opp block would fail
+    # every healthy cell ever banked. Armed => full resolved dict; unarmed =>
+    # ABSENT, and the run's artifacts are byte-identical to today's.
+    _opp_tiearb = (dict(enabled=True,
+                        B=int(args.opp_tiearb_b), J=int(args.opp_tiearb_j),
+                        mode=str(args.opp_tiearb_mode),
+                        salt=str(args.opp_tiearb_salt),
+                        eps=float(args.opp_tiearb_eps),
+                        phase_gate=str(args.opp_tiearb_phase_gate))
+                   if args.opp_tiearb_enabled else None)
+    if str(args.opp_tiearb_phase_gate) != "all" and not args.opp_tiearb_enabled:
+        ap.error(f"--opp-tiearb-phase-gate {args.opp_tiearb_phase_gate!r} was passed "
+                 "WITHOUT --opp-tiearb-enabled: the gate is a window on the "
+                 "arbiter's fire decision and there is no OPPONENT arbiter to "
+                 "gate. That cell would be champion-vs-champion wearing a gated "
+                 "cell's name.")
+    if _opp_tiearb is not None:
+        if _backend != "rust":
+            ap.error("--opp-tiearb-enabled is RUST-ONLY (the arbiter binds at the "
+                     "pooled_q_argmax root hook in carc_core::fair::FairAgent); "
+                     f"resolved backend is {_backend!r}. The python search path "
+                     "would fail-loud in every worker — refusing up front instead.")
+        if args.opponent != "fair-champion":
+            ap.error("--opp-tiearb-enabled applies to the `fair-champion` "
+                     "head-to-head opponent (the only production PIMC seat that "
+                     f"can host the arbiter); got --opponent {args.opponent}. The "
+                     "h800/greedy/bare-net rungs are FROZEN RULERS and stay "
+                     "python whatever --backend says.")
+        # Construct + read back ONCE, exactly as the candidate does: a bad
+        # mode/B/J dies at launch and a STALE carc_rs wheel dies HERE rather
+        # than 30 s into the first worker. A silently arbiter-free OPPONENT is
+        # the J13 failure mode on the other seat — it grades a ONE-SIDED cell
+        # wearing a both-sides cell's name.
+        _probe_cfg_ot = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
+                                         args.final_select, args.value_norm,
+                                         None, tiearb=_opp_tiearb)
+        from carcassonne_ai.rust_agent import search_config_rs as _sc_rs_ot
+        _probe_sc_ot = _sc_rs_ot(_probe_cfg_ot, 8)   # TypeError == rebuild the wheel
+        _resolved_ot = dict(_probe_sc_ot.tiearb)
+        if _resolved_ot != _opp_tiearb:
+            ap.error(f"the resolved rust OPPONENT tiearb knob {_resolved_ot} does "
+                     f"not match the requested {_opp_tiearb} — refusing to launch. "
+                     "⚠️ A MISSING 'phase_gate' key on the resolved side means a "
+                     "STALE carc_rs wheel that predates measurement/phasegate_prep "
+                     "— its arbiter would run UNGATED.")
+        print(f"[tiearb] TIE ARBITER LIVE on the OPPONENT: {_opp_tiearb} "
+              f"(leaf hash does NOT move; gates = manifest opp_tiearb + summary "
+              f"opp_tiearb_phi + the per-game opp_tiearb telemetry)", flush=True)
+        if not _cand_tiearb["enabled"]:
+            # LEGAL (an opponent-only arm is a real design), but it is the exact
+            # inverse of the historical confound, so it must never be silent.
+            print("[tiearb] ⚠️ ONE-SIDED, OPPONENT-ONLY: the arbiter is armed on "
+                  "the opponent and NOT on the candidate. That is a real cell, "
+                  "but the sign of every statistic flips relative to a "
+                  "candidate-armed cell — say so in the read-rule.", flush=True)
     # CANDIDATE-ONLY PUCT KNOBS (measurement/fpu_resurrection_prep): same
     # resolve-once / fail-fast pattern. ⚠️ Like `cand_tiearb` this dict is ALWAYS
     # built, even when both knobs are unset, because `READ_RULE` `G-FPU` /
@@ -4559,6 +4981,7 @@ def main(argv=None) -> int:
                       cand_jrules_filter=_cand_jrules_filter,
                       cand_tiearb=_cand_tiearb,
                       cand_search=_cand_search,
+                      opp_tiearb=_opp_tiearb,
                       opp_label=opp_label)
 
     if args.info in ("fair-net", "fair-netprior") and not args.net:
@@ -4861,6 +5284,15 @@ def main(argv=None) -> int:
                          else _leaf_dict(opp_leaf_cfg)),
             "curve125_leaf_provenance": opp_leaf_prov,
             "champ_cfg": (None if args.opponent in _LEAFLESS_RUNGS else champ_cfg_dict),
+            # THE TIE ARBITER on this seat, mirrored INSIDE the opponent block so a
+            # reader of `config.opponent` alone cannot miss it. Same absent-when-
+            # unarmed rule as `config.opp_tiearb` (its canonical address): a
+            # candidate-only or arb-off cell's opponent block is byte-identical to
+            # every one ever written. ⚠️ `champ_cfg` above is the SHARED five-knob
+            # dict and can never carry this — `_cfg_from_dict` reads five keys by
+            # name and drops the rest, which is exactly why the arbiter needed its
+            # own parameter on `_make_opponent`.
+            **({"tiearb": _opp_tiearb} if _opp_tiearb is not None else {}),
             "production_config_deviations": (_prod_deviations(args, sims_override=opp_eff_sims,
                                                               k_dets_override=opp_eff_k_dets)
                                              if args.opponent in _HEAD_TO_HEAD else None),
@@ -4935,6 +5367,16 @@ def main(argv=None) -> int:
         # nothing. The other two gates are summary.json's `tiearb_phi`
         # (`G-FIRE`) and the per-host two-sided J13 positive control.
         "cand_tiearb": _cand_tiearb,
+        # ⭐⭐ THE TIE ARBITER, OPPONENT SEAT (2026-08-31 plumbing). ⚠️ PRESENT
+        # ONLY WHEN ARMED — the deliberate INVERSE of `cand_tiearb`'s
+        # always-present rule, because the two gate vocabularies disagree and
+        # both are load-bearing: `G-J4` fails on an ABSENT `config.cand_tiearb`,
+        # while phasegate's `G-TIEARB-ARM` fails on a PRESENT opponent tiearb
+        # container. An unarmed run therefore emits nothing here and every
+        # banked adjudicator reads it exactly as it reads today's cells. When
+        # armed, this is the FULL resolved dict (same shape as cand_tiearb,
+        # `phase_gate` included) and it is `assert_tiearb_sides`'s address.
+        **({"opp_tiearb": _opp_tiearb} if _opp_tiearb is not None else {}),
         # ⭐⭐ CANDIDATE-ONLY PUCT KNOBS (measurement/fpu_resurrection_prep).
         # ⚠️ ALWAYS a full RESOLVED dict — never None, never a bare flag —
         # because READ_RULE `G-FPU` / `G-CPUCT` make an ABSENT `config.cand_search`
@@ -5257,6 +5699,11 @@ def main(argv=None) -> int:
     # single-key merge, so a racing --shared-claim peer cannot corrupt the
     # provenance block.
     patch_manifest(out, "cand_tiearb", _cand_tiearb)
+    # The OPPONENT seat's knob at the SAME two addresses (`config.opp_tiearb`
+    # above, top level here) — ONLY when armed. Unarmed writes nothing at all, so
+    # an unarmed cell's manifest is byte-identical to today's.
+    if _opp_tiearb is not None:
+        patch_manifest(out, "opp_tiearb", _opp_tiearb)
     # READ_RULE `G-TOOL` witnesses, at manifest TOP LEVEL and fail-closed by
     # name: the two boxes must have run the SAME rust toolchain and the SAME
     # `carc_rs` build, and no cell may have mixed builds. ⚠️ `carc_rs_version`
@@ -5355,7 +5802,7 @@ def main(argv=None) -> int:
                           _netprior_backend, _backend, _rust_threads,
                           _simsplit, _cand_jrules_prior, _cand_jrules_filter,
                           _cand_exact_objective, _cand_tiearb, _wc_tiebreak,
-                          _cand_search))
+                          _cand_search, _opp_tiearb))
         else:
             _pool_cm = Pool(
                 processes=workers, initializer=_worker_init,
@@ -5371,7 +5818,7 @@ def main(argv=None) -> int:
                           _netprior_backend, _backend, _rust_threads,
                           _simsplit, _cand_jrules_prior, _cand_jrules_filter,
                           _cand_exact_objective, _cand_tiearb, _wc_tiebreak,
-                          _cand_search))
+                          _cand_search, _opp_tiearb))
         with _pool_cm as pool:
             done = 0
             for r in pool.imap_unordered(_play_one, todo, chunksize=1):
@@ -5461,6 +5908,29 @@ def main(argv=None) -> int:
             "_realized_note":
                 "keys above `phase_gate` are the RESOLVED CONFIG (also at "
                 "config.cand_tiearb, written before game 1); the fired_*/"
+                "pickchanges_*/tiearb_error* keys are REALIZED COUNTS patched "
+                "at close-out. summary.json is their canonical home.",
+        })
+    # The same REALIZED counts for the OPPONENT seat, at top-level `opp_tiearb`.
+    # Written only when the opponent actually played armed games, so the address
+    # exists exactly when there is something to witness.
+    if summ.get("opp_tiearb_games"):
+        patch_manifest(out, "opp_tiearb", {
+            **_opp_tiearb,
+            "fired_plies": int(summ.get("opp_tiearb_fired_plies_total") or 0),
+            "fired_early": int(summ.get("opp_tiearb_fired_early_total") or 0),
+            "fired_mid": int(summ.get("opp_tiearb_fired_mid_total") or 0),
+            "fired_late": int(summ.get("opp_tiearb_fired_late_total") or 0),
+            "pickchanges": int(summ.get("opp_tiearb_pickchanges_total") or 0),
+            "pickchanges_early": int(summ.get("opp_tiearb_pickchanges_early_total") or 0),
+            "pickchanges_mid": int(summ.get("opp_tiearb_pickchanges_mid_total") or 0),
+            "pickchanges_late": int(summ.get("opp_tiearb_pickchanges_late_total") or 0),
+            "tiearb_errors_total": int(summ.get("opp_tiearb_errors_total") or 0),
+            "tiearb_error_rate_on_fired":
+                float(summ.get("opp_tiearb_error_rate_on_fired") or 0.0),
+            "_realized_note":
+                "keys above `phase_gate` are the RESOLVED CONFIG (also at "
+                "config.opp_tiearb, written before game 1); the fired_*/"
                 "pickchanges_*/tiearb_error* keys are REALIZED COUNTS patched "
                 "at close-out. summary.json is their canonical home.",
         })
