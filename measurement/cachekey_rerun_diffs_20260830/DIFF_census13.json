@@ -1,0 +1,4116 @@
+{
+  "schema": "carcassonne-cachekey-rerun-diff/v1",
+  "date": "2026-08-30",
+  "framing": "SUPERSEDE-BY-RERUN \u2014 no banked artifact was edited",
+  "verdicts": [
+    {
+      "label": "CL-083 Census 1 (GT-M1)",
+      "banked_sha256_16": "a6c4c46e190dbd7e",
+      "rerun_sha256_16": "1c7592ac55274096",
+      "n_scalars": 306,
+      "n_differing": 200,
+      "verdict": "FLAGGED",
+      "rows": [
+        {
+          "stat": "COMPANION_control_stratum.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "COMPANION_control_stratum.U_ci95[0]",
+          "banked": 0.25675675675675674,
+          "rerun": 0.2375,
+          "abs_delta": 0.019256756756756754,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.U_ci95[1]",
+          "banked": 0.43333333333333335,
+          "rerun": 0.4069767441860465,
+          "abs_delta": 0.026356589147286835,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.U_unanimous",
+          "banked": 0.3448275862068966,
+          "rerun": 0.3218390804597701,
+          "abs_delta": 0.022988505747126464,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.0.0",
+          "banked": 4,
+          "rerun": 5,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.0.125",
+          "banked": 3,
+          "rerun": 1,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.0.25",
+          "banked": 3,
+          "rerun": 4,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.0.375",
+          "banked": 9,
+          "rerun": 11,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.0.5",
+          "banked": 9,
+          "rerun": 11,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.0.625",
+          "banked": 10,
+          "rerun": 9,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.0.75",
+          "banked": 7,
+          "rerun": 8,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.0.875",
+          "banked": 12,
+          "rerun": 10,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.agree_frac_hist.1.0",
+          "banked": 30,
+          "rerun": 28,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.dissent_rate",
+          "banked": 0.6551724137931034,
+          "rerun": 0.6781609195402298,
+          "abs_delta": 0.02298850574712641,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.max_reach_ci95[0]",
+          "banked": 0.25301204819277107,
+          "rerun": 0.28865979381443296,
+          "abs_delta": 0.0356477456216619,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.max_reach_ci95[1]",
+          "banked": 0.4166666666666667,
+          "rerun": 0.45569620253164556,
+          "abs_delta": 0.03902953586497887,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.max_reach_excl_control",
+          "banked": 0.3333333333333333,
+          "rerun": 0.367816091954023,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.mean_agree_frac",
+          "banked": 0.7011494252873564,
+          "rerun": 0.6795977011494253,
+          "abs_delta": 0.02155172413793105,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.mean_cvar_eligible",
+          "banked": 22.49425287356322,
+          "rerun": 25.862068965517242,
+          "abs_delta": 3.3678160919540225,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.mean_distinct_world_picks",
+          "banked": 2.264367816091954,
+          "rerun": 2.2988505747126435,
+          "abs_delta": 0.0344827586206895,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.n",
+          "banked": 87,
+          "rerun": 87,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "COMPANION_control_stratum.n_star_cvar_eligible",
+          "banked": 87,
+          "rerun": 87,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach.0.25",
+          "banked": 0.3333333333333333,
+          "rerun": 0.367816091954023,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach.0.5",
+          "banked": 0.2413793103448276,
+          "rerun": 0.26436781609195403,
+          "abs_delta": 0.022988505747126436,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach.0.75",
+          "banked": 0.21839080459770116,
+          "rerun": 0.22988505747126436,
+          "abs_delta": 0.011494252873563204,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach.1.0",
+          "banked": 0.11494252873563218,
+          "rerun": 0.14942528735632185,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach_star_eligible_only.0.25",
+          "banked": 0.3333333333333333,
+          "rerun": 0.367816091954023,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach_star_eligible_only.0.5",
+          "banked": 0.2413793103448276,
+          "rerun": 0.26436781609195403,
+          "abs_delta": 0.022988505747126436,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach_star_eligible_only.0.75",
+          "banked": 0.21839080459770116,
+          "rerun": 0.22988505747126436,
+          "abs_delta": 0.011494252873563204,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach_star_eligible_only.1.0",
+          "banked": 0.11494252873563218,
+          "rerun": 0.14942528735632185,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach_vs_equalweight.0.25",
+          "banked": 0.26436781609195403,
+          "rerun": 0.27586206896551724,
+          "abs_delta": 0.011494252873563204,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach_vs_equalweight.0.5",
+          "banked": 0.14942528735632185,
+          "rerun": 0.14942528735632185,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach_vs_equalweight.0.75",
+          "banked": 0.11494252873563218,
+          "rerun": 0.10344827586206896,
+          "abs_delta": 0.011494252873563218,
+          "identical": false
+        },
+        {
+          "stat": "COMPANION_control_stratum.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.U_ci95[0]",
+          "banked": 0.5,
+          "rerun": 0.5,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.U_ci95[1]",
+          "banked": 0.5,
+          "rerun": 0.5,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.U_unanimous",
+          "banked": 0.5,
+          "rerun": 0.5,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.agree_frac_hist.0.875",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.agree_frac_hist.1.0",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.dissent_rate",
+          "banked": 0.5,
+          "rerun": 0.5,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.max_reach_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.max_reach_ci95[1]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.max_reach_excl_control",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.mean_agree_frac",
+          "banked": 0.9375,
+          "rerun": 0.9375,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.mean_cvar_eligible",
+          "banked": 31.0,
+          "rerun": 31.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.mean_distinct_world_picks",
+          "banked": 1.5,
+          "rerun": 1.5,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n",
+          "banked": 2,
+          "rerun": 2,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n_star_cvar_eligible",
+          "banked": 2,
+          "rerun": 2,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach.0.25",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach.0.5",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach.0.75",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach_star_eligible_only.0.25",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach_star_eligible_only.0.5",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach_star_eligible_only.0.75",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach_star_eligible_only.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach_vs_equalweight.0.25",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach_vs_equalweight.0.5",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach_vs_equalweight.0.75",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.U_ci95[0]",
+          "banked": 0.3333333333333333,
+          "rerun": 0.3333333333333333,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.U_ci95[1]",
+          "banked": 0.75,
+          "rerun": 0.5,
+          "abs_delta": 0.25,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.U_unanimous",
+          "banked": 0.5714285714285714,
+          "rerun": 0.42857142857142855,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.agree_frac_hist.0.125",
+          "banked": "<absent>",
+          "rerun": 1,
+          "abs_delta": null,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.agree_frac_hist.0.25",
+          "banked": 1,
+          "rerun": "<absent>",
+          "abs_delta": null,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.agree_frac_hist.0.5",
+          "banked": "<absent>",
+          "rerun": 1,
+          "abs_delta": null,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.agree_frac_hist.0.75",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.agree_frac_hist.0.875",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.agree_frac_hist.1.0",
+          "banked": 4,
+          "rerun": 3,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.dissent_rate",
+          "banked": 0.42857142857142855,
+          "rerun": 0.5714285714285714,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.max_reach_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.25,
+          "abs_delta": 0.25,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.max_reach_ci95[1]",
+          "banked": 0.3333333333333333,
+          "rerun": 0.3333333333333333,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.max_reach_excl_control",
+          "banked": 0.14285714285714285,
+          "rerun": 0.2857142857142857,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.mean_agree_frac",
+          "banked": 0.8392857142857143,
+          "rerun": 0.75,
+          "abs_delta": 0.0892857142857143,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.mean_cvar_eligible",
+          "banked": 15.285714285714286,
+          "rerun": 17.857142857142858,
+          "abs_delta": 2.571428571428571,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.mean_distinct_world_picks",
+          "banked": 1.5714285714285714,
+          "rerun": 2.142857142857143,
+          "abs_delta": 0.5714285714285714,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n",
+          "banked": 7,
+          "rerun": 7,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n_star_cvar_eligible",
+          "banked": 7,
+          "rerun": 7,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach.0.25",
+          "banked": 0.14285714285714285,
+          "rerun": 0.2857142857142857,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach.0.5",
+          "banked": 0.14285714285714285,
+          "rerun": 0.2857142857142857,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach.0.75",
+          "banked": 0.14285714285714285,
+          "rerun": 0.14285714285714285,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach.1.0",
+          "banked": 0.14285714285714285,
+          "rerun": 0.14285714285714285,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach_star_eligible_only.0.25",
+          "banked": 0.14285714285714285,
+          "rerun": 0.2857142857142857,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach_star_eligible_only.0.5",
+          "banked": 0.14285714285714285,
+          "rerun": 0.2857142857142857,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach_star_eligible_only.0.75",
+          "banked": 0.14285714285714285,
+          "rerun": 0.14285714285714285,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach_star_eligible_only.1.0",
+          "banked": 0.14285714285714285,
+          "rerun": 0.14285714285714285,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach_vs_equalweight.0.25",
+          "banked": 0.0,
+          "rerun": 0.14285714285714285,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach_vs_equalweight.0.5",
+          "banked": 0.0,
+          "rerun": 0.14285714285714285,
+          "abs_delta": 0.14285714285714285,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach_vs_equalweight.0.75",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.U_ci95[0]",
+          "banked": 0.2937853107344633,
+          "rerun": 0.2513089005235602,
+          "abs_delta": 0.04247641021090309,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.U_ci95[1]",
+          "banked": 0.4419889502762431,
+          "rerun": 0.375,
+          "abs_delta": 0.06698895027624308,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.U_unanimous",
+          "banked": 0.3670212765957447,
+          "rerun": 0.31382978723404253,
+          "abs_delta": 0.05319148936170215,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.0.0",
+          "banked": 5,
+          "rerun": 5,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.0.125",
+          "banked": 17,
+          "rerun": 15,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.0.25",
+          "banked": 15,
+          "rerun": 24,
+          "abs_delta": 9,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.0.375",
+          "banked": 14,
+          "rerun": 13,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.0.5",
+          "banked": 15,
+          "rerun": 12,
+          "abs_delta": 3,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.0.625",
+          "banked": 20,
+          "rerun": 15,
+          "abs_delta": 5,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.0.75",
+          "banked": 15,
+          "rerun": 21,
+          "abs_delta": 6,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.0.875",
+          "banked": 18,
+          "rerun": 24,
+          "abs_delta": 6,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.agree_frac_hist.1.0",
+          "banked": 69,
+          "rerun": 59,
+          "abs_delta": 10,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.dissent_rate",
+          "banked": 0.6329787234042553,
+          "rerun": 0.6861702127659575,
+          "abs_delta": 0.05319148936170215,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.max_reach_ci95[0]",
+          "banked": 0.27717391304347827,
+          "rerun": 0.2774869109947644,
+          "abs_delta": 0.0003129979512861425,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.max_reach_ci95[1]",
+          "banked": 0.4039408866995074,
+          "rerun": 0.4148936170212766,
+          "abs_delta": 0.010952730321769188,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.max_reach_excl_control",
+          "banked": 0.3404255319148936,
+          "rerun": 0.34574468085106386,
+          "abs_delta": 0.005319148936170248,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.mean_agree_frac",
+          "banked": 0.6761968085106383,
+          "rerun": 0.6589095744680851,
+          "abs_delta": 0.01728723404255328,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.mean_cvar_eligible",
+          "banked": 17.95744680851064,
+          "rerun": 21.617021276595743,
+          "abs_delta": 3.659574468085104,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.mean_distinct_world_picks",
+          "banked": 2.393617021276596,
+          "rerun": 2.4095744680851063,
+          "abs_delta": 0.01595744680851041,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.n",
+          "banked": 188,
+          "rerun": 188,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.n_star_cvar_eligible",
+          "banked": 188,
+          "rerun": 188,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach.0.25",
+          "banked": 0.3404255319148936,
+          "rerun": 0.34574468085106386,
+          "abs_delta": 0.005319148936170248,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach.0.5",
+          "banked": 0.2712765957446808,
+          "rerun": 0.2872340425531915,
+          "abs_delta": 0.01595744680851069,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach.0.75",
+          "banked": 0.2393617021276596,
+          "rerun": 0.24468085106382978,
+          "abs_delta": 0.005319148936170193,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach.1.0",
+          "banked": 0.18085106382978725,
+          "rerun": 0.1702127659574468,
+          "abs_delta": 0.010638297872340441,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach_star_eligible_only.0.25",
+          "banked": 0.3404255319148936,
+          "rerun": 0.34574468085106386,
+          "abs_delta": 0.005319148936170248,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach_star_eligible_only.0.5",
+          "banked": 0.2712765957446808,
+          "rerun": 0.2872340425531915,
+          "abs_delta": 0.01595744680851069,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach_star_eligible_only.0.75",
+          "banked": 0.2393617021276596,
+          "rerun": 0.24468085106382978,
+          "abs_delta": 0.005319148936170193,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach_star_eligible_only.1.0",
+          "banked": 0.18085106382978725,
+          "rerun": 0.1702127659574468,
+          "abs_delta": 0.010638297872340441,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach_vs_equalweight.0.25",
+          "banked": 0.2127659574468085,
+          "rerun": 0.25,
+          "abs_delta": 0.03723404255319149,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach_vs_equalweight.0.5",
+          "banked": 0.12234042553191489,
+          "rerun": 0.1702127659574468,
+          "abs_delta": 0.047872340425531915,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach_vs_equalweight.0.75",
+          "banked": 0.0797872340425532,
+          "rerun": 0.10638297872340426,
+          "abs_delta": 0.02659574468085106,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_contest_exposed.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.U_ci95[0]",
+          "banked": 0.2717391304347826,
+          "rerun": 0.24757281553398058,
+          "abs_delta": 0.02416631490080201,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.U_ci95[1]",
+          "banked": 0.4011299435028249,
+          "rerun": 0.3858695652173913,
+          "abs_delta": 0.015260378285433585,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.U_unanimous",
+          "banked": 0.3351063829787234,
+          "rerun": 0.31382978723404253,
+          "abs_delta": 0.021276595744680882,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.0.0",
+          "banked": 2,
+          "rerun": 9,
+          "abs_delta": 7,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.0.125",
+          "banked": 16,
+          "rerun": 16,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.0.25",
+          "banked": 19,
+          "rerun": 15,
+          "abs_delta": 4,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.0.375",
+          "banked": 15,
+          "rerun": 21,
+          "abs_delta": 6,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.0.5",
+          "banked": 15,
+          "rerun": 12,
+          "abs_delta": 3,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.0.625",
+          "banked": 19,
+          "rerun": 21,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.0.75",
+          "banked": 16,
+          "rerun": 14,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.0.875",
+          "banked": 23,
+          "rerun": 21,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.agree_frac_hist.1.0",
+          "banked": 63,
+          "rerun": 59,
+          "abs_delta": 4,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.dissent_rate",
+          "banked": 0.6648936170212766,
+          "rerun": 0.6861702127659575,
+          "abs_delta": 0.021276595744680882,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.max_reach_ci95[0]",
+          "banked": 0.3299492385786802,
+          "rerun": 0.34054054054054056,
+          "abs_delta": 0.010591301961860367,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.max_reach_ci95[1]",
+          "banked": 0.453125,
+          "rerun": 0.4803921568627451,
+          "abs_delta": 0.027267156862745112,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.max_reach_excl_control",
+          "banked": 0.39361702127659576,
+          "rerun": 0.4148936170212766,
+          "abs_delta": 0.021276595744680826,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.mean_agree_frac",
+          "banked": 0.6748670212765957,
+          "rerun": 0.6416223404255319,
+          "abs_delta": 0.0332446808510638,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.mean_cvar_eligible",
+          "banked": 17.638297872340427,
+          "rerun": 21.28723404255319,
+          "abs_delta": 3.648936170212764,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.mean_distinct_world_picks",
+          "banked": 2.367021276595745,
+          "rerun": 2.473404255319149,
+          "abs_delta": 0.10638297872340408,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.n",
+          "banked": 188,
+          "rerun": 188,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.n_star_cvar_eligible",
+          "banked": 188,
+          "rerun": 188,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach.0.25",
+          "banked": 0.39361702127659576,
+          "rerun": 0.4148936170212766,
+          "abs_delta": 0.021276595744680826,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach.0.5",
+          "banked": 0.3351063829787234,
+          "rerun": 0.3670212765957447,
+          "abs_delta": 0.03191489361702127,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach.0.75",
+          "banked": 0.2872340425531915,
+          "rerun": 0.2872340425531915,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach.1.0",
+          "banked": 0.18617021276595744,
+          "rerun": 0.1702127659574468,
+          "abs_delta": 0.015957446808510634,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach_star_eligible_only.0.25",
+          "banked": 0.39361702127659576,
+          "rerun": 0.4148936170212766,
+          "abs_delta": 0.021276595744680826,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach_star_eligible_only.0.5",
+          "banked": 0.3351063829787234,
+          "rerun": 0.3670212765957447,
+          "abs_delta": 0.03191489361702127,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach_star_eligible_only.0.75",
+          "banked": 0.2872340425531915,
+          "rerun": 0.2872340425531915,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach_star_eligible_only.1.0",
+          "banked": 0.18617021276595744,
+          "rerun": 0.1702127659574468,
+          "abs_delta": 0.015957446808510634,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach_vs_equalweight.0.25",
+          "banked": 0.28191489361702127,
+          "rerun": 0.324468085106383,
+          "abs_delta": 0.04255319148936171,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach_vs_equalweight.0.5",
+          "banked": 0.16489361702127658,
+          "rerun": 0.23404255319148937,
+          "abs_delta": 0.06914893617021278,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach_vs_equalweight.0.75",
+          "banked": 0.11702127659574468,
+          "rerun": 0.14893617021276595,
+          "abs_delta": 0.03191489361702127,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1_contest_exposed.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "VERDICT",
+          "banked": "GT-M1 NOT KILLED (max reach 0.340 >= 0.30)",
+          "rerun": "GT-M1 NOT KILLED (max reach 0.346 >= 0.30)",
+          "abs_delta": null,
+          "identical": false
+        },
+        {
+          "stat": "alphas[0]",
+          "banked": 0.25,
+          "rerun": 0.25,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "alphas[1]",
+          "banked": 0.5,
+          "rerun": 0.5,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "alphas[2]",
+          "banked": 0.75,
+          "rerun": 0.75,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "alphas[3]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "already_agree_label",
+          "banked": "FALSE (U <= 0.50)",
+          "rerun": "FALSE (U <= 0.50)",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.U_ci95[0]",
+          "banked": 0.25675675675675674,
+          "rerun": 0.2375,
+          "abs_delta": 0.019256756756756754,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.U_ci95[1]",
+          "banked": 0.43333333333333335,
+          "rerun": 0.4069767441860465,
+          "abs_delta": 0.026356589147286835,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.U_unanimous",
+          "banked": 0.3448275862068966,
+          "rerun": 0.3218390804597701,
+          "abs_delta": 0.022988505747126464,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.0.0",
+          "banked": 4,
+          "rerun": 5,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.0.125",
+          "banked": 3,
+          "rerun": 1,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.0.25",
+          "banked": 3,
+          "rerun": 4,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.0.375",
+          "banked": 9,
+          "rerun": 11,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.0.5",
+          "banked": 9,
+          "rerun": 11,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.0.625",
+          "banked": 10,
+          "rerun": 9,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.0.75",
+          "banked": 7,
+          "rerun": 8,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.0.875",
+          "banked": 12,
+          "rerun": 10,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.agree_frac_hist.1.0",
+          "banked": 30,
+          "rerun": 28,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.dissent_rate",
+          "banked": 0.6551724137931034,
+          "rerun": 0.6781609195402298,
+          "abs_delta": 0.02298850574712641,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.max_reach_ci95[0]",
+          "banked": 0.25301204819277107,
+          "rerun": 0.28865979381443296,
+          "abs_delta": 0.0356477456216619,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.max_reach_ci95[1]",
+          "banked": 0.4166666666666667,
+          "rerun": 0.45569620253164556,
+          "abs_delta": 0.03902953586497887,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.max_reach_excl_control",
+          "banked": 0.3333333333333333,
+          "rerun": 0.367816091954023,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.mean_agree_frac",
+          "banked": 0.7011494252873564,
+          "rerun": 0.6795977011494253,
+          "abs_delta": 0.02155172413793105,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.mean_cvar_eligible",
+          "banked": 22.49425287356322,
+          "rerun": 25.862068965517242,
+          "abs_delta": 3.3678160919540225,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.mean_distinct_world_picks",
+          "banked": 2.264367816091954,
+          "rerun": 2.2988505747126435,
+          "abs_delta": 0.0344827586206895,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.n",
+          "banked": 87,
+          "rerun": 87,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.n_star_cvar_eligible",
+          "banked": 87,
+          "rerun": 87,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.reach.0.25",
+          "banked": 0.3333333333333333,
+          "rerun": 0.367816091954023,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach.0.5",
+          "banked": 0.2413793103448276,
+          "rerun": 0.26436781609195403,
+          "abs_delta": 0.022988505747126436,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach.0.75",
+          "banked": 0.21839080459770116,
+          "rerun": 0.22988505747126436,
+          "abs_delta": 0.011494252873563204,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach.1.0",
+          "banked": 0.11494252873563218,
+          "rerun": 0.14942528735632185,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach_star_eligible_only.0.25",
+          "banked": 0.3333333333333333,
+          "rerun": 0.367816091954023,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach_star_eligible_only.0.5",
+          "banked": 0.2413793103448276,
+          "rerun": 0.26436781609195403,
+          "abs_delta": 0.022988505747126436,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach_star_eligible_only.0.75",
+          "banked": 0.21839080459770116,
+          "rerun": 0.22988505747126436,
+          "abs_delta": 0.011494252873563204,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach_star_eligible_only.1.0",
+          "banked": 0.11494252873563218,
+          "rerun": 0.14942528735632185,
+          "abs_delta": 0.03448275862068967,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach_vs_equalweight.0.25",
+          "banked": 0.26436781609195403,
+          "rerun": 0.27586206896551724,
+          "abs_delta": 0.011494252873563204,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach_vs_equalweight.0.5",
+          "banked": 0.14942528735632185,
+          "rerun": 0.14942528735632185,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.reach_vs_equalweight.0.75",
+          "banked": 0.11494252873563218,
+          "rerun": 0.10344827586206896,
+          "abs_delta": 0.011494252873563218,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.U_ci95[0]",
+          "banked": 0.10588235294117647,
+          "rerun": 0.04819277108433735,
+          "abs_delta": 0.05768958185683912,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.U_ci95[1]",
+          "banked": 0.2727272727272727,
+          "rerun": 0.17857142857142858,
+          "abs_delta": 0.09415584415584413,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.U_unanimous",
+          "banked": 0.18518518518518517,
+          "rerun": 0.1111111111111111,
+          "abs_delta": 0.07407407407407407,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.0.0",
+          "banked": 5,
+          "rerun": 5,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.0.125",
+          "banked": 11,
+          "rerun": 9,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.0.25",
+          "banked": 9,
+          "rerun": 14,
+          "abs_delta": 5,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.0.375",
+          "banked": 12,
+          "rerun": 10,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.0.5",
+          "banked": 7,
+          "rerun": 5,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.0.625",
+          "banked": 6,
+          "rerun": 7,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.0.75",
+          "banked": 10,
+          "rerun": 13,
+          "abs_delta": 3,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.0.875",
+          "banked": 6,
+          "rerun": 9,
+          "abs_delta": 3,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.agree_frac_hist.1.0",
+          "banked": 15,
+          "rerun": 9,
+          "abs_delta": 6,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.dissent_rate",
+          "banked": 0.8148148148148148,
+          "rerun": 0.8888888888888888,
+          "abs_delta": 0.07407407407407407,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.max_reach_ci95[0]",
+          "banked": 0.38961038961038963,
+          "rerun": 0.3815789473684211,
+          "abs_delta": 0.008031442241968556,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.max_reach_ci95[1]",
+          "banked": 0.5975609756097561,
+          "rerun": 0.6,
+          "abs_delta": 0.0024390243902439046,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.max_reach_excl_control",
+          "banked": 0.49382716049382713,
+          "rerun": 0.49382716049382713,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.mean_agree_frac",
+          "banked": 0.5324074074074074,
+          "rerun": 0.5169753086419753,
+          "abs_delta": 0.015432098765432167,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.mean_cvar_eligible",
+          "banked": 20.135802469135804,
+          "rerun": 27.395061728395063,
+          "abs_delta": 7.2592592592592595,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.mean_distinct_world_picks",
+          "banked": 3.185185185185185,
+          "rerun": 3.2098765432098766,
+          "abs_delta": 0.024691358024691468,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.n",
+          "banked": 81,
+          "rerun": 81,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.n_star_cvar_eligible",
+          "banked": 81,
+          "rerun": 81,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.reach.0.25",
+          "banked": 0.49382716049382713,
+          "rerun": 0.49382716049382713,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.reach.0.5",
+          "banked": 0.4074074074074074,
+          "rerun": 0.4074074074074074,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.reach.0.75",
+          "banked": 0.35802469135802467,
+          "rerun": 0.3333333333333333,
+          "abs_delta": 0.024691358024691357,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.reach.1.0",
+          "banked": 0.2716049382716049,
+          "rerun": 0.2345679012345679,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.reach_star_eligible_only.0.25",
+          "banked": 0.49382716049382713,
+          "rerun": 0.49382716049382713,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.reach_star_eligible_only.0.5",
+          "banked": 0.4074074074074074,
+          "rerun": 0.4074074074074074,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.reach_star_eligible_only.0.75",
+          "banked": 0.35802469135802467,
+          "rerun": 0.3333333333333333,
+          "abs_delta": 0.024691358024691357,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.reach_star_eligible_only.1.0",
+          "banked": 0.2716049382716049,
+          "rerun": 0.2345679012345679,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.reach_vs_equalweight.0.25",
+          "banked": 0.3333333333333333,
+          "rerun": 0.3950617283950617,
+          "abs_delta": 0.06172839506172839,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.reach_vs_equalweight.0.5",
+          "banked": 0.19753086419753085,
+          "rerun": 0.25925925925925924,
+          "abs_delta": 0.06172839506172839,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.reach_vs_equalweight.0.75",
+          "banked": 0.12345679012345678,
+          "rerun": 0.16049382716049382,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.U_ci95[0]",
+          "banked": 0.32,
+          "rerun": 0.2916666666666667,
+          "abs_delta": 0.02833333333333332,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.U_ci95[1]",
+          "banked": 0.6521739130434783,
+          "rerun": 0.6086956521739131,
+          "abs_delta": 0.04347826086956519,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.U_unanimous",
+          "banked": 0.5,
+          "rerun": 0.46153846153846156,
+          "abs_delta": 0.038461538461538436,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.agree_frac_hist.0.125",
+          "banked": 2,
+          "rerun": 2,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.agree_frac_hist.0.5",
+          "banked": 2,
+          "rerun": 1,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.agree_frac_hist.0.625",
+          "banked": 3,
+          "rerun": 3,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.agree_frac_hist.0.75",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.agree_frac_hist.0.875",
+          "banked": 5,
+          "rerun": 7,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.agree_frac_hist.1.0",
+          "banked": 13,
+          "rerun": 12,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.dissent_rate",
+          "banked": 0.5,
+          "rerun": 0.5384615384615384,
+          "abs_delta": 0.038461538461538436,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.max_reach_ci95[0]",
+          "banked": 0.07407407407407407,
+          "rerun": 0.034482758620689655,
+          "abs_delta": 0.039591315453384415,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.max_reach_ci95[1]",
+          "banked": 0.42857142857142855,
+          "rerun": 0.3181818181818182,
+          "abs_delta": 0.11038961038961037,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.max_reach_excl_control",
+          "banked": 0.23076923076923078,
+          "rerun": 0.15384615384615385,
+          "abs_delta": 0.07692307692307693,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.mean_agree_frac",
+          "banked": 0.8173076923076923,
+          "rerun": 0.8269230769230769,
+          "abs_delta": 0.009615384615384581,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.mean_cvar_eligible",
+          "banked": 5.153846153846154,
+          "rerun": 5.153846153846154,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.mean_distinct_world_picks",
+          "banked": 1.6923076923076923,
+          "rerun": 1.6538461538461537,
+          "abs_delta": 0.03846153846153855,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.n",
+          "banked": 26,
+          "rerun": 26,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.n_star_cvar_eligible",
+          "banked": 26,
+          "rerun": 26,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach.0.25",
+          "banked": 0.23076923076923078,
+          "rerun": 0.15384615384615385,
+          "abs_delta": 0.07692307692307693,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach.0.5",
+          "banked": 0.15384615384615385,
+          "rerun": 0.15384615384615385,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach.0.75",
+          "banked": 0.11538461538461539,
+          "rerun": 0.11538461538461539,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach.1.0",
+          "banked": 0.07692307692307693,
+          "rerun": 0.07692307692307693,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach_star_eligible_only.0.25",
+          "banked": 0.23076923076923078,
+          "rerun": 0.15384615384615385,
+          "abs_delta": 0.07692307692307693,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach_star_eligible_only.0.5",
+          "banked": 0.15384615384615385,
+          "rerun": 0.15384615384615385,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach_star_eligible_only.0.75",
+          "banked": 0.11538461538461539,
+          "rerun": 0.11538461538461539,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach_star_eligible_only.1.0",
+          "banked": 0.07692307692307693,
+          "rerun": 0.07692307692307693,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach_vs_equalweight.0.25",
+          "banked": 0.15384615384615385,
+          "rerun": 0.07692307692307693,
+          "abs_delta": 0.07692307692307693,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach_vs_equalweight.0.5",
+          "banked": 0.07692307692307693,
+          "rerun": 0.07692307692307693,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach_vs_equalweight.0.75",
+          "banked": 0.038461538461538464,
+          "rerun": 0.038461538461538464,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.P_star_cvar_eligible",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.U_ci95[0]",
+          "banked": 0.3888888888888889,
+          "rerun": 0.35714285714285715,
+          "abs_delta": 0.031746031746031744,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.U_ci95[1]",
+          "banked": 0.6231884057971014,
+          "rerun": 0.5844155844155844,
+          "abs_delta": 0.03877282138151705,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.U_unanimous",
+          "banked": 0.5061728395061729,
+          "rerun": 0.4691358024691358,
+          "abs_delta": 0.03703703703703709,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.agree_frac_hist.0.125",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.agree_frac_hist.0.25",
+          "banked": 6,
+          "rerun": 10,
+          "abs_delta": 4,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.agree_frac_hist.0.375",
+          "banked": 2,
+          "rerun": 3,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.agree_frac_hist.0.5",
+          "banked": 6,
+          "rerun": 6,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.agree_frac_hist.0.625",
+          "banked": 11,
+          "rerun": 5,
+          "abs_delta": 6,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.agree_frac_hist.0.75",
+          "banked": 4,
+          "rerun": 7,
+          "abs_delta": 3,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.agree_frac_hist.0.875",
+          "banked": 7,
+          "rerun": 8,
+          "abs_delta": 1,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.agree_frac_hist.1.0",
+          "banked": 41,
+          "rerun": 38,
+          "abs_delta": 3,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.dissent_rate",
+          "banked": 0.49382716049382713,
+          "rerun": 0.5308641975308642,
+          "abs_delta": 0.03703703703703709,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.max_reach_ci95[0]",
+          "banked": 0.13414634146341464,
+          "rerun": 0.16216216216216217,
+          "abs_delta": 0.02801582069874753,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.max_reach_ci95[1]",
+          "banked": 0.32142857142857145,
+          "rerun": 0.3563218390804598,
+          "abs_delta": 0.03489326765188833,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.max_reach_excl_control",
+          "banked": 0.2222222222222222,
+          "rerun": 0.25925925925925924,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.mean_agree_frac",
+          "banked": 0.7746913580246914,
+          "rerun": 0.7469135802469136,
+          "abs_delta": 0.02777777777777779,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.mean_cvar_eligible",
+          "banked": 19.88888888888889,
+          "rerun": 21.123456790123456,
+          "abs_delta": 1.2345679012345663,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.mean_distinct_world_picks",
+          "banked": 1.8271604938271604,
+          "rerun": 1.8518518518518519,
+          "abs_delta": 0.024691358024691468,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.n",
+          "banked": 81,
+          "rerun": 81,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.n_star_cvar_eligible",
+          "banked": 81,
+          "rerun": 81,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.reach.0.25",
+          "banked": 0.2222222222222222,
+          "rerun": 0.25925925925925924,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach.0.5",
+          "banked": 0.1728395061728395,
+          "rerun": 0.20987654320987653,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach.0.75",
+          "banked": 0.16049382716049382,
+          "rerun": 0.19753086419753085,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach.1.0",
+          "banked": 0.12345679012345678,
+          "rerun": 0.13580246913580246,
+          "abs_delta": 0.012345679012345678,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach_star_eligible_only.0.25",
+          "banked": 0.2222222222222222,
+          "rerun": 0.25925925925925924,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach_star_eligible_only.0.5",
+          "banked": 0.1728395061728395,
+          "rerun": 0.20987654320987653,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach_star_eligible_only.0.75",
+          "banked": 0.16049382716049382,
+          "rerun": 0.19753086419753085,
+          "abs_delta": 0.037037037037037035,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach_star_eligible_only.1.0",
+          "banked": 0.12345679012345678,
+          "rerun": 0.13580246913580246,
+          "abs_delta": 0.012345679012345678,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach_vs_equalweight.0.25",
+          "banked": 0.1111111111111111,
+          "rerun": 0.16049382716049382,
+          "abs_delta": 0.04938271604938271,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach_vs_equalweight.0.5",
+          "banked": 0.06172839506172839,
+          "rerun": 0.1111111111111111,
+          "abs_delta": 0.04938271604938271,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach_vs_equalweight.0.75",
+          "banked": 0.04938271604938271,
+          "rerun": 0.07407407407407407,
+          "abs_delta": 0.024691358024691357,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.reach_vs_equalweight.1.0",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.alpha1_control_note",
+          "banked": "NOT a void trigger -- the PREREG's identity premise was arithmetically wrong (see DEVIATIONS D-1); reported as the equal-weight pooling reach.",
+          "rerun": "NOT a void trigger -- the PREREG's identity premise was arithmetically wrong (see DEVIATIONS D-1); reported as the equal-weight pooling reach.",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.n_exact_region",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.n_not_ok",
+          "banked": 0,
+          "rerun": 0,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.n_rows",
+          "banked": 580,
+          "rerun": 580,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.prereg_alpha1_control_disagreements",
+          "banked": 88,
+          "rerun": 86,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "judge_free",
+          "banked": true,
+          "rerun": true,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "prereg",
+          "banked": "measurement/cl083_mech_censuses_20260830/PREREG.md",
+          "rerun": "measurement/cl083_mech_censuses_20260830/PREREG.md",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "schema",
+          "banked": "carcassonne-cl083-census1-readout/v1",
+          "rerun": "carcassonne-cl083-census1-readout/v1",
+          "abs_delta": null,
+          "identical": true
+        }
+      ]
+    },
+    {
+      "label": "CL-083 Census 3 (SA-M1)",
+      "banked_sha256_16": "94ffb6cf32187c60",
+      "rerun_sha256_16": "820a82d84664d7b3",
+      "n_scalars": 274,
+      "n_differing": 86,
+      "verdict": "FLAGGED",
+      "rows": [
+        {
+          "stat": "ONSET_ONLY.P_best_seed_unvisited_given_exists",
+          "banked": 0.04081632653061224,
+          "rerun": 0.04081632653061224,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.P_exists",
+          "banked": 0.5345454545454545,
+          "rerun": 0.5345454545454545,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.P_exists_ci95[0]",
+          "banked": 0.4844290657439446,
+          "rerun": 0.4844290657439446,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.P_exists_ci95[1]",
+          "banked": 0.5851851851851851,
+          "rerun": 0.5851851851851851,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.P_wellvisited_given_exists",
+          "banked": 0.8299319727891157,
+          "rerun": 0.8231292517006803,
+          "abs_delta": 0.006802721088435382,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.P_wv_ci95[0]",
+          "banked": 0.7908496732026143,
+          "rerun": 0.7847222222222222,
+          "abs_delta": 0.006127450980392135,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.P_wv_ci95[1]",
+          "banked": 0.8731343283582089,
+          "rerun": 0.8656716417910447,
+          "abs_delta": 0.007462686567164201,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.compound_ci95[0]",
+          "banked": 0.064,
+          "rerun": 0.06882591093117409,
+          "abs_delta": 0.004825910931174085,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.compound_ci95[1]",
+          "banked": 0.11409395973154363,
+          "rerun": 0.11842105263157894,
+          "abs_delta": 0.004327092900035315,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.compound_reachable_share",
+          "banked": 0.09090909090909091,
+          "rerun": 0.09454545454545454,
+          "abs_delta": 0.003636363636363632,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.mean_budget_share_of_best_seed",
+          "banked": 0.4514465669988926,
+          "rerun": 0.41252867426040185,
+          "abs_delta": 0.03891789273849072,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.mean_n_legal",
+          "banked": 26.585454545454546,
+          "rerun": 26.585454545454546,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.mean_n_tagged",
+          "banked": 1.0327272727272727,
+          "rerun": 1.0327272727272727,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.median_rank_of_best_seed",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.n",
+          "banked": 275,
+          "rerun": 275,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.n_exists",
+          "banked": 147,
+          "rerun": 147,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.n_seed_quartiles[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "ONSET_ONLY.n_seed_quartiles[1]",
+          "banked": 223.0,
+          "rerun": 192.0,
+          "abs_delta": 31.0,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.n_seed_quartiles[2]",
+          "banked": 5606.0,
+          "rerun": 4940.0,
+          "abs_delta": 666.0,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.n_seed_quartiles[3]",
+          "banked": 9181.0,
+          "rerun": 7985.0,
+          "abs_delta": 1196.0,
+          "identical": false
+        },
+        {
+          "stat": "ONSET_ONLY.n_seed_quartiles[4]",
+          "banked": 11008.0,
+          "rerun": 11008.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.P_best_seed_unvisited_given_exists",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.P_exists",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.P_exists_ci95[0]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.P_exists_ci95[1]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.P_wellvisited_given_exists",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.P_wv_ci95[0]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.P_wv_ci95[1]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.compound_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.compound_ci95[1]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.compound_reachable_share",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.mean_budget_share_of_best_seed",
+          "banked": 0.2712875484496124,
+          "rerun": 0.2704699612403101,
+          "abs_delta": 0.0008175872093023062,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.mean_n_legal",
+          "banked": 33.333333333333336,
+          "rerun": 33.333333333333336,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.mean_n_tagged",
+          "banked": 4.666666666666667,
+          "rerun": 4.666666666666667,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.median_rank_of_best_seed",
+          "banked": 6,
+          "rerun": 6,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n",
+          "banked": 3,
+          "rerun": 3,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n_exists",
+          "banked": 3,
+          "rerun": 3,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n_seed_quartiles[0]",
+          "banked": 187.0,
+          "rerun": 187.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n_seed_quartiles[1]",
+          "banked": 187.0,
+          "rerun": 187.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n_seed_quartiles[2]",
+          "banked": 296.0,
+          "rerun": 296.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n_seed_quartiles[3]",
+          "banked": 8476.0,
+          "rerun": 8449.0,
+          "abs_delta": 27.0,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.app_aug2.n_seed_quartiles[4]",
+          "banked": 8476.0,
+          "rerun": 8449.0,
+          "abs_delta": 27.0,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.P_best_seed_unvisited_given_exists",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.P_exists",
+          "banked": 0.8,
+          "rerun": 0.8,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.P_exists_ci95[0]",
+          "banked": 0.75,
+          "rerun": 0.75,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.P_exists_ci95[1]",
+          "banked": 0.8333333333333334,
+          "rerun": 0.8333333333333334,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.P_wellvisited_given_exists",
+          "banked": 0.875,
+          "rerun": 0.875,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.P_wv_ci95[0]",
+          "banked": 0.6666666666666666,
+          "rerun": 0.6666666666666666,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.P_wv_ci95[1]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.compound_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.compound_ci95[1]",
+          "banked": 0.25,
+          "rerun": 0.25,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.compound_reachable_share",
+          "banked": 0.1,
+          "rerun": 0.1,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.mean_budget_share_of_best_seed",
+          "banked": 0.341319949127907,
+          "rerun": 0.29401344476744184,
+          "abs_delta": 0.04730650436046513,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.mean_n_legal",
+          "banked": 19.2,
+          "rerun": 19.2,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.mean_n_tagged",
+          "banked": 2.3,
+          "rerun": 2.3,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.median_rank_of_best_seed",
+          "banked": 2,
+          "rerun": 2,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n",
+          "banked": 10,
+          "rerun": 10,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n_exists",
+          "banked": 8,
+          "rerun": 8,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n_seed_quartiles[0]",
+          "banked": 92.0,
+          "rerun": 90.0,
+          "abs_delta": 2.0,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n_seed_quartiles[1]",
+          "banked": 510.0,
+          "rerun": 509.0,
+          "abs_delta": 1.0,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n_seed_quartiles[2]",
+          "banked": 5536.0,
+          "rerun": 1606.0,
+          "abs_delta": 3930.0,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n_seed_quartiles[3]",
+          "banked": 8223.0,
+          "rerun": 8228.0,
+          "abs_delta": 5.0,
+          "identical": false
+        },
+        {
+          "stat": "OTHER_PROFILE_LEG.walled.n_seed_quartiles[4]",
+          "banked": 8492.0,
+          "rerun": 8493.0,
+          "abs_delta": 1.0,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.P_best_seed_unvisited_given_exists",
+          "banked": 0.016304347826086956,
+          "rerun": 0.016304347826086956,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.P_exists",
+          "banked": 0.6690909090909091,
+          "rerun": 0.6690909090909091,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.P_exists_ci95[0]",
+          "banked": 0.6086956521739131,
+          "rerun": 0.6086956521739131,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.P_exists_ci95[1]",
+          "banked": 0.7258566978193146,
+          "rerun": 0.7258566978193146,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.P_wellvisited_given_exists",
+          "banked": 0.8967391304347826,
+          "rerun": 0.8913043478260869,
+          "abs_delta": 0.005434782608695676,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.P_wv_ci95[0]",
+          "banked": 0.8557692307692307,
+          "rerun": 0.8490566037735849,
+          "abs_delta": 0.006712626995645787,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.P_wv_ci95[1]",
+          "banked": 0.9336734693877551,
+          "rerun": 0.93,
+          "abs_delta": 0.003673469387755035,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.compound_ci95[0]",
+          "banked": 0.0429042904290429,
+          "rerun": 0.046218487394957986,
+          "abs_delta": 0.0033141969659150824,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.compound_ci95[1]",
+          "banked": 0.09477124183006536,
+          "rerun": 0.0996309963099631,
+          "abs_delta": 0.0048597544798977405,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.compound_reachable_share",
+          "banked": 0.06909090909090909,
+          "rerun": 0.07272727272727272,
+          "abs_delta": 0.003636363636363632,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.mean_budget_share_of_best_seed",
+          "banked": 0.4136028540508089,
+          "rerun": 0.3757346435793731,
+          "abs_delta": 0.03786821047143579,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.mean_n_legal",
+          "banked": 26.585454545454546,
+          "rerun": 26.585454545454546,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.mean_n_tagged",
+          "banked": 4.127272727272727,
+          "rerun": 4.127272727272727,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.median_rank_of_best_seed",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.n",
+          "banked": 275,
+          "rerun": 275,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.n_exists",
+          "banked": 184,
+          "rerun": 184,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.n_seed_quartiles[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.n_seed_quartiles[1]",
+          "banked": 458.0,
+          "rerun": 320.0,
+          "abs_delta": 138.0,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.n_seed_quartiles[2]",
+          "banked": 3983.0,
+          "rerun": 3401.0,
+          "abs_delta": 582.0,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.n_seed_quartiles[3]",
+          "banked": 8131.0,
+          "rerun": 7560.0,
+          "abs_delta": 571.0,
+          "identical": false
+        },
+        {
+          "stat": "PRIMARY_all_crux_plies.n_seed_quartiles[4]",
+          "banked": 11008.0,
+          "rerun": 11008.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.P_best_seed_unvisited_given_exists",
+          "banked": 0.016304347826086956,
+          "rerun": 0.016304347826086956,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.P_exists",
+          "banked": 0.6690909090909091,
+          "rerun": 0.6690909090909091,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.P_exists_ci95[0]",
+          "banked": 0.6086956521739131,
+          "rerun": 0.6086956521739131,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.P_exists_ci95[1]",
+          "banked": 0.7258566978193146,
+          "rerun": 0.7258566978193146,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.P_wellvisited_given_exists",
+          "banked": 0.9021739130434783,
+          "rerun": 0.8913043478260869,
+          "abs_delta": 0.010869565217391353,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.P_wv_ci95[0]",
+          "banked": 0.8624338624338624,
+          "rerun": 0.8490566037735849,
+          "abs_delta": 0.013377258660277502,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.P_wv_ci95[1]",
+          "banked": 0.9381443298969072,
+          "rerun": 0.93,
+          "abs_delta": 0.008144329896907165,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.compound_ci95[0]",
+          "banked": 0.039285714285714285,
+          "rerun": 0.046218487394957986,
+          "abs_delta": 0.006932773109243701,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.compound_ci95[1]",
+          "banked": 0.09163346613545817,
+          "rerun": 0.0996309963099631,
+          "abs_delta": 0.007997530174504927,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.compound_reachable_share",
+          "banked": 0.06545454545454546,
+          "rerun": 0.07272727272727272,
+          "abs_delta": 0.007272727272727264,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.mean_budget_share_of_best_seed",
+          "banked": 0.41239128459934277,
+          "rerun": 0.37549272465874617,
+          "abs_delta": 0.0368985599405966,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.mean_n_legal",
+          "banked": 26.585454545454546,
+          "rerun": 26.585454545454546,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.mean_n_tagged",
+          "banked": 4.127272727272727,
+          "rerun": 4.127272727272727,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.median_rank_of_best_seed",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.n",
+          "banked": 275,
+          "rerun": 275,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.n_exists",
+          "banked": 184,
+          "rerun": 184,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.n_seed_quartiles[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "STABILITY_salt1.n_seed_quartiles[1]",
+          "banked": 582.0,
+          "rerun": 362.0,
+          "abs_delta": 220.0,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.n_seed_quartiles[2]",
+          "banked": 4127.0,
+          "rerun": 3279.0,
+          "abs_delta": 848.0,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.n_seed_quartiles[3]",
+          "banked": 8546.0,
+          "rerun": 7560.0,
+          "abs_delta": 986.0,
+          "identical": false
+        },
+        {
+          "stat": "STABILITY_salt1.n_seed_quartiles[4]",
+          "banked": 11008.0,
+          "rerun": 11008.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "VERDICT",
+          "banked": "SA-M1 KILLED -- BRANCH B (P_wv|exists 0.897 >= 0.80); COMPOUND (reachable share 0.069 <= 0.20)",
+          "rerun": "SA-M1 KILLED -- BRANCH B (P_wv|exists 0.891 >= 0.80); COMPOUND (reachable share 0.073 <= 0.20)",
+          "abs_delta": null,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.0.P_best_seed_unvisited_given_exists",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.P_exists",
+          "banked": 0.6958762886597938,
+          "rerun": 0.6958762886597938,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.P_exists_ci95[0]",
+          "banked": 0.6318681318681318,
+          "rerun": 0.6318681318681318,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.P_exists_ci95[1]",
+          "banked": 0.7578947368421053,
+          "rerun": 0.7578947368421053,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.P_wellvisited_given_exists",
+          "banked": 0.9703703703703703,
+          "rerun": 0.9703703703703703,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.P_wv_ci95[0]",
+          "banked": 0.937007874015748,
+          "rerun": 0.937007874015748,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.P_wv_ci95[1]",
+          "banked": 0.993103448275862,
+          "rerun": 0.993103448275862,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.compound_ci95[0]",
+          "banked": 0.004901960784313725,
+          "rerun": 0.004901960784313725,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.compound_ci95[1]",
+          "banked": 0.043478260869565216,
+          "rerun": 0.043478260869565216,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.compound_reachable_share",
+          "banked": 0.020618556701030927,
+          "rerun": 0.020618556701030927,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.mean_budget_share_of_best_seed",
+          "banked": 0.5087162198535745,
+          "rerun": 0.46933004952627044,
+          "abs_delta": 0.03938617032730407,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.0.mean_n_legal",
+          "banked": 25.15463917525773,
+          "rerun": 25.15463917525773,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.mean_n_tagged",
+          "banked": 3.881443298969072,
+          "rerun": 3.881443298969072,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.median_rank_of_best_seed",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.n",
+          "banked": 194,
+          "rerun": 194,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.n_exists",
+          "banked": 135,
+          "rerun": 135,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.n_seed_quartiles[0]",
+          "banked": 2.0,
+          "rerun": 2.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.0.n_seed_quartiles[1]",
+          "banked": 1793.0,
+          "rerun": 1548.0,
+          "abs_delta": 245.0,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.0.n_seed_quartiles[2]",
+          "banked": 5877.0,
+          "rerun": 5167.0,
+          "abs_delta": 710.0,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.0.n_seed_quartiles[3]",
+          "banked": 9413.0,
+          "rerun": 8758.0,
+          "abs_delta": 655.0,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.0.n_seed_quartiles[4]",
+          "banked": 11008.0,
+          "rerun": 11008.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.P_best_seed_unvisited_given_exists",
+          "banked": 0.061224489795918366,
+          "rerun": 0.061224489795918366,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.P_exists",
+          "banked": 0.6049382716049383,
+          "rerun": 0.6049382716049383,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.P_exists_ci95[0]",
+          "banked": 0.4939759036144578,
+          "rerun": 0.4939759036144578,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.P_exists_ci95[1]",
+          "banked": 0.6987951807228916,
+          "rerun": 0.6987951807228916,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.P_wellvisited_given_exists",
+          "banked": 0.6938775510204082,
+          "rerun": 0.673469387755102,
+          "abs_delta": 0.020408163265306145,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.P_wv_ci95[0]",
+          "banked": 0.5555555555555556,
+          "rerun": 0.5333333333333333,
+          "abs_delta": 0.022222222222222254,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.P_wv_ci95[1]",
+          "banked": 0.82,
+          "rerun": 0.8,
+          "abs_delta": 0.019999999999999907,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.compound_ci95[0]",
+          "banked": 0.10526315789473684,
+          "rerun": 0.11392405063291139,
+          "abs_delta": 0.008660892738174553,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.compound_ci95[1]",
+          "banked": 0.27906976744186046,
+          "rerun": 0.29213483146067415,
+          "abs_delta": 0.013065064018813688,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.compound_reachable_share",
+          "banked": 0.18518518518518517,
+          "rerun": 0.19753086419753085,
+          "abs_delta": 0.012345679012345678,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.mean_budget_share_of_best_seed",
+          "banked": 0.15155582581869956,
+          "rerun": 0.11786974964404368,
+          "abs_delta": 0.03368607617465588,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.mean_n_legal",
+          "banked": 30.012345679012345,
+          "rerun": 30.012345679012345,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.mean_n_tagged",
+          "banked": 4.716049382716049,
+          "rerun": 4.716049382716049,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.median_rank_of_best_seed",
+          "banked": 5,
+          "rerun": 8,
+          "abs_delta": 3,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.n",
+          "banked": 81,
+          "rerun": 81,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.n_exists",
+          "banked": 49,
+          "rerun": 49,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.n_seed_quartiles[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.n_seed_quartiles[1]",
+          "banked": 51.0,
+          "rerun": 51.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_actor.1.n_seed_quartiles[2]",
+          "banked": 451.0,
+          "rerun": 273.0,
+          "abs_delta": 178.0,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.n_seed_quartiles[3]",
+          "banked": 1647.0,
+          "rerun": 1361.0,
+          "abs_delta": 286.0,
+          "identical": false
+        },
+        {
+          "stat": "by_actor.1.n_seed_quartiles[4]",
+          "banked": 10567.0,
+          "rerun": 8257.0,
+          "abs_delta": 2310.0,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.meeples.P_best_seed_unvisited_given_exists",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.P_exists",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.P_exists_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.P_exists_ci95[1]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.P_wellvisited_given_exists",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.P_wv_ci95",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.compound_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.compound_ci95[1]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.compound_reachable_share",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.mean_budget_share_of_best_seed",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.mean_n_legal",
+          "banked": 5.153846153846154,
+          "rerun": 5.153846153846154,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.mean_n_tagged",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.median_rank_of_best_seed",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.n",
+          "banked": 26,
+          "rerun": 26,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.n_exists",
+          "banked": 0,
+          "rerun": 0,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.meeples.n_seed_quartiles",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.P_best_seed_unvisited_given_exists",
+          "banked": 0.016304347826086956,
+          "rerun": 0.016304347826086956,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.P_exists",
+          "banked": 0.7389558232931727,
+          "rerun": 0.7389558232931727,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.P_exists_ci95[0]",
+          "banked": 0.6852791878172588,
+          "rerun": 0.6852791878172588,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.P_exists_ci95[1]",
+          "banked": 0.788,
+          "rerun": 0.788,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.P_wellvisited_given_exists",
+          "banked": 0.8967391304347826,
+          "rerun": 0.8913043478260869,
+          "abs_delta": 0.005434782608695676,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.P_wv_ci95[0]",
+          "banked": 0.8557692307692307,
+          "rerun": 0.8490566037735849,
+          "abs_delta": 0.006712626995645787,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.P_wv_ci95[1]",
+          "banked": 0.9336734693877551,
+          "rerun": 0.93,
+          "abs_delta": 0.003673469387755035,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.compound_ci95[0]",
+          "banked": 0.047619047619047616,
+          "rerun": 0.05154639175257732,
+          "abs_delta": 0.0039273441335297005,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.compound_ci95[1]",
+          "banked": 0.10569105691056911,
+          "rerun": 0.1092436974789916,
+          "abs_delta": 0.0035526405684224854,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.compound_reachable_share",
+          "banked": 0.07630522088353414,
+          "rerun": 0.08032128514056225,
+          "abs_delta": 0.004016064257028107,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.mean_budget_share_of_best_seed",
+          "banked": 0.4136028540508089,
+          "rerun": 0.3757346435793731,
+          "abs_delta": 0.03786821047143579,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.mean_n_legal",
+          "banked": 28.823293172690764,
+          "rerun": 28.823293172690764,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.mean_n_tagged",
+          "banked": 4.5582329317269075,
+          "rerun": 4.5582329317269075,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.median_rank_of_best_seed",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.n",
+          "banked": 249,
+          "rerun": 249,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.n_exists",
+          "banked": 184,
+          "rerun": 184,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.n_seed_quartiles[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_phase.tiles.n_seed_quartiles[1]",
+          "banked": 458.0,
+          "rerun": 320.0,
+          "abs_delta": 138.0,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.n_seed_quartiles[2]",
+          "banked": 3983.0,
+          "rerun": 3401.0,
+          "abs_delta": 582.0,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.n_seed_quartiles[3]",
+          "banked": 8131.0,
+          "rerun": 7560.0,
+          "abs_delta": 571.0,
+          "identical": false
+        },
+        {
+          "stat": "by_phase.tiles.n_seed_quartiles[4]",
+          "banked": 11008.0,
+          "rerun": 11008.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.P_best_seed_unvisited_given_exists",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.P_exists",
+          "banked": 0.6206896551724138,
+          "rerun": 0.6206896551724138,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.P_exists_ci95[0]",
+          "banked": 0.5263157894736842,
+          "rerun": 0.5263157894736842,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.P_exists_ci95[1]",
+          "banked": 0.7142857142857143,
+          "rerun": 0.7142857142857143,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.P_wellvisited_given_exists",
+          "banked": 0.9444444444444444,
+          "rerun": 0.9444444444444444,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.P_wv_ci95[0]",
+          "banked": 0.875,
+          "rerun": 0.875,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.P_wv_ci95[1]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.compound_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.compound_ci95[1]",
+          "banked": 0.0821917808219178,
+          "rerun": 0.0821917808219178,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.compound_reachable_share",
+          "banked": 0.034482758620689655,
+          "rerun": 0.034482758620689655,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.mean_budget_share_of_best_seed",
+          "banked": 0.3302261654823428,
+          "rerun": 0.30264689653316107,
+          "abs_delta": 0.027579268949181723,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.mean_n_legal",
+          "banked": 27.551724137931036,
+          "rerun": 27.551724137931036,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.mean_n_tagged",
+          "banked": 4.850574712643678,
+          "rerun": 4.850574712643678,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.median_rank_of_best_seed",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.n",
+          "banked": 87,
+          "rerun": 87,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.n_exists",
+          "banked": 54,
+          "rerun": 54,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.n_seed_quartiles[0]",
+          "banked": 34.0,
+          "rerun": 34.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.control.n_seed_quartiles[1]",
+          "banked": 379.0,
+          "rerun": 292.0,
+          "abs_delta": 87.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.n_seed_quartiles[2]",
+          "banked": 2182.0,
+          "rerun": 1866.0,
+          "abs_delta": 316.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.n_seed_quartiles[3]",
+          "banked": 7489.0,
+          "rerun": 6191.0,
+          "abs_delta": 1298.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.control.n_seed_quartiles[4]",
+          "banked": 10962.0,
+          "rerun": 10961.0,
+          "abs_delta": 1.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.P_best_seed_unvisited_given_exists",
+          "banked": 0.061224489795918366,
+          "rerun": 0.061224489795918366,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.P_exists",
+          "banked": 0.6049382716049383,
+          "rerun": 0.6049382716049383,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.P_exists_ci95[0]",
+          "banked": 0.4939759036144578,
+          "rerun": 0.4939759036144578,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.P_exists_ci95[1]",
+          "banked": 0.6987951807228916,
+          "rerun": 0.6987951807228916,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.P_wellvisited_given_exists",
+          "banked": 0.6938775510204082,
+          "rerun": 0.673469387755102,
+          "abs_delta": 0.020408163265306145,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.P_wv_ci95[0]",
+          "banked": 0.5555555555555556,
+          "rerun": 0.5333333333333333,
+          "abs_delta": 0.022222222222222254,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.P_wv_ci95[1]",
+          "banked": 0.82,
+          "rerun": 0.8,
+          "abs_delta": 0.019999999999999907,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.compound_ci95[0]",
+          "banked": 0.10526315789473684,
+          "rerun": 0.11392405063291139,
+          "abs_delta": 0.008660892738174553,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.compound_ci95[1]",
+          "banked": 0.27906976744186046,
+          "rerun": 0.29213483146067415,
+          "abs_delta": 0.013065064018813688,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.compound_reachable_share",
+          "banked": 0.18518518518518517,
+          "rerun": 0.19753086419753085,
+          "abs_delta": 0.012345679012345678,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.mean_budget_share_of_best_seed",
+          "banked": 0.15155582581869956,
+          "rerun": 0.11786974964404368,
+          "abs_delta": 0.03368607617465588,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.mean_n_legal",
+          "banked": 30.012345679012345,
+          "rerun": 30.012345679012345,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.mean_n_tagged",
+          "banked": 4.716049382716049,
+          "rerun": 4.716049382716049,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.median_rank_of_best_seed",
+          "banked": 5,
+          "rerun": 8,
+          "abs_delta": 3,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.n",
+          "banked": 81,
+          "rerun": 81,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.n_exists",
+          "banked": 49,
+          "rerun": 49,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.n_seed_quartiles[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.n_seed_quartiles[1]",
+          "banked": 51.0,
+          "rerun": 51.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.defense.n_seed_quartiles[2]",
+          "banked": 451.0,
+          "rerun": 273.0,
+          "abs_delta": 178.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.n_seed_quartiles[3]",
+          "banked": 1647.0,
+          "rerun": 1361.0,
+          "abs_delta": 286.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.defense.n_seed_quartiles[4]",
+          "banked": 10567.0,
+          "rerun": 8257.0,
+          "abs_delta": 2310.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.farm_capture.P_best_seed_unvisited_given_exists",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.P_exists",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.P_exists_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.P_exists_ci95[1]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.P_wellvisited_given_exists",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.P_wv_ci95",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.compound_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.compound_ci95[1]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.compound_reachable_share",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.mean_budget_share_of_best_seed",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.mean_n_legal",
+          "banked": 5.153846153846154,
+          "rerun": 5.153846153846154,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.mean_n_tagged",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.median_rank_of_best_seed",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.n",
+          "banked": 26,
+          "rerun": 26,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.n_exists",
+          "banked": 0,
+          "rerun": 0,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.farm_capture.n_seed_quartiles",
+          "banked": null,
+          "rerun": null,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.P_best_seed_unvisited_given_exists",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.P_exists",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.P_exists_ci95[0]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.P_exists_ci95[1]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.P_wellvisited_given_exists",
+          "banked": 0.9876543209876543,
+          "rerun": 0.9876543209876543,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.P_wv_ci95[0]",
+          "banked": 0.9594594594594594,
+          "rerun": 0.9594594594594594,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.P_wv_ci95[1]",
+          "banked": 1.0,
+          "rerun": 1.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.compound_ci95[0]",
+          "banked": 0.0,
+          "rerun": 0.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.compound_ci95[1]",
+          "banked": 0.04054054054054054,
+          "rerun": 0.04054054054054054,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.compound_reachable_share",
+          "banked": 0.012345679012345678,
+          "rerun": 0.012345679012345678,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.mean_budget_share_of_best_seed",
+          "banked": 0.6277095894343956,
+          "rerun": 0.5804521515216767,
+          "abs_delta": 0.04725743791271886,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.mean_n_legal",
+          "banked": 29.0,
+          "rerun": 29.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.mean_n_tagged",
+          "banked": 4.08641975308642,
+          "rerun": 4.08641975308642,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.median_rank_of_best_seed",
+          "banked": 1,
+          "rerun": 1,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.n",
+          "banked": 81,
+          "rerun": 81,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.n_exists",
+          "banked": 81,
+          "rerun": 81,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.n_seed_quartiles[0]",
+          "banked": 2.0,
+          "rerun": 2.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "by_stratum.invasion.n_seed_quartiles[1]",
+          "banked": 5172.0,
+          "rerun": 4576.0,
+          "abs_delta": 596.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.n_seed_quartiles[2]",
+          "banked": 7289.0,
+          "rerun": 6553.0,
+          "abs_delta": 736.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.n_seed_quartiles[3]",
+          "banked": 9854.0,
+          "rerun": 9418.0,
+          "abs_delta": 436.0,
+          "identical": false
+        },
+        {
+          "stat": "by_stratum.invasion.n_seed_quartiles[4]",
+          "banked": 11008.0,
+          "rerun": 11008.0,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.alpha1_control_note",
+          "banked": "NOT a void trigger -- the PREREG's identity premise was arithmetically wrong (see DEVIATIONS D-1); reported as the equal-weight pooling reach.",
+          "rerun": "NOT a void trigger -- the PREREG's identity premise was arithmetically wrong (see DEVIATIONS D-1); reported as the equal-weight pooling reach.",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.n_exact_region",
+          "banked": 4,
+          "rerun": 4,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.n_not_ok",
+          "banked": 0,
+          "rerun": 0,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.n_rows",
+          "banked": 580,
+          "rerun": 580,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "instrument_faults.prereg_alpha1_control_disagreements",
+          "banked": 88,
+          "rerun": 86,
+          "abs_delta": 2,
+          "identical": false
+        },
+        {
+          "stat": "judge_free",
+          "banked": true,
+          "rerun": true,
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "m_as_budget_share",
+          "banked": 0.009992732558139535,
+          "rerun": 0.009992732558139535,
+          "abs_delta": 0.0,
+          "identical": true
+        },
+        {
+          "stat": "m_visits",
+          "banked": 110,
+          "rerun": 110,
+          "abs_delta": 0,
+          "identical": true
+        },
+        {
+          "stat": "prereg",
+          "banked": "measurement/cl083_mech_censuses_20260830/PREREG.md",
+          "rerun": "measurement/cl083_mech_censuses_20260830/PREREG.md",
+          "abs_delta": null,
+          "identical": true
+        },
+        {
+          "stat": "schema",
+          "banked": "carcassonne-cl083-census3-readout/v1",
+          "rerun": "carcassonne-cl083-census3-readout/v1",
+          "abs_delta": null,
+          "identical": true
+        }
+      ]
+    }
+  ],
+  "raw_row_files": [
+    {
+      "file": "C13_fixed_v1",
+      "banked_sha256_16": "ba5550b98478a0be",
+      "rerun_sha256_16": "6308da896c375de4",
+      "bytes_identical": false,
+      "multiset_identical": false,
+      "n_banked": 554,
+      "n_rerun": 554
+    },
+    {
+      "file": "C13_walled",
+      "banked_sha256_16": "07f12dd8443e766a",
+      "rerun_sha256_16": "61ed4c08e64f7584",
+      "bytes_identical": false,
+      "multiset_identical": false,
+      "n_banked": 20,
+      "n_rerun": 20
+    },
+    {
+      "file": "C13_app_aug2",
+      "banked_sha256_16": "d681d29b01e71dd5",
+      "rerun_sha256_16": "04ed520a94f895d0",
+      "bytes_identical": false,
+      "multiset_identical": false,
+      "n_banked": 6,
+      "n_rerun": 6
+    }
+  ]
+}
