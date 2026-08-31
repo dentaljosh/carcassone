@@ -33,6 +33,13 @@ import os
 import sys
 
 CHAMP_LEAF_HASH = "a36d2e15a3b3d71d"
+# ⚠️ THE ROUND'S FROZEN BUDGET, not "whatever PRODUCTION.yaml says today". These are the
+# knobs the 2026-08-10 menu round's cells were LAUNCHED at (k8x1376 = 11008, the champion
+# budget of that date); the gate's job is to prove the round's own arms are configured
+# alike, so it must NOT track later promotions — champion.fair_deploy went to k16x1376 =
+# 22016 on 2026-08-30 and these cells are still k8x1376, correctly. Deliberately literal;
+# contrast eval_fair_puct.PROD_KNOBS, which asks a LIVE question ("is this cell the shipped
+# champion?") and therefore must LOAD governance/PRODUCTION.yaml instead of restating it.
 DEPLOY_K_DETS = 8
 DEPLOY_SIMS = 1376
 # The recorded farm_base_off knockout magnitude (CL-074 farm rows, bands 1.00e11 / 1.05e11).
@@ -90,7 +97,9 @@ def check_manifest(man_path, label, expect_cand_differs):
     for who, kd, sm in (("candidate", ck, cs), ("opponent", ok_, os_)):
         if kd != DEPLOY_K_DETS or sm != DEPLOY_SIMS:
             fails.append(f"{label}: ASSERTION 3 FAILED - {who} budget is k{kd}x{sm}, expected "
-                         f"k{DEPLOY_K_DETS}x{DEPLOY_SIMS} (=11008, the deploy champion)")
+                         f"k{DEPLOY_K_DETS}x{DEPLOY_SIMS} "
+                         f"(={DEPLOY_K_DETS * DEPLOY_SIMS}, this ROUND's frozen budget — "
+                         "not necessarily today's champion; see the constant's note)")
     return (not fails), found, fails
 
 

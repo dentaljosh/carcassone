@@ -1506,16 +1506,77 @@ def _make_opponent(opponent, cfg_dict, sims, k_dets, K, rung_sims, seed,
                           wc_tiebreak=wc_tiebreak)
 
 
-# The PRODUCTION champion's search knobs (governance/PRODUCTION.yaml). These are ALSO
-# governance/PRODUCTION.yaml (NOT the argparse defaults — those stay at the common
-# k4×688 eval config, which since CL-071 is a *deviation* and prints as one);
-# `_prod_deviations` exists to catch any gap between a cell's knobs and the champion.
-# k_dets/sims track the CL-071 promotion (2026-07-29): champion budget is k8×1376=11008.
-# The pre-promotion k4×688 stood here until 2026-07-30, inverting the banner for a day
-# (true-champion cells flagged as deviant, superseded-budget cells blessed) — see the
-# 2026-07-30 audit F9 class and the h2h prereg note (ceb49a9).
-PROD_KNOBS = {"c_puct": 1.5, "tau_p": 5.0, "leaf_quantize": "float",
-              "value_norm": 15.0, "k_dets": 8, "sims": 1376}
+# The PRODUCTION champion's search knobs — READ FROM governance/PRODUCTION.yaml at import,
+# never restated here. These are the CHAMPION's values (NOT the argparse defaults — those
+# stay at the common k4×688 eval config, which since CL-071 is a *deviation* and prints as
+# one); `_prod_deviations` exists to catch any gap between a cell's knobs and the champion.
+#
+# ⚠️ WHY THIS IS A LOADER AND NOT A LITERAL — the "point, don't copy" rule, learned twice.
+# This block used to be a hard-coded dict restating the YAML. RESTATEMENT IS THE DEFECT;
+# the loader is the fix. The restatement has now bitten the banner twice:
+#   • 2026-07-30 — the pre-promotion k4×688 stood here after the CL-071 k8×1376 promotion,
+#     INVERTING the banner for a day (true-champion cells flagged as deviant, superseded-
+#     budget cells blessed). See the 2026-07-30 audit F9 class + the h2h prereg (ceb49a9).
+#   • 2026-08-30 — the k16×1376 (22016) desktop promotion left `k_dets: 8` frozen here, so
+#     every TRUE-champion cell drew a spurious `[warn] ... deviates from PRODUCTION.yaml`
+#     AND got a FALSE `production_config_deviations: ['k_dets=16 (production 8)']` stamped
+#     into its otherwise-healthy manifest.
+# A copy cannot be kept in sync by discipline — it has to not exist. The YAML is the single
+# source; `champion_factory.load_production_spec()` is the single reader.
+#
+# CANONICAL YAML ADDRESSES (what each knob is read from):
+#   c_puct        <- champion.agent_knobs.c_puct
+#   tau_p         <- champion.agent_knobs.tau_p
+#   leaf_quantize <- champion.agent_knobs.leaf_quantize
+#   value_norm    <- champion.agent_knobs.value_norm
+#   k_dets        <- champion.fair_deploy.k_dets      (the FAIR deploy budget of record)
+#   sims          <- champion.fair_deploy.sims_per_det
+PROD_KNOB_YAML_ADDRESSES = {
+    "c_puct": "champion.agent_knobs.c_puct",
+    "tau_p": "champion.agent_knobs.tau_p",
+    "leaf_quantize": "champion.agent_knobs.leaf_quantize",
+    "value_norm": "champion.agent_knobs.value_norm",
+    "k_dets": "champion.fair_deploy.k_dets",
+    "sims": "champion.fair_deploy.sims_per_det",
+}
+
+
+def _load_prod_knobs():
+    """The champion's shared search knobs, resolved from governance/PRODUCTION.yaml.
+
+    ⛔ FAIL LOUD, NEVER FALL BACK. If the YAML is missing/unparseable/shaped wrong we
+    return an EMPTY dict and say so ONCE on stderr. A warning-generator that cannot find
+    its reference must disable itself, not invent numbers: an empty dict makes
+    `_prod_deviations` report NO deviations (it iterates these knobs), which is the only
+    honest answer when the authority is unreadable — and strictly safer than the
+    alternative failure mode this loader exists to kill, where a stale constant asserts a
+    deviation that does not exist and stamps it into a manifest.
+
+    Types are pinned to the shapes `_prod_deviations` formats against (float knobs print
+    with %g, non-float knobs print verbatim), so the message text is unchanged."""
+    try:
+        spec = champion_factory.load_production_spec()
+        return {
+            "c_puct": float(spec.c_puct),
+            "tau_p": float(spec.tau_p),
+            "leaf_quantize": str(spec.leaf_quantize),
+            "value_norm": float(spec.value_norm),
+            "k_dets": int(spec.k_dets),
+            "sims": int(spec.sims_per_det),
+        }
+    except Exception as exc:                                    # noqa: BLE001
+        print("[warn] governance/PRODUCTION.yaml could not be read "
+              f"({type(exc).__name__}: {exc}). The production-deviation banner is "
+              "DISABLED for this process — no cell will be checked against, or claimed "
+              "to match, the shipped champion config. This is NOT a licence to read a "
+              "run's `production_config_deviations: []` as 'on production knobs'. Fix "
+              "the YAML (addresses: "
+              + "; ".join(f"{k} <- {v}" for k, v in PROD_KNOB_YAML_ADDRESSES.items())
+              + ").", file=sys.stderr)
+        return {}
+
+
+PROD_KNOBS = _load_prod_knobs()
 
 
 def _prod_deviations(args, sims_override=None, k_dets_override=None):
@@ -1527,7 +1588,12 @@ def _prod_deviations(args, sims_override=None, k_dets_override=None):
     block reports ITS OWN deviation, not the candidate's — with --opp-sims/--opp-k-dets
     the two sides deliberately search different budgets, so the shared-knob framing no
     longer holds for those axes. None (symmetric) -> getattr(args, ...), byte-identical
-    to the pre---opp-sims/--opp-k-dets behavior."""
+    to the pre---opp-sims/--opp-k-dets behavior.
+
+    ⚠️ If PROD_KNOBS is EMPTY the YAML was unreadable and `_load_prod_knobs` already said
+    so on stderr; this then returns [] because there is nothing to compare against. An
+    empty result means "no deviation FOUND" — it only means "matches the champion" when
+    the loader actually loaded. Do not read one as the other."""
     _ovr = {"sims": sims_override, "k_dets": k_dets_override}
     out = []
     for k, want in PROD_KNOBS.items():

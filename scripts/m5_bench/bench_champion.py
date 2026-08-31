@@ -70,9 +70,12 @@ from pathlib import Path  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_BUNDLE = HERE / "bundle"
-# k_dets x sims_per_det. k4x688 = 2752 sims/move = the champion budget of record
-# (PRODUCTION.yaml fair_deploy). The three below it are the same WIDTH at 1/4, 1/2 and
-# 1/16 depth, so the ladder isolates depth cost; k1x32 is a smoke, not a strength cell.
+# k_dets x sims_per_det. This is a COST ladder, not a claim about the champion: k4x688,
+# k4x344 and k4x172 are the same WIDTH at full/half/quarter depth so the ladder isolates
+# depth cost, and k1x32 is a smoke, not a strength cell. ⚠️ Do NOT read k4x688 as "the
+# champion budget of record" — it was, until 2026-07-29 (k8x1376) and 2026-08-30
+# (k16x1376). The budget of record is `spec.k_dets`/`spec.sims_per_det`, LOADED from
+# governance/PRODUCTION.yaml below (and printed + stamped as `yaml_k_dets`).
 DEFAULT_BUDGETS = "k1x32,k4x172,k4x344,k4x688"
 
 
