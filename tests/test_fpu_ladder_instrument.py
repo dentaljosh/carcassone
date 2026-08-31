@@ -120,7 +120,7 @@ def test_workers_conf_agrees_with_the_law(L):
     assert val("RULES_PROFILE") == L.RULES_PROFILE
     assert val("BACKEND") == L.BACKEND
     # ⭐ the owner's W ruling of 2026-08-30, pinned so a future edit is deliberate
-    assert int(val("W_LOCAL")) == 14
+    assert int(val("W_LOCAL")) == 30  # 14->30 owner ruling 2026-08-30
     assert int(val("W_LAPTOP")) == 22
     # ⭐ each box smokes a dose the round actually runs
     doses = {c.value for c in L.CELLS}
