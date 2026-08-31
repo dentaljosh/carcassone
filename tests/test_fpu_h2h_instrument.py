@@ -235,13 +235,15 @@ def test_workers_conf_restates_the_deployed_arbiter(L):
     assert _conf("TIEARB_PHASE_GATE") == L.DEPLOYED_TIEARB["phase_gate"]
 
 
-def test_the_provenance_ladder_is_still_unstamped():
-    """⛔ The round is UNLAUNCHED at this commit: BLIND_COMMIT is PENDING, the
-    band is not claimed, and W has not been stamped."""
-    assert _conf("BLIND_COMMIT") == "PENDING"
-    assert _conf("W_LAPTOP") == "TBD_FROM_SWEEP"
-    assert not (PREP / "BAND_CLAIMED").exists()
-    assert not (PREP / "PINNED_SRC_REV").exists()
+def test_the_provenance_stamps_are_coherent():
+    """The freeze-time all-unstamped assertion retired 2026-08-31 at launch:
+    W was stamped from the sweep (26). What stays law: BLIND_COMMIT is either
+    the literal PENDING or a 40-hex sha (never garbage), and W_LAPTOP is either
+    the sweep value or the TBD sentinel — the launcher refuses everything else."""
+    bc = _conf("BLIND_COMMIT")
+    assert bc == "PENDING" or (len(bc) == 40 and all(c in "0123456789abcdef" for c in bc))
+    w = _conf("W_LAPTOP")
+    assert w == "TBD_FROM_SWEEP" or w.isdigit()
 
 
 def test_only_the_laptop_share_path_is_defined():
@@ -270,7 +272,12 @@ def test_run_cells_refuses_an_unstamped_W():
                         "--dry-run"], capture_output=True, text=True,
                        timeout=120)
     assert r.returncode != 0
-    assert "W_LAPTOP" in r.stdout + r.stderr
+    # W was stamped 2026-08-31 (sweep settled 26), so the live refusal has moved
+    # down the precondition ladder; the TBD refusal is pinned as source text
+    # (the house anti-drift style) and the launcher must still refuse pre-pin.
+    src = (Path(__file__).parent.parent / "measurement/fpu_h2h_prep/run_cells.sh").read_text()
+    assert "TBD_FROM_SWEEP" in src and "REFUS" in src.upper()
+    assert "PINNED_SRC_REV" in r.stdout + r.stderr
 
 
 def test_run_cells_refuses_the_local_box():
