@@ -1,0 +1,23 @@
+{
+ "census1": "GT-M1 NOT KILLED (max reach 0.346 >= 0.30)",
+ "already_agree": "FALSE (U <= 0.50)",
+ "U": 0.31382978723404253,
+ "reach": {
+  "0.25": 0.34574468085106386,
+  "0.5": 0.2872340425531915,
+  "0.75": 0.24468085106382978,
+  "1.0": 0.1702127659574468
+ },
+ "census3": "SA-M1 KILLED -- BRANCH B (P_wv|exists 0.891 >= 0.80); COMPOUND (reachable share 0.073 <= 0.20)",
+ "P_exists": 0.6690909090909091,
+ "P_wv": 0.8913043478260869,
+ "compound": 0.07272727272727272,
+ "faults": {
+  "n_rows": 580,
+  "n_not_ok": 0,
+  "errors": {},
+  "n_exact_region": 4,
+  "prereg_alpha1_control_disagreements": 86,
+  "alpha1_control_note": "NOT a void trigger -- the PREREG's identity premise was arithmetically wrong (see DEVIATIONS D-1); reported as the equal-weight pooling reach."
+ }
+}

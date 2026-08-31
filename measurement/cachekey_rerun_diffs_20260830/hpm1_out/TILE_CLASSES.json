@@ -1,0 +1,226 @@
+{
+ "by_description": {
+  "chapel_with_road": {
+   "count": 2,
+   "ce": 0,
+   "fr": 1,
+   "ch": 1
+  },
+  "chapel": {
+   "count": 4,
+   "ce": 0,
+   "fr": 1,
+   "ch": 1
+  },
+  "full_city_with_shield": {
+   "count": 1,
+   "ce": 4,
+   "fr": 0,
+   "ch": 0
+  },
+  "city_top_straight_road": {
+   "count": 4,
+   "ce": 1,
+   "fr": 2,
+   "ch": 0
+  },
+  "city_top": {
+   "count": 4,
+   "ce": 1,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_top_flowers": {
+   "count": 1,
+   "ce": 1,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_narrow_shield": {
+   "count": 2,
+   "ce": 2,
+   "fr": 2,
+   "ch": 0
+  },
+  "city_narrow": {
+   "count": 1,
+   "ce": 2,
+   "fr": 2,
+   "ch": 0
+  },
+  "city_left_right": {
+   "count": 2,
+   "ce": 2,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_top_bottom_flowers": {
+   "count": 1,
+   "ce": 2,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_top_right": {
+   "count": 1,
+   "ce": 2,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_top_left_flowers": {
+   "count": 1,
+   "ce": 2,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_top_road_bend_right": {
+   "count": 3,
+   "ce": 1,
+   "fr": 2,
+   "ch": 0
+  },
+  "city_top_road_bend_left": {
+   "count": 3,
+   "ce": 1,
+   "fr": 2,
+   "ch": 0
+  },
+  "city_top_crossroads": {
+   "count": 3,
+   "ce": 1,
+   "fr": 3,
+   "ch": 0
+  },
+  "city_diagonal_top_right_shield": {
+   "count": 1,
+   "ce": 2,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_diagonal_top_right_shield_flowers": {
+   "count": 1,
+   "ce": 2,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_diagonal_top_right": {
+   "count": 2,
+   "ce": 2,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_diagonal_top_right_flowers": {
+   "count": 1,
+   "ce": 2,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_diagonal_top_left_shield_road": {
+   "count": 2,
+   "ce": 2,
+   "fr": 2,
+   "ch": 0
+  },
+  "city_diagonal_top_left_road": {
+   "count": 3,
+   "ce": 2,
+   "fr": 2,
+   "ch": 0
+  },
+  "city_bottom_grass_shield": {
+   "count": 1,
+   "ce": 3,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_bottom_grass": {
+   "count": 2,
+   "ce": 3,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_bottom_grass_flowers": {
+   "count": 1,
+   "ce": 3,
+   "fr": 1,
+   "ch": 0
+  },
+  "city_bottom_road_shield": {
+   "count": 2,
+   "ce": 3,
+   "fr": 2,
+   "ch": 0
+  },
+  "city_bottom_road": {
+   "count": 1,
+   "ce": 3,
+   "fr": 2,
+   "ch": 0
+  },
+  "straight_road": {
+   "count": 7,
+   "ce": 0,
+   "fr": 2,
+   "ch": 0
+  },
+  "straight_road_flowers": {
+   "count": 1,
+   "ce": 0,
+   "fr": 2,
+   "ch": 0
+  },
+  "bent_road": {
+   "count": 8,
+   "ce": 0,
+   "fr": 2,
+   "ch": 0
+  },
+  "bent_road_flowers": {
+   "count": 1,
+   "ce": 0,
+   "fr": 2,
+   "ch": 0
+  },
+  "three_split_road": {
+   "count": 4,
+   "ce": 0,
+   "fr": 3,
+   "ch": 0
+  },
+  "crossroads": {
+   "count": 1,
+   "ce": 0,
+   "fr": 4,
+   "ch": 0
+  }
+ },
+ "classes": [
+  "CE0_FR1_CH1",
+  "CE0_FR2_CH0",
+  "CE0_FR3_CH0",
+  "CE0_FR4_CH0",
+  "CE1_FR1_CH0",
+  "CE1_FR2_CH0",
+  "CE1_FR3_CH0",
+  "CE2_FR1_CH0",
+  "CE2_FR2_CH0",
+  "CE3_FR1_CH0",
+  "CE3_FR2_CH0",
+  "CE4_FR0_CH0"
+ ],
+ "class_totals": {
+  "CE0_FR1_CH1": 6,
+  "CE0_FR2_CH0": 17,
+  "CE0_FR3_CH0": 4,
+  "CE0_FR4_CH0": 1,
+  "CE1_FR1_CH0": 5,
+  "CE1_FR2_CH0": 10,
+  "CE1_FR3_CH0": 3,
+  "CE2_FR1_CH0": 10,
+  "CE2_FR2_CH0": 8,
+  "CE3_FR1_CH0": 4,
+  "CE3_FR2_CH0": 3,
+  "CE4_FR0_CH0": 1
+ },
+ "n_kinds": 32,
+ "n_tiles": 72
+}

@@ -1,0 +1,298 @@
+{
+  "schema": "carcassonne-omm1-refuter-gate/v1",
+  "spec": "measurement/omm1_refuter_gate_20260830/PREREG.md",
+  "instrument_only": true,
+  "salt": "tiearb2-deploy-v1",
+  "arm_cap_j": 4,
+  "eps": 0.0,
+  "max_plies": 400,
+  "b_worlds": 64,
+  "b_deployed": 16,
+  "split": 32,
+  "leg2_suffix": [
+    "omm1-leg2"
+  ],
+  "refuter_of_record": {
+    "invasion_alpha": 0.09,
+    "invasion_alpha_cap": 11.0,
+    "invasion_stub_max_tiles": 2
+  },
+  "refuter_max": {
+    "invasion_alpha": 1.0,
+    "invasion_alpha_cap": 11.0,
+    "invasion_stub_max_tiles": 2,
+    "invasion_beta": 1.0
+  },
+  "bar_delta_flip": 0.22,
+  "bar_swap_replication": 0.5,
+  "bar_derivation": {
+    "target_pts_per_game": 1.0,
+    "G_arb_pts_per_game": 3.07,
+    "mean_arms": 3.0022,
+    "p_arb_ne_rnd": 0.6669109319832123,
+    "formula": "bar = target * (1 - 1/mean_arms) / G_arb  [the fire rate cancels]",
+    "derived": 0.21723483126489002,
+    "R_x_pts_per_changed_pick_reporting_only": 0.10170820493391869,
+    "fired_plies_per_game_walled": 45.26
+  },
+  "host": "Doctor",
+  "corpora_resolved": {
+    "champ449": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/omd2/measurement/champ_action_logs/champ_games.jsonl",
+    "tiearb2_850": "/home/doctor/projects/carcassone/measurement/tiearb2_20260816/corpus/champ_games_tiearb2.jsonl"
+  },
+  "main_tree_fallback": "/home/doctor/projects/carcassone",
+  "wheel": {
+    "module_path": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/pyext_rel/carc_rs/__init__.py",
+    "version": "0.1.0",
+    "sha256": "f9e8813be08f73c8b4ecb929d651b5aa586ac72933e1f00787a7d61c77ff6bb3",
+    "wheel_file": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/wheel/carc_rs-0.1.0-cp312-abi3-manylinux_2_34_x86_64.whl",
+    "is_shadow_build": true,
+    "has_legs_api": true
+  },
+  "step": "build_fired_plies",
+  "leaf_hashes": {
+    "harness_leaf_hash": "a36d2e15a3b3d71d",
+    "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+    "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "profile": "walled",
+  "corpora_used": [
+    "champ449",
+    "tiearb2_850"
+  ],
+  "corpora_missing": [],
+  "limit": 120,
+  "n_games": 240,
+  "n_games_without_a_fire": 0,
+  "n_fired_plies_total": 8871,
+  "fired_plies_per_game": 36.9625,
+  "n_sampled": 240,
+  "banked_tied_tile_plies_per_game": 45.26,
+  "fired_over_tied_fraction": 0.8166703490941228,
+  "G_FIRE_fraction_bracket": [
+    0.6,
+    1.0
+  ],
+  "G_FIRE_join": {
+    "available": true,
+    "census": "/tmp/claude-1000/-home-doctor-projects-carcassone/d538aba0-bcf8-4b08-a01a-684a1ae3c7eb/scratchpad/omd2/measurement/tiearb_widening_20260817/census/tile_gap_rows.jsonl",
+    "n_joined": 4443,
+    "n_disagree": 20,
+    "agreement": 0.995498537024533,
+    "disagreement_examples": [
+      [
+        28000000011,
+        24
+      ],
+      [
+        28000000012,
+        112
+      ],
+      [
+        28000000015,
+        72
+      ],
+      [
+        28000000017,
+        30
+      ],
+      [
+        28000000022,
+        66
+      ],
+      [
+        28000000031,
+        110
+      ],
+      [
+        28000000031,
+        114
+      ],
+      [
+        28000000050,
+        24
+      ],
+      [
+        28000000052,
+        48
+      ],
+      [
+        28000000059,
+        138
+      ]
+    ],
+    "full_join": true,
+    "n_disagree_witnessed": 20,
+    "n_disagree_unverifiable": 0,
+    "all_witnessed": true,
+    "class_counts": {
+      "ULP": 2,
+      "REAL": 18,
+      "UNKNOWN": 0
+    },
+    "witnesses": [
+      {
+        "deck_seed": 28000000011,
+        "ply": 24,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000012,
+        "ply": 112,
+        "corpus": "champ449",
+        "census_gap": 0.40000000000000036,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000015,
+        "ply": 72,
+        "corpus": "champ449",
+        "census_gap": 0.9999999999999964,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000017,
+        "ply": 30,
+        "corpus": "champ449",
+        "census_gap": 0.5000000000000004,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000022,
+        "ply": 66,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000031,
+        "ply": 110,
+        "corpus": "champ449",
+        "census_gap": 1.7763568394002505e-15,
+        "gap_recorded": true,
+        "class": "ULP"
+      },
+      {
+        "deck_seed": 28000000031,
+        "ply": 114,
+        "corpus": "champ449",
+        "census_gap": 1.7763568394002505e-15,
+        "gap_recorded": true,
+        "class": "ULP"
+      },
+      {
+        "deck_seed": 28000000050,
+        "ply": 24,
+        "corpus": "champ449",
+        "census_gap": 0.5,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000052,
+        "ply": 48,
+        "corpus": "champ449",
+        "census_gap": 0.2500000000000018,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000059,
+        "ply": 138,
+        "corpus": "champ449",
+        "census_gap": 1.0,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000072,
+        "ply": 12,
+        "corpus": "champ449",
+        "census_gap": 0.6000000000000001,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000076,
+        "ply": 112,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000078,
+        "ply": 52,
+        "corpus": "champ449",
+        "census_gap": 0.5999999999999996,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000086,
+        "ply": 24,
+        "corpus": "champ449",
+        "census_gap": 1.0,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000093,
+        "ply": 20,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000096,
+        "ply": 18,
+        "corpus": "champ449",
+        "census_gap": 0.5,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000096,
+        "ply": 124,
+        "corpus": "champ449",
+        "census_gap": 0.09999999999999964,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000100,
+        "ply": 94,
+        "corpus": "champ449",
+        "census_gap": 0.75,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000106,
+        "ply": 22,
+        "corpus": "champ449",
+        "census_gap": 0.34999999999999964,
+        "gap_recorded": true,
+        "class": "REAL"
+      },
+      {
+        "deck_seed": 28000000115,
+        "ply": 60,
+        "corpus": "champ449",
+        "census_gap": 0.3000000000000007,
+        "gap_recorded": true,
+        "class": "REAL"
+      }
+    ]
+  },
+  "G_FIRE": "PASS",
+  "elapsed_s": 2.1199522018432617
+}

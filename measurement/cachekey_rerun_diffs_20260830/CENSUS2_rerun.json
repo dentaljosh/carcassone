@@ -1,0 +1,401 @@
+{
+ "schema": "carcassonne-cl083-census2-readout/v1",
+ "prereg": "measurement/cl083_mech_censuses_20260830/PREREG.md",
+ "judge_free": true,
+ "coverage": {
+  "n_games": 56,
+  "n_recon_failures": 0,
+  "n_setups": 642,
+  "by_profile": {
+   "app_aug2": 1,
+   "fixed_v1": 53,
+   "walled": 2
+  },
+  "setups_by_seat": {
+   "champion": 336,
+   "owner": 306
+  }
+ },
+ "PRIMARY_N": 12,
+ "primary": {
+  "owner": {
+   "n_setups": 306,
+   "n_eligible": 287,
+   "n_censored": 19,
+   "n_abandoned": 122,
+   "abandonment_rate": 0.4250871080139373,
+   "mean_own_growth": 0.6829268292682927,
+   "opp_growth_rate": 0.13588850174216027,
+   "finished_in_window_rate": 0.1951219512195122,
+   "still_open_at_end_rate": 0.8013937282229965
+  },
+  "champion": {
+   "n_setups": 336,
+   "n_eligible": 318,
+   "n_censored": 18,
+   "n_abandoned": 117,
+   "abandonment_rate": 0.36792452830188677,
+   "mean_own_growth": 0.8113207547169812,
+   "opp_growth_rate": 0.22327044025157233,
+   "finished_in_window_rate": 0.1918238993710692,
+   "still_open_at_end_rate": 0.8081761006289309
+  },
+  "D_champ_minus_owner": -0.05716257971205052,
+  "D_ci95_gamecluster": [
+   -0.12592154680762274,
+   0.019523422969820903
+  ],
+  "n_game_clusters": 56,
+  "n_boot_ok": 2000
+ },
+ "robustness_windows": {
+  "N6": {
+   "owner": {
+    "n_setups": 306,
+    "n_eligible": 297,
+    "n_censored": 9,
+    "n_abandoned": 212,
+    "abandonment_rate": 0.7138047138047138,
+    "mean_own_growth": 0.2828282828282828,
+    "opp_growth_rate": 0.08754208754208755,
+    "finished_in_window_rate": 0.08417508417508418,
+    "still_open_at_end_rate": 0.9124579124579124
+   },
+   "champion": {
+    "n_setups": 336,
+    "n_eligible": 322,
+    "n_censored": 14,
+    "n_abandoned": 219,
+    "abandonment_rate": 0.6801242236024845,
+    "mean_own_growth": 0.30434782608695654,
+    "opp_growth_rate": 0.16459627329192547,
+    "finished_in_window_rate": 0.08074534161490683,
+    "still_open_at_end_rate": 0.9192546583850931
+   },
+   "D_champ_minus_owner": -0.033680490202229296,
+   "D_ci95_gamecluster": [
+    -0.11361638537271446,
+    0.04308918953305907
+   ],
+   "n_game_clusters": 56,
+   "n_boot_ok": 2000
+  },
+  "N12": {
+   "owner": {
+    "n_setups": 306,
+    "n_eligible": 287,
+    "n_censored": 19,
+    "n_abandoned": 122,
+    "abandonment_rate": 0.4250871080139373,
+    "mean_own_growth": 0.6829268292682927,
+    "opp_growth_rate": 0.13588850174216027,
+    "finished_in_window_rate": 0.1951219512195122,
+    "still_open_at_end_rate": 0.8013937282229965
+   },
+   "champion": {
+    "n_setups": 336,
+    "n_eligible": 318,
+    "n_censored": 18,
+    "n_abandoned": 117,
+    "abandonment_rate": 0.36792452830188677,
+    "mean_own_growth": 0.8113207547169812,
+    "opp_growth_rate": 0.22327044025157233,
+    "finished_in_window_rate": 0.1918238993710692,
+    "still_open_at_end_rate": 0.8081761006289309
+   },
+   "D_champ_minus_owner": -0.05716257971205052,
+   "D_ci95_gamecluster": [
+    -0.12592154680762274,
+    0.019523422969820903
+   ],
+   "n_game_clusters": 56,
+   "n_boot_ok": 2000
+  },
+  "N20": {
+   "owner": {
+    "n_setups": 306,
+    "n_eligible": 277,
+    "n_censored": 29,
+    "n_abandoned": 73,
+    "abandonment_rate": 0.26353790613718414,
+    "mean_own_growth": 1.0433212996389891,
+    "opp_growth_rate": 0.19855595667870035,
+    "finished_in_window_rate": 0.2924187725631769,
+    "still_open_at_end_rate": 0.703971119133574
+   },
+   "champion": {
+    "n_setups": 336,
+    "n_eligible": 311,
+    "n_censored": 25,
+    "n_abandoned": 76,
+    "abandonment_rate": 0.24437299035369775,
+    "mean_own_growth": 1.1768488745980707,
+    "opp_growth_rate": 0.31189710610932475,
+    "finished_in_window_rate": 0.2604501607717042,
+    "still_open_at_end_rate": 0.7395498392282959
+   },
+   "D_champ_minus_owner": -0.01916491578348639,
+   "D_ci95_gamecluster": [
+    -0.08745260374995653,
+    0.05190133607399794
+   ],
+   "n_game_clusters": 56,
+   "n_boot_ok": 2000
+  }
+ },
+ "by_class": {
+  "city": {
+   "owner": {
+    "n_setups": 227,
+    "n_eligible": 212,
+    "n_censored": 15,
+    "n_abandoned": 92,
+    "abandonment_rate": 0.4339622641509434,
+    "mean_own_growth": 0.6792452830188679,
+    "opp_growth_rate": 0.13679245283018868,
+    "finished_in_window_rate": 0.19339622641509435,
+    "still_open_at_end_rate": 0.8018867924528302
+   },
+   "champion": {
+    "n_setups": 185,
+    "n_eligible": 175,
+    "n_censored": 10,
+    "n_abandoned": 63,
+    "abandonment_rate": 0.36,
+    "mean_own_growth": 0.8342857142857143,
+    "opp_growth_rate": 0.18285714285714286,
+    "finished_in_window_rate": 0.19428571428571428,
+    "still_open_at_end_rate": 0.8057142857142857
+   },
+   "D_champ_minus_owner": -0.07396226415094342,
+   "D_ci95_gamecluster": [
+    -0.16125259875259873,
+    0.02097163139783781
+   ],
+   "n_game_clusters": 56,
+   "n_boot_ok": 2000
+  },
+  "road": {
+   "owner": {
+    "n_setups": 79,
+    "n_eligible": 75,
+    "n_censored": 4,
+    "n_abandoned": 30,
+    "abandonment_rate": 0.4,
+    "mean_own_growth": 0.6933333333333334,
+    "opp_growth_rate": 0.13333333333333333,
+    "finished_in_window_rate": 0.2,
+    "still_open_at_end_rate": 0.8
+   },
+   "champion": {
+    "n_setups": 151,
+    "n_eligible": 143,
+    "n_censored": 8,
+    "n_abandoned": 54,
+    "abandonment_rate": 0.3776223776223776,
+    "mean_own_growth": 0.7832167832167832,
+    "opp_growth_rate": 0.2727272727272727,
+    "finished_in_window_rate": 0.1888111888111888,
+    "still_open_at_end_rate": 0.8111888111888111
+   },
+   "D_champ_minus_owner": -0.02237762237762242,
+   "D_ci95_gamecluster": [
+    -0.15000000000000002,
+    0.10040485829959517
+   ],
+   "n_game_clusters": 56,
+   "n_boot_ok": 2000
+  }
+ },
+ "by_rules_profile": {
+  "app_aug2": {
+   "owner": {
+    "n_setups": 5,
+    "n_eligible": 5,
+    "n_censored": 0,
+    "n_abandoned": 1,
+    "abandonment_rate": 0.2,
+    "mean_own_growth": 1.0,
+    "opp_growth_rate": 0.0,
+    "finished_in_window_rate": 0.0,
+    "still_open_at_end_rate": 1.0
+   },
+   "champion": {
+    "n_setups": 5,
+    "n_eligible": 4,
+    "n_censored": 1,
+    "n_abandoned": 3,
+    "abandonment_rate": 0.75,
+    "mean_own_growth": 0.25,
+    "opp_growth_rate": 0.0,
+    "finished_in_window_rate": 0.0,
+    "still_open_at_end_rate": 1.0
+   },
+   "D_champ_minus_owner": 0.55,
+   "D_ci95_gamecluster": [
+    0.55,
+    0.55
+   ],
+   "n_game_clusters": 1,
+   "n_boot_ok": 2000
+  },
+  "fixed_v1": {
+   "owner": {
+    "n_setups": 287,
+    "n_eligible": 269,
+    "n_censored": 18,
+    "n_abandoned": 115,
+    "abandonment_rate": 0.4275092936802974,
+    "mean_own_growth": 0.6765799256505576,
+    "opp_growth_rate": 0.137546468401487,
+    "finished_in_window_rate": 0.1970260223048327,
+    "still_open_at_end_rate": 0.8029739776951673
+   },
+   "champion": {
+    "n_setups": 314,
+    "n_eligible": 298,
+    "n_censored": 16,
+    "n_abandoned": 110,
+    "abandonment_rate": 0.3691275167785235,
+    "mean_own_growth": 0.8154362416107382,
+    "opp_growth_rate": 0.23154362416107382,
+    "finished_in_window_rate": 0.1912751677852349,
+    "still_open_at_end_rate": 0.8087248322147651
+   },
+   "D_champ_minus_owner": -0.058381776901773874,
+   "D_ci95_gamecluster": [
+    -0.12855357700718528,
+    0.01845291194086912
+   ],
+   "n_game_clusters": 53,
+   "n_boot_ok": 2000
+  },
+  "walled": {
+   "owner": {
+    "n_setups": 14,
+    "n_eligible": 13,
+    "n_censored": 1,
+    "n_abandoned": 6,
+    "abandonment_rate": 0.46153846153846156,
+    "mean_own_growth": 0.6923076923076923,
+    "opp_growth_rate": 0.15384615384615385,
+    "finished_in_window_rate": 0.23076923076923078,
+    "still_open_at_end_rate": 0.6923076923076923
+   },
+   "champion": {
+    "n_setups": 17,
+    "n_eligible": 16,
+    "n_censored": 1,
+    "n_abandoned": 4,
+    "abandonment_rate": 0.25,
+    "mean_own_growth": 0.875,
+    "opp_growth_rate": 0.125,
+    "finished_in_window_rate": 0.25,
+    "still_open_at_end_rate": 0.75
+   },
+   "D_champ_minus_owner": -0.21153846153846156,
+   "D_ci95_gamecluster": [
+    -0.31746031746031744,
+    -0.07142857142857145
+   ],
+   "n_game_clusters": 2,
+   "n_boot_ok": 2000
+  }
+ },
+ "by_budget_epoch": {
+  "(1376, 16)": {
+   "owner": {
+    "n_setups": 4,
+    "n_eligible": 4,
+    "n_censored": 0,
+    "n_abandoned": 2,
+    "abandonment_rate": 0.5,
+    "mean_own_growth": 0.5,
+    "opp_growth_rate": 0.0,
+    "finished_in_window_rate": 0.0,
+    "still_open_at_end_rate": 1.0
+   },
+   "champion": {
+    "n_setups": 7,
+    "n_eligible": 7,
+    "n_censored": 0,
+    "n_abandoned": 1,
+    "abandonment_rate": 0.14285714285714285,
+    "mean_own_growth": 1.2857142857142858,
+    "opp_growth_rate": 0.14285714285714285,
+    "finished_in_window_rate": 0.42857142857142855,
+    "still_open_at_end_rate": 0.5714285714285714
+   },
+   "D_champ_minus_owner": -0.35714285714285715,
+   "D_ci95_gamecluster": [
+    -0.35714285714285715,
+    -0.35714285714285715
+   ],
+   "n_game_clusters": 1,
+   "n_boot_ok": 2000
+  },
+  "(1376, 8)": {
+   "owner": {
+    "n_setups": 288,
+    "n_eligible": 270,
+    "n_censored": 18,
+    "n_abandoned": 114,
+    "abandonment_rate": 0.4222222222222222,
+    "mean_own_growth": 0.6851851851851852,
+    "opp_growth_rate": 0.13703703703703704,
+    "finished_in_window_rate": 0.1962962962962963,
+    "still_open_at_end_rate": 0.8037037037037037
+   },
+   "champion": {
+    "n_setups": 312,
+    "n_eligible": 295,
+    "n_censored": 17,
+    "n_abandoned": 112,
+    "abandonment_rate": 0.37966101694915255,
+    "mean_own_growth": 0.7966101694915254,
+    "opp_growth_rate": 0.2305084745762712,
+    "finished_in_window_rate": 0.18305084745762712,
+    "still_open_at_end_rate": 0.8169491525423729
+   },
+   "D_champ_minus_owner": -0.04256120527306967,
+   "D_ci95_gamecluster": [
+    -0.11538847620959641,
+    0.036619718309859106
+   ],
+   "n_game_clusters": 53,
+   "n_boot_ok": 2000
+  },
+  "(688, 4)": {
+   "owner": {
+    "n_setups": 14,
+    "n_eligible": 13,
+    "n_censored": 1,
+    "n_abandoned": 6,
+    "abandonment_rate": 0.46153846153846156,
+    "mean_own_growth": 0.6923076923076923,
+    "opp_growth_rate": 0.15384615384615385,
+    "finished_in_window_rate": 0.23076923076923078,
+    "still_open_at_end_rate": 0.6923076923076923
+   },
+   "champion": {
+    "n_setups": 17,
+    "n_eligible": 16,
+    "n_censored": 1,
+    "n_abandoned": 4,
+    "abandonment_rate": 0.25,
+    "mean_own_growth": 0.875,
+    "opp_growth_rate": 0.125,
+    "finished_in_window_rate": 0.25,
+    "still_open_at_end_rate": 0.75
+   },
+   "D_champ_minus_owner": -0.21153846153846156,
+   "D_ci95_gamecluster": [
+    -0.31746031746031744,
+    -0.07142857142857145
+   ],
+   "n_game_clusters": 2,
+   "n_boot_ok": 2000
+  }
+ },
+ "VERDICT": "CF-M1 KILLED (D <= 0: champion abandons no more than the owner)"
+}

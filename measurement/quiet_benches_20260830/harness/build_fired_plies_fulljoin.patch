@@ -1,0 +1,69 @@
+--- banked/build_fired_plies.py
++++ fulljoin/build_fired_plies.py
+@@ -123,14 +123,25 @@
+     if not L.TILE_CENSUS.exists():
+         return {"available": False, "n_joined": 0, "agreement": 1.0, "n_disagree": 0}
+     tied: dict[tuple[int, int], bool] = {}
++    gap: dict[tuple[int, int], float] = {}
+     with L.TILE_CENSUS.open() as fh:
+         for line in fh:
+             if not line.strip():
+                 continue
+             d = json.loads(line)
+-            tied[(int(d["deck_seed"]), int(d["ply"]))] = bool(d["tie_exact"])
++            k = (int(d["deck_seed"]), int(d["ply"]))
++            tied[k] = bool(d["tie_exact"])
++            for gk in ("gap", "tile_gap", "top1_minus_top2", "gap_exact"):
++                if gk in d and d[gk] is not None:
++                    gap[k] = float(d[gk])
++                    break
+     n_joined = n_disagree = 0
+     examples = []
++    # OM-D2 FULL JOIN (quiet re-read 2026-08-30): the banked run capped
++    # `examples` at 10, which is exactly the "10 unverifiable keys" caveat —
++    # half of the 20 disagreeing plies had no recorded witness. Record EVERY
++    # disagreeing key, with the census's own gap, so each is verifiable.
++    witnesses = []
+     for pg in per_game:
+         for f in pg["fired"]:
+             key = (int(pg["deck_seed"]), int(f["ply"]))
+@@ -141,6 +152,22 @@
+                 n_disagree += 1
+                 if len(examples) < 10:
+                     examples.append(list(key))
++                g = gap.get(key)
++                witnesses.append(
++                    {
++                        "deck_seed": key[0],
++                        "ply": key[1],
++                        "corpus": pg["corpus"],
++                        "census_gap": g,
++                        "gap_recorded": g is not None,
++                        "class": (
++                            None
++                            if g is None
++                            else ("ULP" if abs(g) < 1e-9 else "REAL")
++                        ),
++                    }
++                )
++    n_witness = sum(1 for w in witnesses if w["gap_recorded"])
+     return {
+         "available": True,
+         "census": str(L.TILE_CENSUS),
+@@ -148,6 +175,16 @@
+         "n_disagree": n_disagree,
+         "agreement": (1.0 - n_disagree / n_joined) if n_joined else 1.0,
+         "disagreement_examples": examples,
++        "full_join": True,
++        "n_disagree_witnessed": n_witness,
++        "n_disagree_unverifiable": n_disagree - n_witness,
++        "all_witnessed": n_witness == n_disagree,
++        "class_counts": {
++            "ULP": sum(1 for w in witnesses if w["class"] == "ULP"),
++            "REAL": sum(1 for w in witnesses if w["class"] == "REAL"),
++            "UNKNOWN": sum(1 for w in witnesses if w["class"] is None),
++        },
++        "witnesses": witnesses,
+     }
+ 
+ 

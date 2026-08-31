@@ -1,0 +1,409 @@
+{
+ "schema": "carcassonne-cl083-census3-readout/v1",
+ "prereg": "measurement/cl083_mech_censuses_20260830/PREREG.md",
+ "judge_free": true,
+ "m_visits": 110,
+ "m_as_budget_share": 0.009992732558139535,
+ "instrument_faults": {
+  "n_rows": 580,
+  "n_not_ok": 0,
+  "errors": {},
+  "n_exact_region": 4,
+  "prereg_alpha1_control_disagreements": 86,
+  "alpha1_control_note": "NOT a void trigger -- the PREREG's identity premise was arithmetically wrong (see DEVIATIONS D-1); reported as the equal-weight pooling reach."
+ },
+ "PRIMARY_all_crux_plies": {
+  "n": 275,
+  "n_exists": 184,
+  "P_exists": 0.6690909090909091,
+  "P_exists_ci95": [
+   0.6086956521739131,
+   0.7258566978193146
+  ],
+  "P_wellvisited_given_exists": 0.8913043478260869,
+  "P_wv_ci95": [
+   0.8490566037735849,
+   0.93
+  ],
+  "compound_reachable_share": 0.07272727272727272,
+  "compound_ci95": [
+   0.046218487394957986,
+   0.0996309963099631
+  ],
+  "n_seed_quartiles": [
+   0.0,
+   320.0,
+   3401.0,
+   7560.0,
+   11008.0
+  ],
+  "median_rank_of_best_seed": 1,
+  "mean_budget_share_of_best_seed": 0.3757346435793731,
+  "P_best_seed_unvisited_given_exists": 0.016304347826086956,
+  "mean_n_tagged": 4.127272727272727,
+  "mean_n_legal": 26.585454545454546
+ },
+ "ONSET_ONLY": {
+  "n": 275,
+  "n_exists": 147,
+  "P_exists": 0.5345454545454545,
+  "P_exists_ci95": [
+   0.4844290657439446,
+   0.5851851851851851
+  ],
+  "P_wellvisited_given_exists": 0.8231292517006803,
+  "P_wv_ci95": [
+   0.7847222222222222,
+   0.8656716417910447
+  ],
+  "compound_reachable_share": 0.09454545454545454,
+  "compound_ci95": [
+   0.06882591093117409,
+   0.11842105263157894
+  ],
+  "n_seed_quartiles": [
+   0.0,
+   192.0,
+   4940.0,
+   7985.0,
+   11008.0
+  ],
+  "median_rank_of_best_seed": 1,
+  "mean_budget_share_of_best_seed": 0.41252867426040185,
+  "P_best_seed_unvisited_given_exists": 0.04081632653061224,
+  "mean_n_tagged": 1.0327272727272727,
+  "mean_n_legal": 26.585454545454546
+ },
+ "by_stratum": {
+  "invasion": {
+   "n": 81,
+   "n_exists": 81,
+   "P_exists": 1.0,
+   "P_exists_ci95": [
+    1.0,
+    1.0
+   ],
+   "P_wellvisited_given_exists": 0.9876543209876543,
+   "P_wv_ci95": [
+    0.9594594594594594,
+    1.0
+   ],
+   "compound_reachable_share": 0.012345679012345678,
+   "compound_ci95": [
+    0.0,
+    0.04054054054054054
+   ],
+   "n_seed_quartiles": [
+    2.0,
+    4576.0,
+    6553.0,
+    9418.0,
+    11008.0
+   ],
+   "median_rank_of_best_seed": 1,
+   "mean_budget_share_of_best_seed": 0.5804521515216767,
+   "P_best_seed_unvisited_given_exists": 0.0,
+   "mean_n_tagged": 4.08641975308642,
+   "mean_n_legal": 29.0
+  },
+  "defense": {
+   "n": 81,
+   "n_exists": 49,
+   "P_exists": 0.6049382716049383,
+   "P_exists_ci95": [
+    0.4939759036144578,
+    0.6987951807228916
+   ],
+   "P_wellvisited_given_exists": 0.673469387755102,
+   "P_wv_ci95": [
+    0.5333333333333333,
+    0.8
+   ],
+   "compound_reachable_share": 0.19753086419753085,
+   "compound_ci95": [
+    0.11392405063291139,
+    0.29213483146067415
+   ],
+   "n_seed_quartiles": [
+    0.0,
+    51.0,
+    273.0,
+    1361.0,
+    8257.0
+   ],
+   "median_rank_of_best_seed": 8,
+   "mean_budget_share_of_best_seed": 0.11786974964404368,
+   "P_best_seed_unvisited_given_exists": 0.061224489795918366,
+   "mean_n_tagged": 4.716049382716049,
+   "mean_n_legal": 30.012345679012345
+  },
+  "farm_capture": {
+   "n": 26,
+   "n_exists": 0,
+   "P_exists": 0.0,
+   "P_exists_ci95": [
+    0.0,
+    0.0
+   ],
+   "P_wellvisited_given_exists": null,
+   "P_wv_ci95": null,
+   "compound_reachable_share": 0.0,
+   "compound_ci95": [
+    0.0,
+    0.0
+   ],
+   "n_seed_quartiles": null,
+   "median_rank_of_best_seed": null,
+   "mean_budget_share_of_best_seed": null,
+   "P_best_seed_unvisited_given_exists": null,
+   "mean_n_tagged": 0.0,
+   "mean_n_legal": 5.153846153846154
+  },
+  "control": {
+   "n": 87,
+   "n_exists": 54,
+   "P_exists": 0.6206896551724138,
+   "P_exists_ci95": [
+    0.5263157894736842,
+    0.7142857142857143
+   ],
+   "P_wellvisited_given_exists": 0.9444444444444444,
+   "P_wv_ci95": [
+    0.875,
+    1.0
+   ],
+   "compound_reachable_share": 0.034482758620689655,
+   "compound_ci95": [
+    0.0,
+    0.0821917808219178
+   ],
+   "n_seed_quartiles": [
+    34.0,
+    292.0,
+    1866.0,
+    6191.0,
+    10961.0
+   ],
+   "median_rank_of_best_seed": 1,
+   "mean_budget_share_of_best_seed": 0.30264689653316107,
+   "P_best_seed_unvisited_given_exists": 0.0,
+   "mean_n_tagged": 4.850574712643678,
+   "mean_n_legal": 27.551724137931036
+  }
+ },
+ "by_phase": {
+  "meeples": {
+   "n": 26,
+   "n_exists": 0,
+   "P_exists": 0.0,
+   "P_exists_ci95": [
+    0.0,
+    0.0
+   ],
+   "P_wellvisited_given_exists": null,
+   "P_wv_ci95": null,
+   "compound_reachable_share": 0.0,
+   "compound_ci95": [
+    0.0,
+    0.0
+   ],
+   "n_seed_quartiles": null,
+   "median_rank_of_best_seed": null,
+   "mean_budget_share_of_best_seed": null,
+   "P_best_seed_unvisited_given_exists": null,
+   "mean_n_tagged": 0.0,
+   "mean_n_legal": 5.153846153846154
+  },
+  "tiles": {
+   "n": 249,
+   "n_exists": 184,
+   "P_exists": 0.7389558232931727,
+   "P_exists_ci95": [
+    0.6852791878172588,
+    0.788
+   ],
+   "P_wellvisited_given_exists": 0.8913043478260869,
+   "P_wv_ci95": [
+    0.8490566037735849,
+    0.93
+   ],
+   "compound_reachable_share": 0.08032128514056225,
+   "compound_ci95": [
+    0.05154639175257732,
+    0.1092436974789916
+   ],
+   "n_seed_quartiles": [
+    0.0,
+    320.0,
+    3401.0,
+    7560.0,
+    11008.0
+   ],
+   "median_rank_of_best_seed": 1,
+   "mean_budget_share_of_best_seed": 0.3757346435793731,
+   "P_best_seed_unvisited_given_exists": 0.016304347826086956,
+   "mean_n_tagged": 4.5582329317269075,
+   "mean_n_legal": 28.823293172690764
+  }
+ },
+ "by_actor": {
+  "0": {
+   "n": 194,
+   "n_exists": 135,
+   "P_exists": 0.6958762886597938,
+   "P_exists_ci95": [
+    0.6318681318681318,
+    0.7578947368421053
+   ],
+   "P_wellvisited_given_exists": 0.9703703703703703,
+   "P_wv_ci95": [
+    0.937007874015748,
+    0.993103448275862
+   ],
+   "compound_reachable_share": 0.020618556701030927,
+   "compound_ci95": [
+    0.004901960784313725,
+    0.043478260869565216
+   ],
+   "n_seed_quartiles": [
+    2.0,
+    1548.0,
+    5167.0,
+    8758.0,
+    11008.0
+   ],
+   "median_rank_of_best_seed": 1,
+   "mean_budget_share_of_best_seed": 0.46933004952627044,
+   "P_best_seed_unvisited_given_exists": 0.0,
+   "mean_n_tagged": 3.881443298969072,
+   "mean_n_legal": 25.15463917525773
+  },
+  "1": {
+   "n": 81,
+   "n_exists": 49,
+   "P_exists": 0.6049382716049383,
+   "P_exists_ci95": [
+    0.4939759036144578,
+    0.6987951807228916
+   ],
+   "P_wellvisited_given_exists": 0.673469387755102,
+   "P_wv_ci95": [
+    0.5333333333333333,
+    0.8
+   ],
+   "compound_reachable_share": 0.19753086419753085,
+   "compound_ci95": [
+    0.11392405063291139,
+    0.29213483146067415
+   ],
+   "n_seed_quartiles": [
+    0.0,
+    51.0,
+    273.0,
+    1361.0,
+    8257.0
+   ],
+   "median_rank_of_best_seed": 8,
+   "mean_budget_share_of_best_seed": 0.11786974964404368,
+   "P_best_seed_unvisited_given_exists": 0.061224489795918366,
+   "mean_n_tagged": 4.716049382716049,
+   "mean_n_legal": 30.012345679012345
+  }
+ },
+ "STABILITY_salt1": {
+  "n": 275,
+  "n_exists": 184,
+  "P_exists": 0.6690909090909091,
+  "P_exists_ci95": [
+   0.6086956521739131,
+   0.7258566978193146
+  ],
+  "P_wellvisited_given_exists": 0.8913043478260869,
+  "P_wv_ci95": [
+   0.8490566037735849,
+   0.93
+  ],
+  "compound_reachable_share": 0.07272727272727272,
+  "compound_ci95": [
+   0.046218487394957986,
+   0.0996309963099631
+  ],
+  "n_seed_quartiles": [
+   0.0,
+   362.0,
+   3279.0,
+   7560.0,
+   11008.0
+  ],
+  "median_rank_of_best_seed": 1,
+  "mean_budget_share_of_best_seed": 0.37549272465874617,
+  "P_best_seed_unvisited_given_exists": 0.016304347826086956,
+  "mean_n_tagged": 4.127272727272727,
+  "mean_n_legal": 26.585454545454546
+ },
+ "OTHER_PROFILE_LEG": {
+  "app_aug2": {
+   "n": 3,
+   "n_exists": 3,
+   "P_exists": 1.0,
+   "P_exists_ci95": [
+    1.0,
+    1.0
+   ],
+   "P_wellvisited_given_exists": 1.0,
+   "P_wv_ci95": [
+    1.0,
+    1.0
+   ],
+   "compound_reachable_share": 0.0,
+   "compound_ci95": [
+    0.0,
+    0.0
+   ],
+   "n_seed_quartiles": [
+    187.0,
+    187.0,
+    296.0,
+    8449.0,
+    8449.0
+   ],
+   "median_rank_of_best_seed": 6,
+   "mean_budget_share_of_best_seed": 0.2704699612403101,
+   "P_best_seed_unvisited_given_exists": 0.0,
+   "mean_n_tagged": 4.666666666666667,
+   "mean_n_legal": 33.333333333333336
+  },
+  "walled": {
+   "n": 10,
+   "n_exists": 8,
+   "P_exists": 0.8,
+   "P_exists_ci95": [
+    0.75,
+    0.8333333333333334
+   ],
+   "P_wellvisited_given_exists": 0.875,
+   "P_wv_ci95": [
+    0.6666666666666666,
+    1.0
+   ],
+   "compound_reachable_share": 0.1,
+   "compound_ci95": [
+    0.0,
+    0.25
+   ],
+   "n_seed_quartiles": [
+    90.0,
+    509.0,
+    1606.0,
+    8228.0,
+    8493.0
+   ],
+   "median_rank_of_best_seed": 2,
+   "mean_budget_share_of_best_seed": 0.29401344476744184,
+   "P_best_seed_unvisited_given_exists": 0.0,
+   "mean_n_tagged": 2.3,
+   "mean_n_legal": 19.2
+  }
+ },
+ "VERDICT": "SA-M1 KILLED -- BRANCH B (P_wv|exists 0.891 >= 0.80); COMPOUND (reachable share 0.073 <= 0.20)"
+}

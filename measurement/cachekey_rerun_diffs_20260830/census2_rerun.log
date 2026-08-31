@@ -1,0 +1,10 @@
+{
+ "D": -0.05716257971205052,
+ "owner_rate": 0.4250871080139373,
+ "champ_rate": 0.36792452830188677,
+ "ci": [
+  -0.12592154680762274,
+  0.019523422969820903
+ ],
+ "VERDICT": "CF-M1 KILLED (D <= 0: champion abandons no more than the owner)"
+}

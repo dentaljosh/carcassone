@@ -1,0 +1,7635 @@
+[
+ {
+  "game": "28000000010",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   117
+  ],
+  "recorded_scores": [
+   109,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000012",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   77
+  ],
+  "recorded_scores": [
+   94,
+   77
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000015",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   114,
+   95
+  ],
+  "recorded_scores": [
+   114,
+   95
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000014",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   133,
+   119
+  ],
+  "recorded_scores": [
+   133,
+   119
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000007",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   85,
+   104
+  ],
+  "recorded_scores": [
+   85,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000004",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   124,
+   131
+  ],
+  "recorded_scores": [
+   124,
+   131
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000011",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   99
+  ],
+  "recorded_scores": [
+   110,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000005",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   111
+  ],
+  "recorded_scores": [
+   104,
+   111
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000002",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   85,
+   106
+  ],
+  "recorded_scores": [
+   85,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000009",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   62
+  ],
+  "recorded_scores": [
+   97,
+   62
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000013",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   108
+  ],
+  "recorded_scores": [
+   102,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000008",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   91,
+   79
+  ],
+  "recorded_scores": [
+   91,
+   79
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000001",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   101
+  ],
+  "recorded_scores": [
+   110,
+   101
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000000",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   108
+  ],
+  "recorded_scores": [
+   90,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000003",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   105,
+   105
+  ],
+  "recorded_scores": [
+   105,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000006",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   111,
+   121
+  ],
+  "recorded_scores": [
+   111,
+   121
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000019",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   97
+  ],
+  "recorded_scores": [
+   96,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000021",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   87
+  ],
+  "recorded_scores": [
+   89,
+   87
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000020",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   107
+  ],
+  "recorded_scores": [
+   99,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000023",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   92,
+   127
+  ],
+  "recorded_scores": [
+   92,
+   127
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000016",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   83
+  ],
+  "recorded_scores": [
+   104,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000026",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   62
+  ],
+  "recorded_scores": [
+   101,
+   62
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000022",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   116,
+   86
+  ],
+  "recorded_scores": [
+   116,
+   86
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000017",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   107
+  ],
+  "recorded_scores": [
+   101,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000028",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   94
+  ],
+  "recorded_scores": [
+   82,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000027",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   100
+  ],
+  "recorded_scores": [
+   97,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000025",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   97
+  ],
+  "recorded_scores": [
+   82,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000030",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   107
+  ],
+  "recorded_scores": [
+   97,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000018",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   100,
+   75
+  ],
+  "recorded_scores": [
+   100,
+   75
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000031",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   82
+  ],
+  "recorded_scores": [
+   84,
+   82
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000024",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   121
+  ],
+  "recorded_scores": [
+   110,
+   121
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000029",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   106
+  ],
+  "recorded_scores": [
+   102,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000033",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   100,
+   82
+  ],
+  "recorded_scores": [
+   100,
+   82
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000035",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   83
+  ],
+  "recorded_scores": [
+   103,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000034",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   108,
+   73
+  ],
+  "recorded_scores": [
+   108,
+   73
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000040",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   105
+  ],
+  "recorded_scores": [
+   103,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000032",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   79,
+   104
+  ],
+  "recorded_scores": [
+   79,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000039",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   107,
+   110
+  ],
+  "recorded_scores": [
+   107,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000041",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   95,
+   117
+  ],
+  "recorded_scores": [
+   95,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000036",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   88,
+   76
+  ],
+  "recorded_scores": [
+   88,
+   76
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000037",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   86,
+   104
+  ],
+  "recorded_scores": [
+   86,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000043",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   107
+  ],
+  "recorded_scores": [
+   82,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000038",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   87,
+   93
+  ],
+  "recorded_scores": [
+   87,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000042",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   119,
+   110
+  ],
+  "recorded_scores": [
+   119,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000045",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   116,
+   99
+  ],
+  "recorded_scores": [
+   116,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000044",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   80,
+   80
+  ],
+  "recorded_scores": [
+   80,
+   80
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000047",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   78,
+   65
+  ],
+  "recorded_scores": [
+   78,
+   65
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000046",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   121,
+   116
+  ],
+  "recorded_scores": [
+   121,
+   116
+  ],
+  "human_player": null,
+  "n_farm_commits": 12
+ },
+ {
+  "game": "28000000049",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   100,
+   82
+  ],
+  "recorded_scores": [
+   100,
+   82
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000051",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   72,
+   104
+  ],
+  "recorded_scores": [
+   72,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 3
+ },
+ {
+  "game": "28000000050",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   91,
+   88
+  ],
+  "recorded_scores": [
+   91,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000053",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   118,
+   115
+  ],
+  "recorded_scores": [
+   118,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000048",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   106
+  ],
+  "recorded_scores": [
+   103,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000055",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   80,
+   109
+  ],
+  "recorded_scores": [
+   80,
+   109
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000057",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   96,
+   106
+  ],
+  "recorded_scores": [
+   96,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000059",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   74,
+   104
+  ],
+  "recorded_scores": [
+   74,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000058",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   112,
+   90
+  ],
+  "recorded_scores": [
+   112,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000056",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   113,
+   112
+  ],
+  "recorded_scores": [
+   113,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000052",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   129,
+   111
+  ],
+  "recorded_scores": [
+   129,
+   111
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000061",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   90
+  ],
+  "recorded_scores": [
+   110,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000054",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   94
+  ],
+  "recorded_scores": [
+   110,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000062",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   90,
+   85
+  ],
+  "recorded_scores": [
+   90,
+   85
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000065",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   129,
+   115
+  ],
+  "recorded_scores": [
+   129,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000060",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   64,
+   93
+  ],
+  "recorded_scores": [
+   64,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000063",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   99
+  ],
+  "recorded_scores": [
+   104,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000064",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   109
+  ],
+  "recorded_scores": [
+   100,
+   109
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000067",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   92
+  ],
+  "recorded_scores": [
+   100,
+   92
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000066",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   90
+  ],
+  "recorded_scores": [
+   98,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000071",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   94
+  ],
+  "recorded_scores": [
+   99,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000069",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   108,
+   114
+  ],
+  "recorded_scores": [
+   108,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000070",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   96
+  ],
+  "recorded_scores": [
+   93,
+   96
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000073",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   99
+  ],
+  "recorded_scores": [
+   104,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000074",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   71,
+   77
+  ],
+  "recorded_scores": [
+   71,
+   77
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000072",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   88,
+   89
+  ],
+  "recorded_scores": [
+   88,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000075",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   126
+  ],
+  "recorded_scores": [
+   103,
+   126
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000068",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   88,
+   83
+  ],
+  "recorded_scores": [
+   88,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000077",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   106,
+   88
+  ],
+  "recorded_scores": [
+   106,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000080",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   92,
+   120
+  ],
+  "recorded_scores": [
+   92,
+   120
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000079",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   95,
+   93
+  ],
+  "recorded_scores": [
+   95,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000081",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   108,
+   77
+  ],
+  "recorded_scores": [
+   108,
+   77
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000078",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   114
+  ],
+  "recorded_scores": [
+   101,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000082",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   115,
+   97
+  ],
+  "recorded_scores": [
+   115,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000076",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   118,
+   99
+  ],
+  "recorded_scores": [
+   118,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000084",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   112
+  ],
+  "recorded_scores": [
+   109,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000086",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   72,
+   108
+  ],
+  "recorded_scores": [
+   72,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000083",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   91,
+   97
+  ],
+  "recorded_scores": [
+   91,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000087",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   105
+  ],
+  "recorded_scores": [
+   103,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000088",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   74,
+   100
+  ],
+  "recorded_scores": [
+   74,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000085",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   99
+  ],
+  "recorded_scores": [
+   93,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000089",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   88
+  ],
+  "recorded_scores": [
+   94,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000090",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   117,
+   104
+  ],
+  "recorded_scores": [
+   117,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000092",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   116
+  ],
+  "recorded_scores": [
+   97,
+   116
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000094",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   95,
+   87
+  ],
+  "recorded_scores": [
+   95,
+   87
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000095",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   91,
+   71
+  ],
+  "recorded_scores": [
+   91,
+   71
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000093",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   87
+  ],
+  "recorded_scores": [
+   102,
+   87
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000097",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   113,
+   92
+  ],
+  "recorded_scores": [
+   113,
+   92
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000099",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   87
+  ],
+  "recorded_scores": [
+   94,
+   87
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000091",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   121,
+   116
+  ],
+  "recorded_scores": [
+   121,
+   116
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000096",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   105,
+   107
+  ],
+  "recorded_scores": [
+   105,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000100",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   120
+  ],
+  "recorded_scores": [
+   103,
+   120
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000103",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   107,
+   81
+  ],
+  "recorded_scores": [
+   107,
+   81
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000105",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   67,
+   100
+  ],
+  "recorded_scores": [
+   67,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000104",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   87
+  ],
+  "recorded_scores": [
+   84,
+   87
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000102",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   92
+  ],
+  "recorded_scores": [
+   84,
+   92
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000101",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   71,
+   114
+  ],
+  "recorded_scores": [
+   71,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000098",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   92,
+   103
+  ],
+  "recorded_scores": [
+   92,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000107",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   122,
+   103
+  ],
+  "recorded_scores": [
+   122,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000106",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   105,
+   85
+  ],
+  "recorded_scores": [
+   105,
+   85
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000108",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   104
+  ],
+  "recorded_scores": [
+   96,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000109",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   101
+  ],
+  "recorded_scores": [
+   94,
+   101
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000114",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   72
+  ],
+  "recorded_scores": [
+   110,
+   72
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000110",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   80,
+   117
+  ],
+  "recorded_scores": [
+   80,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000115",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   85
+  ],
+  "recorded_scores": [
+   104,
+   85
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000116",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   72
+  ],
+  "recorded_scores": [
+   98,
+   72
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000111",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   88,
+   113
+  ],
+  "recorded_scores": [
+   88,
+   113
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000113",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   128
+  ],
+  "recorded_scores": [
+   96,
+   128
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000112",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   67
+  ],
+  "recorded_scores": [
+   89,
+   67
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000119",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   85,
+   106
+  ],
+  "recorded_scores": [
+   85,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000118",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   89,
+   66
+  ],
+  "recorded_scores": [
+   89,
+   66
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000120",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   81
+  ],
+  "recorded_scores": [
+   103,
+   81
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000121",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   92
+  ],
+  "recorded_scores": [
+   100,
+   92
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000117",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   94
+  ],
+  "recorded_scores": [
+   96,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000123",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   90
+  ],
+  "recorded_scores": [
+   94,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000122",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   94
+  ],
+  "recorded_scores": [
+   90,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000124",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   114,
+   106
+  ],
+  "recorded_scores": [
+   114,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000130",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   114
+  ],
+  "recorded_scores": [
+   96,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000127",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   119,
+   105
+  ],
+  "recorded_scores": [
+   119,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000128",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   83,
+   102
+  ],
+  "recorded_scores": [
+   83,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000126",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   107
+  ],
+  "recorded_scores": [
+   110,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000133",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   119
+  ],
+  "recorded_scores": [
+   98,
+   119
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000125",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   93
+  ],
+  "recorded_scores": [
+   93,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000134",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   120,
+   90
+  ],
+  "recorded_scores": [
+   120,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000131",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   88
+  ],
+  "recorded_scores": [
+   84,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000136",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   66
+  ],
+  "recorded_scores": [
+   102,
+   66
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000132",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   112,
+   99
+  ],
+  "recorded_scores": [
+   112,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000135",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   117
+  ],
+  "recorded_scores": [
+   110,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000129",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   58,
+   72
+  ],
+  "recorded_scores": [
+   58,
+   72
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000137",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   125
+  ],
+  "recorded_scores": [
+   99,
+   125
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000138",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   78,
+   105
+  ],
+  "recorded_scores": [
+   78,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000139",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   111
+  ],
+  "recorded_scores": [
+   99,
+   111
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000141",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   64
+  ],
+  "recorded_scores": [
+   101,
+   64
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000140",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   73,
+   89
+  ],
+  "recorded_scores": [
+   73,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000145",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   93,
+   106
+  ],
+  "recorded_scores": [
+   93,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000142",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   114
+  ],
+  "recorded_scores": [
+   109,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000143",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   119,
+   107
+  ],
+  "recorded_scores": [
+   119,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000144",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   103,
+   95
+  ],
+  "recorded_scores": [
+   103,
+   95
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000148",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   83
+  ],
+  "recorded_scores": [
+   90,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000146",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   86,
+   97
+  ],
+  "recorded_scores": [
+   86,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000149",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   78,
+   107
+  ],
+  "recorded_scores": [
+   78,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000147",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   80
+  ],
+  "recorded_scores": [
+   94,
+   80
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000151",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   120,
+   89
+  ],
+  "recorded_scores": [
+   120,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000153",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   110
+  ],
+  "recorded_scores": [
+   104,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000154",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   108,
+   81
+  ],
+  "recorded_scores": [
+   108,
+   81
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000150",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   120,
+   122
+  ],
+  "recorded_scores": [
+   120,
+   122
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000156",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   93
+  ],
+  "recorded_scores": [
+   89,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000158",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   94
+  ],
+  "recorded_scores": [
+   96,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000152",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   136,
+   117
+  ],
+  "recorded_scores": [
+   136,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000157",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   103
+  ],
+  "recorded_scores": [
+   94,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000161",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   118
+  ],
+  "recorded_scores": [
+   93,
+   118
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000155",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   88
+  ],
+  "recorded_scores": [
+   109,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000159",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   83
+  ],
+  "recorded_scores": [
+   89,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000162",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   135,
+   111
+  ],
+  "recorded_scores": [
+   135,
+   111
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000163",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   106,
+   91
+  ],
+  "recorded_scores": [
+   106,
+   91
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000160",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   87,
+   70
+  ],
+  "recorded_scores": [
+   87,
+   70
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000165",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   119,
+   100
+  ],
+  "recorded_scores": [
+   119,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000164",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   110
+  ],
+  "recorded_scores": [
+   94,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000166",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   67,
+   98
+  ],
+  "recorded_scores": [
+   67,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000167",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   124,
+   93
+  ],
+  "recorded_scores": [
+   124,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000168",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   106,
+   106
+  ],
+  "recorded_scores": [
+   106,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000170",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   108
+  ],
+  "recorded_scores": [
+   89,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000171",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   64,
+   94
+  ],
+  "recorded_scores": [
+   64,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000169",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   116,
+   97
+  ],
+  "recorded_scores": [
+   116,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000172",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   110
+  ],
+  "recorded_scores": [
+   97,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000173",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   57,
+   72
+  ],
+  "recorded_scores": [
+   57,
+   72
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000176",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   67,
+   87
+  ],
+  "recorded_scores": [
+   67,
+   87
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000174",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   96
+  ],
+  "recorded_scores": [
+   99,
+   96
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000177",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   128
+  ],
+  "recorded_scores": [
+   93,
+   128
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000175",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   116
+  ],
+  "recorded_scores": [
+   109,
+   116
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000179",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   78,
+   83
+  ],
+  "recorded_scores": [
+   78,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000180",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   66,
+   65
+  ],
+  "recorded_scores": [
+   66,
+   65
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000178",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   101
+  ],
+  "recorded_scores": [
+   100,
+   101
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000181",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   124
+  ],
+  "recorded_scores": [
+   100,
+   124
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000185",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   91,
+   102
+  ],
+  "recorded_scores": [
+   91,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000182",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   114
+  ],
+  "recorded_scores": [
+   94,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000184",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   108
+  ],
+  "recorded_scores": [
+   93,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000183",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   107,
+   97
+  ],
+  "recorded_scores": [
+   107,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000188",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   67,
+   63
+  ],
+  "recorded_scores": [
+   67,
+   63
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000189",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   120,
+   77
+  ],
+  "recorded_scores": [
+   120,
+   77
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000186",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   84
+  ],
+  "recorded_scores": [
+   82,
+   84
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000191",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   99,
+   103
+  ],
+  "recorded_scores": [
+   99,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000190",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   120
+  ],
+  "recorded_scores": [
+   104,
+   120
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000193",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   83,
+   119
+  ],
+  "recorded_scores": [
+   83,
+   119
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000192",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   107
+  ],
+  "recorded_scores": [
+   89,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000187",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   69
+  ],
+  "recorded_scores": [
+   84,
+   69
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000194",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   85,
+   120
+  ],
+  "recorded_scores": [
+   85,
+   120
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000195",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   117,
+   117
+  ],
+  "recorded_scores": [
+   117,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000196",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   85,
+   93
+  ],
+  "recorded_scores": [
+   85,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000198",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   77
+  ],
+  "recorded_scores": [
+   104,
+   77
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000197",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   87,
+   106
+  ],
+  "recorded_scores": [
+   87,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000201",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   100,
+   107
+  ],
+  "recorded_scores": [
+   100,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000202",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   58,
+   76
+  ],
+  "recorded_scores": [
+   58,
+   76
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000200",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   74,
+   91
+  ],
+  "recorded_scores": [
+   74,
+   91
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000199",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   91,
+   104
+  ],
+  "recorded_scores": [
+   91,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000205",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   135,
+   102
+  ],
+  "recorded_scores": [
+   135,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000204",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   87,
+   108
+  ],
+  "recorded_scores": [
+   87,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000203",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   114,
+   106
+  ],
+  "recorded_scores": [
+   114,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000207",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   90,
+   113
+  ],
+  "recorded_scores": [
+   90,
+   113
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000208",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   68
+  ],
+  "recorded_scores": [
+   99,
+   68
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000210",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   92,
+   104
+  ],
+  "recorded_scores": [
+   92,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 3
+ },
+ {
+  "game": "28000000206",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   77,
+   98
+  ],
+  "recorded_scores": [
+   77,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000213",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   116
+  ],
+  "recorded_scores": [
+   104,
+   116
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000211",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   127
+  ],
+  "recorded_scores": [
+   84,
+   127
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000209",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   98
+  ],
+  "recorded_scores": [
+   96,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000214",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   103
+  ],
+  "recorded_scores": [
+   89,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000212",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   95
+  ],
+  "recorded_scores": [
+   98,
+   95
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000217",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   107,
+   80
+  ],
+  "recorded_scores": [
+   107,
+   80
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000215",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   94
+  ],
+  "recorded_scores": [
+   94,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000219",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   111
+  ],
+  "recorded_scores": [
+   99,
+   111
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000216",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   114
+  ],
+  "recorded_scores": [
+   98,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000218",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   106,
+   118
+  ],
+  "recorded_scores": [
+   106,
+   118
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000221",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   106,
+   119
+  ],
+  "recorded_scores": [
+   106,
+   119
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000222",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   107,
+   117
+  ],
+  "recorded_scores": [
+   107,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000220",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   103
+  ],
+  "recorded_scores": [
+   89,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000225",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   74,
+   84
+  ],
+  "recorded_scores": [
+   74,
+   84
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000224",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   96,
+   101
+  ],
+  "recorded_scores": [
+   96,
+   101
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000223",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   112,
+   124
+  ],
+  "recorded_scores": [
+   112,
+   124
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000227",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   110
+  ],
+  "recorded_scores": [
+   102,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000226",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   125,
+   124
+  ],
+  "recorded_scores": [
+   125,
+   124
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000228",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   117,
+   132
+  ],
+  "recorded_scores": [
+   117,
+   132
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000229",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   129,
+   112
+  ],
+  "recorded_scores": [
+   129,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000235",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   107
+  ],
+  "recorded_scores": [
+   99,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000232",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   118,
+   101
+  ],
+  "recorded_scores": [
+   118,
+   101
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000236",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   57,
+   89
+  ],
+  "recorded_scores": [
+   57,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 11
+ },
+ {
+  "game": "28000000231",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   117
+  ],
+  "recorded_scores": [
+   97,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000234",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   111,
+   110
+  ],
+  "recorded_scores": [
+   111,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000233",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   89
+  ],
+  "recorded_scores": [
+   100,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000230",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   84
+  ],
+  "recorded_scores": [
+   102,
+   84
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000238",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   100,
+   107
+  ],
+  "recorded_scores": [
+   100,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000239",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   131,
+   120
+  ],
+  "recorded_scores": [
+   131,
+   120
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000237",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   107,
+   107
+  ],
+  "recorded_scores": [
+   107,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000240",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   91,
+   96
+  ],
+  "recorded_scores": [
+   91,
+   96
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000242",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   79,
+   74
+  ],
+  "recorded_scores": [
+   79,
+   74
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000243",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   71,
+   82
+  ],
+  "recorded_scores": [
+   71,
+   82
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000245",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   88,
+   96
+  ],
+  "recorded_scores": [
+   88,
+   96
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000241",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   113,
+   85
+  ],
+  "recorded_scores": [
+   113,
+   85
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000244",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   69
+  ],
+  "recorded_scores": [
+   94,
+   69
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000248",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   122
+  ],
+  "recorded_scores": [
+   104,
+   122
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000247",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   97
+  ],
+  "recorded_scores": [
+   84,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000246",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   127,
+   91
+  ],
+  "recorded_scores": [
+   127,
+   91
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000249",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   115,
+   103
+  ],
+  "recorded_scores": [
+   115,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000250",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   88
+  ],
+  "recorded_scores": [
+   98,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000251",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   120,
+   125
+  ],
+  "recorded_scores": [
+   120,
+   125
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000253",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   93
+  ],
+  "recorded_scores": [
+   96,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000252",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   120,
+   115
+  ],
+  "recorded_scores": [
+   120,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000255",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   89,
+   93
+  ],
+  "recorded_scores": [
+   89,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000254",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   100
+  ],
+  "recorded_scores": [
+   90,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000256",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   112,
+   107
+  ],
+  "recorded_scores": [
+   112,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000258",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   88
+  ],
+  "recorded_scores": [
+   96,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000257",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   115
+  ],
+  "recorded_scores": [
+   94,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000259",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   82
+  ],
+  "recorded_scores": [
+   84,
+   82
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000260",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   114,
+   103
+  ],
+  "recorded_scores": [
+   114,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000264",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   133
+  ],
+  "recorded_scores": [
+   103,
+   133
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000261",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   98,
+   110
+  ],
+  "recorded_scores": [
+   98,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000268",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   104
+  ],
+  "recorded_scores": [
+   110,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000265",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   95,
+   110
+  ],
+  "recorded_scores": [
+   95,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000262",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   77
+  ],
+  "recorded_scores": [
+   97,
+   77
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000267",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   86,
+   112
+  ],
+  "recorded_scores": [
+   86,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000269",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   122,
+   102
+  ],
+  "recorded_scores": [
+   122,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000263",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   106
+  ],
+  "recorded_scores": [
+   100,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000272",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   93
+  ],
+  "recorded_scores": [
+   99,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000271",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   98
+  ],
+  "recorded_scores": [
+   84,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000270",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   94,
+   77
+  ],
+  "recorded_scores": [
+   94,
+   77
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000266",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   91
+  ],
+  "recorded_scores": [
+   99,
+   91
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000273",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   104
+  ],
+  "recorded_scores": [
+   96,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000275",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   84
+  ],
+  "recorded_scores": [
+   102,
+   84
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000274",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   80,
+   94
+  ],
+  "recorded_scores": [
+   80,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000277",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   95
+  ],
+  "recorded_scores": [
+   101,
+   95
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000276",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   82
+  ],
+  "recorded_scores": [
+   82,
+   82
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000278",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   88
+  ],
+  "recorded_scores": [
+   90,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000281",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   89
+  ],
+  "recorded_scores": [
+   98,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000282",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   79
+  ],
+  "recorded_scores": [
+   101,
+   79
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000280",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   79
+  ],
+  "recorded_scores": [
+   99,
+   79
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000279",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   90
+  ],
+  "recorded_scores": [
+   93,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000285",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   81,
+   65
+  ],
+  "recorded_scores": [
+   81,
+   65
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000283",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   79,
+   100
+  ],
+  "recorded_scores": [
+   79,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000288",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   106,
+   99
+  ],
+  "recorded_scores": [
+   106,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000284",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   106,
+   103
+  ],
+  "recorded_scores": [
+   106,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000289",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   95
+  ],
+  "recorded_scores": [
+   84,
+   95
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000286",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   115
+  ],
+  "recorded_scores": [
+   98,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000287",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   98
+  ],
+  "recorded_scores": [
+   109,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000294",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   105,
+   112
+  ],
+  "recorded_scores": [
+   105,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000296",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   100
+  ],
+  "recorded_scores": [
+   82,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000292",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   86,
+   97
+  ],
+  "recorded_scores": [
+   86,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000297",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   102
+  ],
+  "recorded_scores": [
+   93,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000298",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   74
+  ],
+  "recorded_scores": [
+   104,
+   74
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000290",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   70
+  ],
+  "recorded_scores": [
+   104,
+   70
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000295",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   122,
+   120
+  ],
+  "recorded_scores": [
+   122,
+   120
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000301",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   116,
+   102
+  ],
+  "recorded_scores": [
+   116,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000291",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   105
+  ],
+  "recorded_scores": [
+   102,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000293",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   91,
+   71
+  ],
+  "recorded_scores": [
+   91,
+   71
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000302",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   89
+  ],
+  "recorded_scores": [
+   93,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000303",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   84
+  ],
+  "recorded_scores": [
+   109,
+   84
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000299",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   128,
+   99
+  ],
+  "recorded_scores": [
+   128,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000305",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   107,
+   80
+  ],
+  "recorded_scores": [
+   107,
+   80
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000300",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   112,
+   112
+  ],
+  "recorded_scores": [
+   112,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000304",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   117,
+   110
+  ],
+  "recorded_scores": [
+   117,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000307",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   75,
+   100
+  ],
+  "recorded_scores": [
+   75,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000308",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   88,
+   100
+  ],
+  "recorded_scores": [
+   88,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000306",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   116
+  ],
+  "recorded_scores": [
+   99,
+   116
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000311",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   115
+  ],
+  "recorded_scores": [
+   90,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000314",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   92,
+   100
+  ],
+  "recorded_scores": [
+   92,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000315",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   122,
+   124
+  ],
+  "recorded_scores": [
+   122,
+   124
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000309",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   105
+  ],
+  "recorded_scores": [
+   109,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000317",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   97
+  ],
+  "recorded_scores": [
+   110,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000310",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   95,
+   94
+  ],
+  "recorded_scores": [
+   95,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000312",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   98,
+   83
+  ],
+  "recorded_scores": [
+   98,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000313",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   74,
+   92
+  ],
+  "recorded_scores": [
+   74,
+   92
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000318",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   67,
+   70
+  ],
+  "recorded_scores": [
+   67,
+   70
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000319",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   105,
+   66
+  ],
+  "recorded_scores": [
+   105,
+   66
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000320",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   77,
+   105
+  ],
+  "recorded_scores": [
+   77,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000316",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   57,
+   89
+  ],
+  "recorded_scores": [
+   57,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000322",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   95,
+   87
+  ],
+  "recorded_scores": [
+   95,
+   87
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000321",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   77,
+   88
+  ],
+  "recorded_scores": [
+   77,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000323",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   127,
+   121
+  ],
+  "recorded_scores": [
+   127,
+   121
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000324",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   92,
+   99
+  ],
+  "recorded_scores": [
+   92,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000325",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   93,
+   74
+  ],
+  "recorded_scores": [
+   93,
+   74
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000328",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   114,
+   114
+  ],
+  "recorded_scores": [
+   114,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000329",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   105,
+   98
+  ],
+  "recorded_scores": [
+   105,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000327",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   105,
+   69
+  ],
+  "recorded_scores": [
+   105,
+   69
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000326",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   74,
+   97
+  ],
+  "recorded_scores": [
+   74,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000330",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   115
+  ],
+  "recorded_scores": [
+   98,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000333",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   85,
+   85
+  ],
+  "recorded_scores": [
+   85,
+   85
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000332",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   86,
+   100
+  ],
+  "recorded_scores": [
+   86,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000334",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   121,
+   119
+  ],
+  "recorded_scores": [
+   121,
+   119
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000337",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   117,
+   115
+  ],
+  "recorded_scores": [
+   117,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000331",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   128
+  ],
+  "recorded_scores": [
+   110,
+   128
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000335",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   126,
+   102
+  ],
+  "recorded_scores": [
+   126,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000336",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   118
+  ],
+  "recorded_scores": [
+   93,
+   118
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000338",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   142
+  ],
+  "recorded_scores": [
+   109,
+   142
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000339",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   107,
+   112
+  ],
+  "recorded_scores": [
+   107,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000342",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   71,
+   76
+  ],
+  "recorded_scores": [
+   71,
+   76
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000340",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   121,
+   90
+  ],
+  "recorded_scores": [
+   121,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000341",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   85
+  ],
+  "recorded_scores": [
+   101,
+   85
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000343",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   123,
+   105
+  ],
+  "recorded_scores": [
+   123,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000345",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   137,
+   148
+  ],
+  "recorded_scores": [
+   137,
+   148
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000347",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   71,
+   83
+  ],
+  "recorded_scores": [
+   71,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000346",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   76,
+   72
+  ],
+  "recorded_scores": [
+   76,
+   72
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000348",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   75,
+   91
+  ],
+  "recorded_scores": [
+   75,
+   91
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000344",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   81,
+   69
+  ],
+  "recorded_scores": [
+   81,
+   69
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000350",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   73,
+   83
+  ],
+  "recorded_scores": [
+   73,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000352",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   108
+  ],
+  "recorded_scores": [
+   102,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000354",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   106,
+   110
+  ],
+  "recorded_scores": [
+   106,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000349",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   82
+  ],
+  "recorded_scores": [
+   84,
+   82
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000356",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   99,
+   79
+  ],
+  "recorded_scores": [
+   99,
+   79
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000353",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   81,
+   96
+  ],
+  "recorded_scores": [
+   81,
+   96
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000358",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   107
+  ],
+  "recorded_scores": [
+   90,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000359",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   115,
+   122
+  ],
+  "recorded_scores": [
+   115,
+   122
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000357",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   115
+  ],
+  "recorded_scores": [
+   103,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000351",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   103
+  ],
+  "recorded_scores": [
+   101,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000355",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   49,
+   84
+  ],
+  "recorded_scores": [
+   49,
+   84
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000360",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   121,
+   99
+  ],
+  "recorded_scores": [
+   121,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000361",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   102
+  ],
+  "recorded_scores": [
+   104,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000363",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   112,
+   113
+  ],
+  "recorded_scores": [
+   112,
+   113
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000365",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   114,
+   103
+  ],
+  "recorded_scores": [
+   114,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000362",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   131
+  ],
+  "recorded_scores": [
+   96,
+   131
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000364",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   122,
+   88
+  ],
+  "recorded_scores": [
+   122,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000366",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   99
+  ],
+  "recorded_scores": [
+   102,
+   99
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000367",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   114,
+   93
+  ],
+  "recorded_scores": [
+   114,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000369",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   105,
+   65
+  ],
+  "recorded_scores": [
+   105,
+   65
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000371",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   91
+  ],
+  "recorded_scores": [
+   103,
+   91
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000370",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   83
+  ],
+  "recorded_scores": [
+   97,
+   83
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000374",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   109,
+   89
+  ],
+  "recorded_scores": [
+   109,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000372",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   84,
+   82
+  ],
+  "recorded_scores": [
+   84,
+   82
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000373",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   86,
+   81
+  ],
+  "recorded_scores": [
+   86,
+   81
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000368",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   95,
+   110
+  ],
+  "recorded_scores": [
+   95,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000375",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   80,
+   85
+  ],
+  "recorded_scores": [
+   80,
+   85
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000376",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   135,
+   102
+  ],
+  "recorded_scores": [
+   135,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000379",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   119,
+   118
+  ],
+  "recorded_scores": [
+   119,
+   118
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000378",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   104,
+   107
+  ],
+  "recorded_scores": [
+   104,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000381",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   51,
+   116
+  ],
+  "recorded_scores": [
+   51,
+   116
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000380",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   117,
+   108
+  ],
+  "recorded_scores": [
+   117,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000377",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   91,
+   79
+  ],
+  "recorded_scores": [
+   91,
+   79
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000385",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   98
+  ],
+  "recorded_scores": [
+   103,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000384",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   100,
+   96
+  ],
+  "recorded_scores": [
+   100,
+   96
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000382",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   108
+  ],
+  "recorded_scores": [
+   82,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000383",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   117,
+   110
+  ],
+  "recorded_scores": [
+   117,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000387",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   105
+  ],
+  "recorded_scores": [
+   99,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000389",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   115,
+   122
+  ],
+  "recorded_scores": [
+   115,
+   122
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000390",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   92,
+   95
+  ],
+  "recorded_scores": [
+   92,
+   95
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000386",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   75
+  ],
+  "recorded_scores": [
+   104,
+   75
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000388",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   90
+  ],
+  "recorded_scores": [
+   96,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000394",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   91
+  ],
+  "recorded_scores": [
+   103,
+   91
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000391",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   115
+  ],
+  "recorded_scores": [
+   101,
+   115
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000393",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   89
+  ],
+  "recorded_scores": [
+   103,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000392",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   96
+  ],
+  "recorded_scores": [
+   104,
+   96
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000395",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   93,
+   110
+  ],
+  "recorded_scores": [
+   93,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000398",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   95
+  ],
+  "recorded_scores": [
+   98,
+   95
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000401",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   93
+  ],
+  "recorded_scores": [
+   97,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000402",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   58,
+   81
+  ],
+  "recorded_scores": [
+   58,
+   81
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000399",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   77,
+   98
+  ],
+  "recorded_scores": [
+   77,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000404",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   113,
+   110
+  ],
+  "recorded_scores": [
+   113,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000403",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   104,
+   126
+  ],
+  "recorded_scores": [
+   104,
+   126
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000397",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   111
+  ],
+  "recorded_scores": [
+   98,
+   111
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000396",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   98,
+   102
+  ],
+  "recorded_scores": [
+   98,
+   102
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000400",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   92,
+   42
+  ],
+  "recorded_scores": [
+   92,
+   42
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000407",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   122
+  ],
+  "recorded_scores": [
+   102,
+   122
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000410",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   111,
+   110
+  ],
+  "recorded_scores": [
+   111,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000406",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   131,
+   123
+  ],
+  "recorded_scores": [
+   131,
+   123
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000409",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   123,
+   100
+  ],
+  "recorded_scores": [
+   123,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000408",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   85,
+   97
+  ],
+  "recorded_scores": [
+   85,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000405",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   123,
+   106
+  ],
+  "recorded_scores": [
+   123,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000412",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   81,
+   112
+  ],
+  "recorded_scores": [
+   81,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000411",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   87,
+   118
+  ],
+  "recorded_scores": [
+   87,
+   118
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000416",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   111,
+   96
+  ],
+  "recorded_scores": [
+   111,
+   96
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000415",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   96,
+   97
+  ],
+  "recorded_scores": [
+   96,
+   97
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000413",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   118,
+   94
+  ],
+  "recorded_scores": [
+   118,
+   94
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000418",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   88
+  ],
+  "recorded_scores": [
+   82,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000414",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   76,
+   78
+  ],
+  "recorded_scores": [
+   76,
+   78
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000417",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   70,
+   76
+  ],
+  "recorded_scores": [
+   70,
+   76
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000420",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   124,
+   120
+  ],
+  "recorded_scores": [
+   124,
+   120
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000421",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   98
+  ],
+  "recorded_scores": [
+   90,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000423",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   99,
+   100
+  ],
+  "recorded_scores": [
+   99,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000419",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   85,
+   90
+  ],
+  "recorded_scores": [
+   85,
+   90
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000422",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   88
+  ],
+  "recorded_scores": [
+   100,
+   88
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000425",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   114
+  ],
+  "recorded_scores": [
+   103,
+   114
+  ],
+  "human_player": null,
+  "n_farm_commits": 9
+ },
+ {
+  "game": "28000000424",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   84
+  ],
+  "recorded_scores": [
+   97,
+   84
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000426",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   119,
+   101
+  ],
+  "recorded_scores": [
+   119,
+   101
+  ],
+  "human_player": null,
+  "n_farm_commits": 10
+ },
+ {
+  "game": "28000000427",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   101,
+   108
+  ],
+  "recorded_scores": [
+   101,
+   108
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000428",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   77,
+   92
+  ],
+  "recorded_scores": [
+   77,
+   92
+  ],
+  "human_player": null,
+  "n_farm_commits": 11
+ },
+ {
+  "game": "28000000430",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 143,
+  "final_scores": [
+   106,
+   100
+  ],
+  "recorded_scores": [
+   106,
+   100
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000432",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   107,
+   98
+  ],
+  "recorded_scores": [
+   107,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000429",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   100,
+   101
+  ],
+  "recorded_scores": [
+   100,
+   101
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000431",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   112
+  ],
+  "recorded_scores": [
+   102,
+   112
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000433",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   101
+  ],
+  "recorded_scores": [
+   82,
+   101
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000435",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   105
+  ],
+  "recorded_scores": [
+   97,
+   105
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000437",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   102,
+   81
+  ],
+  "recorded_scores": [
+   102,
+   81
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000434",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   60,
+   53
+  ],
+  "recorded_scores": [
+   60,
+   53
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000439",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   110,
+   110
+  ],
+  "recorded_scores": [
+   110,
+   110
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000438",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   82,
+   106
+  ],
+  "recorded_scores": [
+   82,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000440",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   133,
+   95
+  ],
+  "recorded_scores": [
+   133,
+   95
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000436",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   52,
+   93
+  ],
+  "recorded_scores": [
+   52,
+   93
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000443",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   98
+  ],
+  "recorded_scores": [
+   103,
+   98
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ },
+ {
+  "game": "28000000441",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   90,
+   89
+  ],
+  "recorded_scores": [
+   90,
+   89
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000444",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   103,
+   84
+  ],
+  "recorded_scores": [
+   103,
+   84
+  ],
+  "human_player": null,
+  "n_farm_commits": 5
+ },
+ {
+  "game": "28000000447",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   112,
+   103
+  ],
+  "recorded_scores": [
+   112,
+   103
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000445",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   86,
+   106
+  ],
+  "recorded_scores": [
+   86,
+   106
+  ],
+  "human_player": null,
+  "n_farm_commits": 4
+ },
+ {
+  "game": "28000000442",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   97,
+   117
+  ],
+  "recorded_scores": [
+   97,
+   117
+  ],
+  "human_player": null,
+  "n_farm_commits": 7
+ },
+ {
+  "game": "28000000449",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   87,
+   104
+  ],
+  "recorded_scores": [
+   87,
+   104
+  ],
+  "human_player": null,
+  "n_farm_commits": 6
+ },
+ {
+  "game": "28000000448",
+  "corpus": "SP449",
+  "profile": "walled",
+  "recon_ok": true,
+  "n_plies": 144,
+  "final_scores": [
+   113,
+   107
+  ],
+  "recorded_scores": [
+   113,
+   107
+  ],
+  "human_player": null,
+  "n_farm_commits": 8
+ }
+]
