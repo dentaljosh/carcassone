@@ -1,0 +1,3918 @@
+{
+  "round": "fpu_ladder (4 rungs, 4 bands, one dose each)",
+  "pair": [
+    "measurement/fpu_ladder_prep/DESIGN.md",
+    "measurement/fpu_ladder_prep/READ_RULE.md"
+  ],
+  "smoke_mode": false,
+  "budget": {
+    "k_dets": 16,
+    "sims_per_det": 1376,
+    "total_sims": 22016,
+    "note": "the 2026-08-30 promoted desktop champion, BOTH sides"
+  },
+  "bars": {
+    "BAR_EFFECT": 1.5,
+    "adopt": "LB95(M) >= +1.500 pts/deck",
+    "bounded": "UB95(M) < +1.500 pts/deck",
+    "provenance": "\u2b50 AN EFFECT SIZE, NOT 2 sigma-hat (owner ruling 2026-08-30). DESIGN \u00a73 derives it and READ_RULE \u00a78 states what it costs."
+  },
+  "round_gates": [
+    {
+      "gate": "G-WHEEL-SAME",
+      "ok": true,
+      "detail": {
+        "binary_sha_by_cell": {
+          "CELL_FPU005": "a9bb2311ab9a635d",
+          "CELL_FPU010": "a9bb2311ab9a635d",
+          "CELL_FPU015": "a9bb2311ab9a635d",
+          "CELL_FPU030": "a9bb2311ab9a635d"
+        },
+        "by_role": {
+          "local": [
+            "a9bb2311ab9a635d"
+          ],
+          "laptop": [
+            "a9bb2311ab9a635d"
+          ]
+        }
+      },
+      "address": "manifest:carc_rs_binary_sha",
+      "why": "every rung on a box shares that box's binary sha \u26a0\ufe0f the sha is BOX-LOCAL and is never compared ACROSS boxes."
+    },
+    {
+      "gate": "G-REV",
+      "ok": true,
+      "detail": {
+        "pins": {
+          "local": "395b76700ab19c7bc19d46510b1b2f4da60cdfa3",
+          "laptop": "395b76700ab19c7bc19d46510b1b2f4da60cdfa3"
+        },
+        "revs": {
+          "CELL_FPU005": "395b7670-dirty",
+          "CELL_FPU010": "395b7670-dirty",
+          "CELL_FPU015": "395b76700a-dirty",
+          "CELL_FPU030": "395b76700a-dirty"
+        },
+        "canonicalized": {
+          "CELL_FPU005": {
+            "code_rev": "395b7670-dirty",
+            "ok": true,
+            "why": "code_rev '395b7670-dirty' names PINNED_SRC_REV '395b76700ab19c7bc19d46510b1b2f4da60cdfa3'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_FPU010": {
+            "code_rev": "395b7670-dirty",
+            "ok": true,
+            "why": "code_rev '395b7670-dirty' names PINNED_SRC_REV '395b76700ab19c7bc19d46510b1b2f4da60cdfa3'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_FPU015": {
+            "code_rev": "395b76700a-dirty",
+            "ok": true,
+            "why": "code_rev '395b76700a-dirty' names PINNED_SRC_REV '395b76700ab19c7bc19d46510b1b2f4da60cdfa3'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_FPU030": {
+            "code_rev": "395b76700a-dirty",
+            "ok": true,
+            "why": "code_rev '395b76700a-dirty' names PINNED_SRC_REV '395b76700ab19c7bc19d46510b1b2f4da60cdfa3'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          }
+        },
+        "ok": true,
+        "distinct_pins": [
+          "395b76700ab19c7bc19d46510b1b2f4da60cdfa3"
+        ],
+        "pin": "395b76700ab19c7bc19d46510b1b2f4da60cdfa3",
+        "why": "every cell's emitted code_rev canonicalizes to the ONE pin 395b76700ab19c7bc19d46510b1b2f4da60cdfa3 that every box published \u2014 short revs of different lengths are expected and harmless (IS-A1)"
+      },
+      "address": "manifests + each box's PINNED_SRC_REV",
+      "why": "every cell's emitted code_rev canonicalizes to the ONE pin 395b76700ab19c7bc19d46510b1b2f4da60cdfa3 that every box published \u2014 short revs of different lengths are expected and harmless (IS-A1)"
+    },
+    {
+      "gate": "G-BLIND",
+      "ok": true,
+      "detail": {
+        "BLIND_COMMIT_by_cell": {
+          "CELL_FPU005": "f040f2af9e87164a8ab6a01cb539329171234b09",
+          "CELL_FPU010": "f040f2af9e87164a8ab6a01cb539329171234b09",
+          "CELL_FPU015": "f040f2af9e87164a8ab6a01cb539329171234b09",
+          "CELL_FPU030": "f040f2af9e87164a8ab6a01cb539329171234b09"
+        }
+      },
+      "address": "manifest:BLIND_COMMIT",
+      "why": "one 40-hex BLIND_COMMIT stamped into every adjudicated manifest"
+    }
+  ],
+  "round_gates_ok": true,
+  "cells": {
+    "CELL_FPU005": {
+      "cell": "CELL_FPU005",
+      "role": "local",
+      "knob": "fpu_reduction",
+      "dose": 0.05,
+      "band": 164000000000,
+      "purpose": "\u2b50 THE LOW BRACKET POINT. A dose 4x below the incumbent. \u26d4 It is also the round's own liveness worry: a dose small enough to change no decision is indistinguishable from a knob that never bound, which is why the golden gate's positive control is run AT THIS DOSE and not at 0.2 (DESIGN \u00a79).",
+      "gates": [
+        {
+          "gate": "G-FPU",
+          "ok": true,
+          "detail": {
+            "requested_fpu_reduction": 0.05,
+            "fpu_absent": false,
+            "requested_c_puct_override": null,
+            "c_puct_absent": false,
+            "shared_c_puct": 1.5,
+            "frozen": {
+              "fpu_reduction": 0.05,
+              "c_puct": null
+            },
+            "addresses": {
+              "fpu": "manifest:config.cand_search.fpu_reduction",
+              "c_puct": "manifest:config.cand_search.c_puct"
+            }
+          },
+          "address": "manifest:config.cand_search.fpu_reduction",
+          "why": "the REQUEST matches this rung's frozen dose (fpu=0.05) and carries NO c_puct override"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "fpu_reduction": {
+                "candidate": 0.05,
+                "opponent": null
+              },
+              "c_puct": {
+                "candidate": 1.5,
+                "opponent": 1.5
+              }
+            },
+            "cell_knob": "fpu_reduction",
+            "frozen_value": 0.05
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 the dose BOUND on the candidate's resolved config, the opponent carries the champion's values, and c_puct is equal across the two sides"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "owned_alias": "fpu_reduction",
+            "frozen_value": 0.05,
+            "rows": {
+              "k_dets": {
+                "champion": 16,
+                "opponent": 16,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.k_dets",
+                  "manifest:config.opponent.k_dets"
+                ]
+              },
+              "sims_per_det": {
+                "champion": 1376,
+                "opponent": 1376,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.sims_per_det",
+                  "manifest:config.opponent.sims_per_det"
+                ]
+              },
+              "total_sims": {
+                "champion": 22016,
+                "opponent": 22016,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.total_sims",
+                  "manifest:config.opponent.total_sims"
+                ]
+              },
+              "c_puct": {
+                "champion": 1.5,
+                "opponent": 1.5,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.c_puct",
+                  "manifest:config.opponent.champ_cfg.c_puct"
+                ]
+              },
+              "tau_p": {
+                "champion": 5.0,
+                "opponent": 5.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.tau_p",
+                  "manifest:config.opponent.champ_cfg.tau_p"
+                ]
+              },
+              "value_norm": {
+                "champion": 15.0,
+                "opponent": 15.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.value_norm",
+                  "manifest:config.opponent.champ_cfg.value_norm"
+                ]
+              },
+              "leaf_quantize": {
+                "champion": "float",
+                "opponent": "float",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.leaf_quantize",
+                  "manifest:config.opponent.champ_cfg.leaf_quantize"
+                ]
+              },
+              "final_select": {
+                "champion": "visits",
+                "opponent": "visits",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.final_select",
+                  "manifest:config.opponent.champ_cfg.final_select"
+                ]
+              },
+              "fpu_reduction": {
+                "champion": 0.05,
+                "opponent": null,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.fpu_reduction",
+                  "manifest:config.opponent.champ_cfg.fpu_reduction"
+                ]
+              }
+            },
+            "notes": [
+              "\u2b50 fpu_reduction: candidate 0.05 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+            ]
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 fpu_reduction: candidate 0.05 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen \u2014 every OTHER alias is identical across the two sides"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "armed": [],
+            "tiearb_containers": [
+              "config.cand_tiearb",
+              "cand_tiearb"
+            ]
+          },
+          "address": "manifest (full walk)",
+          "why": "the tie arbiter is DISABLED on both sides \u2014 the rung's dose is the only moving part. \u26a0\ufe0f This DEVIATES from the deployed champion (PRODUCTION.yaml carries B=64 since 2026-08-20); the price rides on every branch (DESIGN \u00a72.3)."
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "expected": "a36d2e15a3b3d71d",
+            "cand_curve": [
+              -10.0,
+              -5.0,
+              -1.25,
+              0.0,
+              2.5,
+              3.75,
+              5.0,
+              6.25
+            ]
+          },
+          "address": "manifest:config.{cand,opp}_leaf_hash",
+          "why": "both sides carry the SAME leaf a36d2e15a3b3d71d (curve125) \u2014 fpu_reduction is not a leaf term"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "band_seed_start": 164000000000,
+            "n_decks": 400,
+            "seatings_per_deck": 2,
+            "frozen_band": 164000000000,
+            "addresses": [
+              "manifest:config.band_seed_start",
+              "manifest:config.n_decks",
+              "manifest:config.seatings_per_deck"
+            ]
+          },
+          "address": "manifest:config.band_seed_start",
+          "why": "the rung is on its OWN frozen band with the frozen deck count, 2 seatings per deck"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion) and the product multiplies out"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            },
+            "converted_sides": {
+              "value": [
+                "candidate",
+                "opponent"
+              ],
+              "address": "manifest:config.backend.converted_sides"
+            }
+          },
+          "address": "manifest:config.backend.* \u2014 \u26a0\ufe0f fpu_reduction is threaded on BOTH backends (unlike the J-rules surfaces and the tie arbiter, which are rust-only), so a python leg would NOT be knob-blind. It is still refused: the champion of record plays on rust, and a mixed-backend round is not one round.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+395b76700ab1+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "a9bb2311ab9a635d",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest \u2014 \u26a0\ufe0f carc_rs_version is permanently '0.1.0' and is NOT a discriminator. \u26a0\ufe0f\u26a0\ufe0f UNLIKE THE PARENT ROUND, THE WHEEL HAS MOVED since its golden gate was banked (the S1 R7/R6 merge touched carc_core::search and fair::search_worlds). DESIGN \u00a79 states why the parent's FPU_BITEXACT.json is therefore NOT inherited and a fresh bit-exact run at the launch wheel is a LAUNCH PRECONDITION.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "n": 800,
+            "frozen_n_games": 800,
+            "n_failed": 0,
+            "failure_rate": 0.0,
+            "failure_rate_void_bar": 0.02,
+            "n_common": 400,
+            "n_common_floor": 320.0,
+            "n_common_floor_fraction": 0.8,
+            "notes": [],
+            "addresses": [
+              "summary:n",
+              "summary:n_failed"
+            ]
+          },
+          "address": "summary.json",
+          "why": "\u2b50 n accounts for every frozen game, the failure rate is below the 2% void bar, and n_common clears the 80% floor"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.4775,
+            "band": [
+              0.35,
+              0.65
+            ]
+          },
+          "address": "summary:winrate",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "Doctor",
+            "frozen_role": "local"
+          },
+          "address": "manifest:host",
+          "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "witness": 0.08125,
+              "summary": 0.08125,
+              "agree": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "witness": 0.1168664456827888,
+              "summary": 0.1168664456827888,
+              "agree": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "witness": 400,
+              "summary": 400,
+              "agree": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "witness": 0.4775,
+              "summary": 0.4775,
+              "agree": true,
+              "address": "summary:winrate"
+            },
+            "elo": {
+              "witness": -15.645167545330589,
+              "summary": -15.645167545330589,
+              "agree": true,
+              "address": "summary:elo"
+            }
+          },
+          "address": "summary.json vs the raw records",
+          "why": "the fsum witness agrees on all five statistics"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "range": [
+              164000000000,
+              164000000399
+            ],
+            "n_seeds": 400,
+            "n_common": 400,
+            "frozen_n_decks": 400,
+            "n_common_floor": 320.0,
+            "out_of_range": [],
+            "half_played_decks": [],
+            "n_half_played": 0,
+            "half_played_rate_of_games": 0.0,
+            "half_played_rate_denominator": 800,
+            "failure_rate_void_bar": 0.02,
+            "range_clashes": [],
+            "notes": [],
+            "all_cell_ranges": [
+              [
+                164000000000,
+                164000000399,
+                "CELL_FPU005"
+              ],
+              [
+                165000000000,
+                165000000399,
+                "CELL_FPU010"
+              ],
+              [
+                166000000000,
+                166000000399,
+                "CELL_FPU015"
+              ],
+              [
+                167000000000,
+                167000000399,
+                "CELL_FPU030"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "\u2b50 every realized seed is inside this cell's own range, the one-seat-only rate is BELOW the 2%-of-games void bar, n_common clears the 80% floor, and this cell's band does not intersect any other's"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "M": 0.08125,
+        "z": 0.1168664456827888,
+        "n_paired": 400,
+        "se": 0.6952380516520311,
+        "UB95": 1.4717261033040623,
+        "LB95": -1.3092261033040622,
+        "bar_effect": 1.5,
+        "bar_note": "\u2b50 ADOPT requires LB95 >= bar; BOUNDED requires UB95 < bar. \u26d4 The POINT ESTIMATE clears nothing on its own \u2014 that is the whole difference from a 2-sigma-hat bar (owner ruling 2026-08-30)."
+      },
+      "secondary_elo": {
+        "elo": -15.645167545330589,
+        "footing": "deck-paired",
+        "sigma_1_paired": 8.694697480493907,
+        "sigma_1_unpaired": 12.296159097645663,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.4775,
+        "W": 375,
+        "D": 14,
+        "L": 411,
+        "ci95_elo_paired": [
+          -33.0345625063184,
+          1.7442274156572264
+        ],
+        "instrument_2sigma_elo_resolution": 17.4,
+        "resolution_footing": "deck-paired 2\u03c3 at 800 games / 400 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f\u26a0\ufe0f THIS IS A RESOLUTION, NOT A BAR. The adoption bar is +1.5 pts/deck on the deck-paired MARGIN and no branch reads this block. elo may never be quoted bare; a disagreement between the margin and the elo is DISCLOSED, not arbitrated."
+      },
+      "se_anomaly": {
+        "realized": 0.6952380516520311,
+        "modelled": 0.6905,
+        "ratio": 1.0068617692281407,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        -5.0,
+        0.0,
+        -22.5,
+        16.0,
+        18.0,
+        -9.0,
+        18.0,
+        -11.5,
+        -3.5,
+        -16.5,
+        5.0,
+        -18.0,
+        19.5,
+        -14.5,
+        -29.0,
+        0.5,
+        21.0,
+        -34.0,
+        4.0,
+        9.5,
+        0.5,
+        -4.0,
+        -23.0,
+        17.5,
+        11.0,
+        -7.5,
+        -1.0,
+        -1.5,
+        3.0,
+        -16.0,
+        -5.5,
+        11.0,
+        -27.0,
+        -18.0,
+        -8.5,
+        2.0,
+        -9.0,
+        -16.5,
+        10.0,
+        34.0,
+        -2.5,
+        -11.0,
+        14.5,
+        -14.0,
+        8.5,
+        2.5,
+        4.5,
+        0.0,
+        -7.5,
+        -3.0,
+        21.0,
+        17.0,
+        3.5,
+        10.5,
+        23.5,
+        2.0,
+        -2.5,
+        16.5,
+        5.5,
+        -23.5,
+        2.5,
+        -6.0,
+        9.0,
+        13.0,
+        -0.5,
+        -10.0,
+        -1.0,
+        9.5,
+        -10.0,
+        -6.0,
+        19.5,
+        -3.5,
+        12.0,
+        17.0,
+        -1.5,
+        -5.0,
+        -14.5,
+        10.0,
+        -4.0,
+        22.5,
+        0.5,
+        -0.5,
+        -1.0,
+        10.5,
+        8.0,
+        2.5,
+        0.5,
+        2.0,
+        -18.0,
+        20.5,
+        8.5,
+        27.0,
+        -1.5,
+        4.5,
+        -5.0,
+        34.5,
+        -2.0,
+        1.5,
+        -27.5,
+        1.0,
+        31.5,
+        11.0,
+        13.5,
+        -14.5,
+        -5.5,
+        32.5,
+        -8.0,
+        4.0,
+        -11.0,
+        6.5,
+        5.0,
+        -20.5,
+        34.0,
+        -4.5,
+        -22.0,
+        -6.0,
+        22.0,
+        -4.0,
+        -19.0,
+        -13.5,
+        10.5,
+        -6.0,
+        29.0,
+        -4.0,
+        1.0,
+        3.5,
+        12.0,
+        6.5,
+        -8.5,
+        34.0,
+        4.0,
+        -6.0,
+        -13.5,
+        0.0,
+        -13.0,
+        13.5,
+        15.0,
+        1.5,
+        -12.0,
+        14.0,
+        -3.5,
+        21.5,
+        6.0,
+        -12.0,
+        -3.0,
+        7.0,
+        -4.0,
+        11.0,
+        -4.5,
+        -13.0,
+        -9.5,
+        -18.0,
+        21.5,
+        -10.0,
+        8.5,
+        24.0,
+        16.0,
+        -20.0,
+        5.0,
+        0.5,
+        -3.0,
+        8.0,
+        -9.0,
+        -5.5,
+        -4.5,
+        3.0,
+        -26.5,
+        1.0,
+        -10.5,
+        -6.5,
+        -15.5,
+        6.5,
+        -19.0,
+        37.0,
+        14.0,
+        -9.0,
+        -3.0,
+        -13.5,
+        14.0,
+        -2.5,
+        24.0,
+        5.0,
+        17.5,
+        0.0,
+        -6.5,
+        7.5,
+        32.5,
+        2.0,
+        5.0,
+        0.5,
+        -9.5,
+        1.5,
+        -20.5,
+        -9.5,
+        10.5,
+        19.5,
+        15.5,
+        13.0,
+        -17.0,
+        10.0,
+        -12.5,
+        -9.5,
+        -4.0,
+        -5.5,
+        10.0,
+        -10.5,
+        -10.0,
+        8.5,
+        -15.5,
+        -9.5,
+        -3.0,
+        3.0,
+        11.5,
+        -10.5,
+        4.5,
+        6.5,
+        -15.5,
+        5.5,
+        -1.0,
+        -13.5,
+        -24.5,
+        -1.5,
+        9.0,
+        19.0,
+        0.0,
+        18.0,
+        -1.5,
+        -2.5,
+        2.0,
+        2.0,
+        -5.0,
+        -5.5,
+        -6.5,
+        7.0,
+        -25.5,
+        1.5,
+        1.5,
+        -2.0,
+        7.0,
+        -12.5,
+        -32.5,
+        9.5,
+        -14.0,
+        36.5,
+        -0.5,
+        13.5,
+        8.5,
+        -15.5,
+        4.5,
+        -27.5,
+        6.5,
+        5.5,
+        -18.5,
+        -6.5,
+        -15.0,
+        4.0,
+        -19.5,
+        -11.0,
+        -7.5,
+        -18.0,
+        27.5,
+        -11.5,
+        11.0,
+        -9.5,
+        13.0,
+        11.0,
+        -18.0,
+        -9.5,
+        19.0,
+        17.0,
+        -24.5,
+        -20.5,
+        1.5,
+        4.5,
+        3.0,
+        2.0,
+        1.5,
+        3.5,
+        -4.5,
+        19.5,
+        21.0,
+        -13.5,
+        -8.5,
+        19.5,
+        -13.0,
+        11.0,
+        -6.5,
+        -6.0,
+        1.0,
+        20.0,
+        -30.5,
+        36.0,
+        -8.5,
+        13.0,
+        11.5,
+        -15.5,
+        14.0,
+        -28.5,
+        -14.0,
+        3.0,
+        -17.0,
+        -15.0,
+        5.0,
+        -0.5,
+        -9.5,
+        24.5,
+        19.0,
+        1.0,
+        -20.0,
+        -10.5,
+        -8.0,
+        -27.0,
+        -15.0,
+        10.0,
+        0.0,
+        -4.0,
+        10.0,
+        -20.0,
+        20.5,
+        1.0,
+        13.5,
+        -42.0,
+        9.0,
+        4.5,
+        29.5,
+        5.5,
+        5.0,
+        -9.5,
+        0.0,
+        -6.5,
+        17.5,
+        -0.5,
+        16.5,
+        -8.0,
+        -12.0,
+        17.5,
+        -9.0,
+        6.0,
+        14.5,
+        -9.0,
+        -10.0,
+        4.5,
+        8.5,
+        -6.5,
+        -34.0,
+        4.0,
+        -3.0,
+        15.0,
+        -10.0,
+        -8.5,
+        2.0,
+        -9.0,
+        2.0,
+        -2.0,
+        -10.5,
+        -15.5,
+        5.0,
+        22.5,
+        6.0,
+        6.0,
+        18.5,
+        -2.5,
+        0.5,
+        -10.5,
+        -9.5,
+        -4.5,
+        12.0,
+        -20.0,
+        23.0,
+        5.0,
+        8.5,
+        -17.5,
+        -22.5,
+        25.5,
+        -25.5,
+        -9.0,
+        -3.0,
+        -7.5,
+        0.5,
+        -4.0,
+        17.5,
+        4.5,
+        16.5,
+        -4.0,
+        3.5,
+        -8.0,
+        -4.0,
+        -22.0,
+        16.0,
+        -16.0,
+        -9.5,
+        -0.5,
+        -6.0,
+        -2.5,
+        14.0,
+        -16.5,
+        16.0,
+        4.0,
+        -10.5,
+        -1.0
+      ],
+      "branch": "R-BOUNDED",
+      "riders": [
+        "\u26d4\u26d4 THE 0.2 AND 0.4 CONTEXT ROWS ARE NEVER POOLED WITH A RUNG OF THIS ROUND. They are on bands 155e9 / 156e9; every rung here is on its own fresh band, and CL-068 measured 1.8-2.2x OVER-DISPERSION on merely cross-band contrasts, in BOTH the elo and the deck-paired-margin statistics. There is no arithmetic that combines them.",
+        "\u26d4 NO CROSS-RUNG CONTRAST IS A BRANCH INPUT. The four rungs sit on four bands, so every rung-vs-rung difference is cross-band and carries CL-068's over-dispersion in full. The dose-response shape is printed as a NAMED COMPANION and is a DIRECTION, never a curve and never an optimum.",
+        "\u26d4 FOUR RUNGS ARE FOUR COMPARISONS. The multiplicity is DISCLOSED, not corrected: the bars are pre-registered and each rung is its own question. \u2b50 At the LB95 bar the family-wise FALSE-ADOPT rate under a global null is ~0.006% (4 x 0.0015%) \u2014 the adoption bar cannot fire on noise. That conservatism has a PRICE and READ_RULE \u00a78 states it: LADDER-DEAD fires only ~10% of the time under a true global null.",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind; the adoption chain (screen_lib.ADOPTION_CHAIN) has three more legs after this one and each is its own prereg, its own band and its own owner funding.",
+        "\u26d4 THE TIE ARBITER IS OFF ON BOTH SIDES OF EVERY RUNG. PRODUCTION.yaml has carried B=64 since 2026-08-20, so every reading here is about the ARBITER-FREE champion and its transfer to the deployed one is an ASSUMPTION, not a measurement.",
+        "\u26a0\ufe0f elo may never be quoted bare, and in THIS round it is not even a bar: the adoption bar is +1.5 pts/deck on the deck-paired margin and there is no exchange rate into elo that this round measures. The elo is reported beside the margin with its own paired CI, and a disagreement between the two is DISCLOSED rather than arbitrated.",
+        "\u26a0\ufe0f R-BOUNDED BOUNDS; IT DOES NOT ZERO. The reading is 'below +1.5 pts/deck at 95%', never 'this dose is worthless'. In particular a rung can read R-BOUNDED while carrying a POSITIVE point estimate.",
+        "\u2b50 It DOES discharge THIS RUNG of the funded decision: this dose is not worth taking through the adoption chain on this evidence.",
+        "\u26a0\ufe0f It is a bound at THIS DOSE, THIS BUDGET, and with the ARBITER OFF."
+      ]
+    },
+    "CELL_FPU010": {
+      "cell": "CELL_FPU010",
+      "role": "local",
+      "knob": "fpu_reduction",
+      "dose": 0.1,
+      "band": 165000000000,
+      "purpose": "\u2b50 THE MIDDLE BRACKET POINT, half the incumbent dose.",
+      "gates": [
+        {
+          "gate": "G-FPU",
+          "ok": true,
+          "detail": {
+            "requested_fpu_reduction": 0.1,
+            "fpu_absent": false,
+            "requested_c_puct_override": null,
+            "c_puct_absent": false,
+            "shared_c_puct": 1.5,
+            "frozen": {
+              "fpu_reduction": 0.1,
+              "c_puct": null
+            },
+            "addresses": {
+              "fpu": "manifest:config.cand_search.fpu_reduction",
+              "c_puct": "manifest:config.cand_search.c_puct"
+            }
+          },
+          "address": "manifest:config.cand_search.fpu_reduction",
+          "why": "the REQUEST matches this rung's frozen dose (fpu=0.1) and carries NO c_puct override"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "fpu_reduction": {
+                "candidate": 0.1,
+                "opponent": null
+              },
+              "c_puct": {
+                "candidate": 1.5,
+                "opponent": 1.5
+              }
+            },
+            "cell_knob": "fpu_reduction",
+            "frozen_value": 0.1
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 the dose BOUND on the candidate's resolved config, the opponent carries the champion's values, and c_puct is equal across the two sides"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "owned_alias": "fpu_reduction",
+            "frozen_value": 0.1,
+            "rows": {
+              "k_dets": {
+                "champion": 16,
+                "opponent": 16,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.k_dets",
+                  "manifest:config.opponent.k_dets"
+                ]
+              },
+              "sims_per_det": {
+                "champion": 1376,
+                "opponent": 1376,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.sims_per_det",
+                  "manifest:config.opponent.sims_per_det"
+                ]
+              },
+              "total_sims": {
+                "champion": 22016,
+                "opponent": 22016,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.total_sims",
+                  "manifest:config.opponent.total_sims"
+                ]
+              },
+              "c_puct": {
+                "champion": 1.5,
+                "opponent": 1.5,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.c_puct",
+                  "manifest:config.opponent.champ_cfg.c_puct"
+                ]
+              },
+              "tau_p": {
+                "champion": 5.0,
+                "opponent": 5.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.tau_p",
+                  "manifest:config.opponent.champ_cfg.tau_p"
+                ]
+              },
+              "value_norm": {
+                "champion": 15.0,
+                "opponent": 15.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.value_norm",
+                  "manifest:config.opponent.champ_cfg.value_norm"
+                ]
+              },
+              "leaf_quantize": {
+                "champion": "float",
+                "opponent": "float",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.leaf_quantize",
+                  "manifest:config.opponent.champ_cfg.leaf_quantize"
+                ]
+              },
+              "final_select": {
+                "champion": "visits",
+                "opponent": "visits",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.final_select",
+                  "manifest:config.opponent.champ_cfg.final_select"
+                ]
+              },
+              "fpu_reduction": {
+                "champion": 0.1,
+                "opponent": null,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.fpu_reduction",
+                  "manifest:config.opponent.champ_cfg.fpu_reduction"
+                ]
+              }
+            },
+            "notes": [
+              "\u2b50 fpu_reduction: candidate 0.1 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+            ]
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 fpu_reduction: candidate 0.1 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen \u2014 every OTHER alias is identical across the two sides"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "armed": [],
+            "tiearb_containers": [
+              "config.cand_tiearb",
+              "cand_tiearb"
+            ]
+          },
+          "address": "manifest (full walk)",
+          "why": "the tie arbiter is DISABLED on both sides \u2014 the rung's dose is the only moving part. \u26a0\ufe0f This DEVIATES from the deployed champion (PRODUCTION.yaml carries B=64 since 2026-08-20); the price rides on every branch (DESIGN \u00a72.3)."
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "expected": "a36d2e15a3b3d71d",
+            "cand_curve": [
+              -10.0,
+              -5.0,
+              -1.25,
+              0.0,
+              2.5,
+              3.75,
+              5.0,
+              6.25
+            ]
+          },
+          "address": "manifest:config.{cand,opp}_leaf_hash",
+          "why": "both sides carry the SAME leaf a36d2e15a3b3d71d (curve125) \u2014 fpu_reduction is not a leaf term"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "band_seed_start": 165000000000,
+            "n_decks": 400,
+            "seatings_per_deck": 2,
+            "frozen_band": 165000000000,
+            "addresses": [
+              "manifest:config.band_seed_start",
+              "manifest:config.n_decks",
+              "manifest:config.seatings_per_deck"
+            ]
+          },
+          "address": "manifest:config.band_seed_start",
+          "why": "the rung is on its OWN frozen band with the frozen deck count, 2 seatings per deck"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion) and the product multiplies out"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            },
+            "converted_sides": {
+              "value": [
+                "candidate",
+                "opponent"
+              ],
+              "address": "manifest:config.backend.converted_sides"
+            }
+          },
+          "address": "manifest:config.backend.* \u2014 \u26a0\ufe0f fpu_reduction is threaded on BOTH backends (unlike the J-rules surfaces and the tie arbiter, which are rust-only), so a python leg would NOT be knob-blind. It is still refused: the champion of record plays on rust, and a mixed-backend round is not one round.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+395b76700ab1+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "a9bb2311ab9a635d",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest \u2014 \u26a0\ufe0f carc_rs_version is permanently '0.1.0' and is NOT a discriminator. \u26a0\ufe0f\u26a0\ufe0f UNLIKE THE PARENT ROUND, THE WHEEL HAS MOVED since its golden gate was banked (the S1 R7/R6 merge touched carc_core::search and fair::search_worlds). DESIGN \u00a79 states why the parent's FPU_BITEXACT.json is therefore NOT inherited and a fresh bit-exact run at the launch wheel is a LAUNCH PRECONDITION.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "n": 800,
+            "frozen_n_games": 800,
+            "n_failed": 0,
+            "failure_rate": 0.0,
+            "failure_rate_void_bar": 0.02,
+            "n_common": 400,
+            "n_common_floor": 320.0,
+            "n_common_floor_fraction": 0.8,
+            "notes": [],
+            "addresses": [
+              "summary:n",
+              "summary:n_failed"
+            ]
+          },
+          "address": "summary.json",
+          "why": "\u2b50 n accounts for every frozen game, the failure rate is below the 2% void bar, and n_common clears the 80% floor"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.525,
+            "band": [
+              0.35,
+              0.65
+            ]
+          },
+          "address": "summary:winrate",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "Doctor",
+            "frozen_role": "local"
+          },
+          "address": "manifest:host",
+          "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "witness": 1.5025,
+              "summary": 1.5025,
+              "agree": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "witness": 2.1522917922824116,
+              "summary": 2.1522917922824116,
+              "agree": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "witness": 400,
+              "summary": 400,
+              "agree": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "witness": 0.525,
+              "summary": 0.525,
+              "agree": true,
+              "address": "summary:winrate"
+            },
+            "elo": {
+              "witness": 17.386277512436138,
+              "summary": 17.386277512436138,
+              "agree": true,
+              "address": "summary:elo"
+            }
+          },
+          "address": "summary.json vs the raw records",
+          "why": "the fsum witness agrees on all five statistics"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "range": [
+              165000000000,
+              165000000399
+            ],
+            "n_seeds": 400,
+            "n_common": 400,
+            "frozen_n_decks": 400,
+            "n_common_floor": 320.0,
+            "out_of_range": [],
+            "half_played_decks": [],
+            "n_half_played": 0,
+            "half_played_rate_of_games": 0.0,
+            "half_played_rate_denominator": 800,
+            "failure_rate_void_bar": 0.02,
+            "range_clashes": [],
+            "notes": [],
+            "all_cell_ranges": [
+              [
+                164000000000,
+                164000000399,
+                "CELL_FPU005"
+              ],
+              [
+                165000000000,
+                165000000399,
+                "CELL_FPU010"
+              ],
+              [
+                166000000000,
+                166000000399,
+                "CELL_FPU015"
+              ],
+              [
+                167000000000,
+                167000000399,
+                "CELL_FPU030"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "\u2b50 every realized seed is inside this cell's own range, the one-seat-only rate is BELOW the 2%-of-games void bar, n_common clears the 80% floor, and this cell's band does not intersect any other's"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "M": 1.5025,
+        "z": 2.1522917922824116,
+        "n_paired": 400,
+        "se": 0.6980930770574859,
+        "UB95": 2.898686154114972,
+        "LB95": 0.10631384588502812,
+        "bar_effect": 1.5,
+        "bar_note": "\u2b50 ADOPT requires LB95 >= bar; BOUNDED requires UB95 < bar. \u26d4 The POINT ESTIMATE clears nothing on its own \u2014 that is the whole difference from a 2-sigma-hat bar (owner ruling 2026-08-30)."
+      },
+      "secondary_elo": {
+        "elo": 17.386277512436138,
+        "footing": "deck-paired",
+        "sigma_1_paired": 8.696767400171012,
+        "sigma_1_unpaired": 12.299086406126047,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.525,
+        "W": 411,
+        "D": 18,
+        "L": 371,
+        "ci95_elo_paired": [
+          -0.007257287905886756,
+          34.77981231277816
+        ],
+        "instrument_2sigma_elo_resolution": 17.4,
+        "resolution_footing": "deck-paired 2\u03c3 at 800 games / 400 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f\u26a0\ufe0f THIS IS A RESOLUTION, NOT A BAR. The adoption bar is +1.5 pts/deck on the deck-paired MARGIN and no branch reads this block. elo may never be quoted bare; a disagreement between the margin and the elo is DISCLOSED, not arbitrated."
+      },
+      "se_anomaly": {
+        "realized": 0.6980930770574859,
+        "modelled": 0.6905,
+        "ratio": 1.0109964910318405,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        11.0,
+        17.5,
+        -10.0,
+        -9.5,
+        -7.5,
+        3.0,
+        3.0,
+        4.0,
+        -7.0,
+        0.0,
+        16.0,
+        20.5,
+        -13.5,
+        1.5,
+        -21.5,
+        -8.0,
+        -12.0,
+        -25.5,
+        -10.5,
+        -8.0,
+        25.0,
+        17.5,
+        10.5,
+        7.5,
+        -10.5,
+        11.0,
+        -3.0,
+        14.5,
+        4.0,
+        -5.5,
+        10.5,
+        -6.0,
+        -10.0,
+        4.5,
+        11.0,
+        15.0,
+        8.5,
+        14.0,
+        53.5,
+        -4.0,
+        7.0,
+        -5.5,
+        7.0,
+        -11.5,
+        -8.0,
+        -3.5,
+        11.5,
+        3.0,
+        13.0,
+        -8.5,
+        -6.0,
+        12.0,
+        7.5,
+        -2.0,
+        -33.5,
+        -7.5,
+        21.5,
+        6.0,
+        4.5,
+        9.5,
+        7.5,
+        21.5,
+        11.0,
+        2.0,
+        14.5,
+        -7.5,
+        -9.5,
+        -4.5,
+        -13.5,
+        16.5,
+        -9.0,
+        -3.0,
+        40.0,
+        -14.5,
+        6.5,
+        -5.0,
+        -4.5,
+        4.0,
+        -21.0,
+        13.5,
+        5.0,
+        9.5,
+        37.5,
+        -7.0,
+        -23.0,
+        -0.5,
+        -13.0,
+        -4.0,
+        -19.0,
+        -8.5,
+        -11.0,
+        -15.5,
+        -6.5,
+        6.0,
+        16.0,
+        -36.5,
+        -10.0,
+        1.5,
+        -27.0,
+        -18.5,
+        -11.5,
+        -4.5,
+        26.0,
+        -20.0,
+        31.5,
+        -6.5,
+        -12.0,
+        -5.0,
+        -6.5,
+        15.5,
+        9.0,
+        -7.0,
+        26.5,
+        -6.0,
+        -16.0,
+        7.5,
+        10.5,
+        -14.5,
+        -7.5,
+        -16.0,
+        -8.0,
+        4.5,
+        12.0,
+        -11.0,
+        5.0,
+        -5.0,
+        -18.5,
+        8.5,
+        12.0,
+        -8.5,
+        -20.0,
+        11.5,
+        5.5,
+        5.0,
+        19.5,
+        -8.5,
+        36.5,
+        29.0,
+        -9.0,
+        -7.5,
+        24.5,
+        28.0,
+        15.5,
+        18.5,
+        11.5,
+        -4.5,
+        15.0,
+        -4.5,
+        10.5,
+        14.5,
+        -2.5,
+        -7.0,
+        21.0,
+        29.5,
+        -1.0,
+        2.5,
+        14.0,
+        19.0,
+        -11.0,
+        7.5,
+        17.5,
+        -9.5,
+        20.0,
+        6.0,
+        -7.0,
+        -8.0,
+        7.0,
+        8.5,
+        -8.5,
+        19.5,
+        13.0,
+        -18.0,
+        -5.5,
+        19.5,
+        8.5,
+        -14.0,
+        11.5,
+        -11.0,
+        -3.5,
+        -0.5,
+        11.5,
+        -51.5,
+        9.0,
+        15.5,
+        -2.5,
+        19.0,
+        -21.0,
+        2.5,
+        -6.5,
+        -20.0,
+        6.0,
+        0.5,
+        -6.0,
+        15.0,
+        12.5,
+        8.0,
+        8.5,
+        -5.0,
+        6.0,
+        26.0,
+        2.0,
+        10.5,
+        -20.5,
+        9.5,
+        10.5,
+        10.5,
+        24.0,
+        -15.0,
+        -15.0,
+        1.0,
+        -17.5,
+        25.5,
+        -5.5,
+        -1.5,
+        17.5,
+        4.5,
+        -9.0,
+        -2.5,
+        13.5,
+        5.0,
+        5.0,
+        -8.5,
+        -10.0,
+        22.5,
+        -10.0,
+        -2.0,
+        -5.5,
+        23.5,
+        -11.5,
+        15.0,
+        14.0,
+        -6.0,
+        21.5,
+        -2.5,
+        32.0,
+        13.0,
+        3.5,
+        3.5,
+        1.0,
+        -5.0,
+        5.5,
+        30.5,
+        -4.5,
+        12.0,
+        -15.0,
+        8.0,
+        -10.0,
+        3.0,
+        -4.5,
+        7.5,
+        -5.0,
+        5.0,
+        2.5,
+        -6.0,
+        18.0,
+        -1.0,
+        -17.0,
+        3.5,
+        1.5,
+        8.5,
+        3.5,
+        -31.0,
+        8.0,
+        -18.0,
+        12.5,
+        -9.0,
+        9.5,
+        2.0,
+        -1.5,
+        -11.5,
+        0.0,
+        -9.0,
+        18.5,
+        4.5,
+        -4.0,
+        -9.5,
+        -13.0,
+        -11.5,
+        -14.5,
+        23.0,
+        -20.0,
+        16.5,
+        -5.0,
+        -1.0,
+        6.5,
+        -2.5,
+        1.5,
+        16.5,
+        -24.5,
+        23.5,
+        3.0,
+        23.0,
+        -8.0,
+        -4.0,
+        -5.0,
+        -7.0,
+        -12.5,
+        -5.5,
+        17.5,
+        9.0,
+        -2.5,
+        1.0,
+        12.0,
+        5.0,
+        32.0,
+        -2.5,
+        -20.0,
+        -15.0,
+        12.0,
+        25.0,
+        -0.5,
+        -1.0,
+        9.0,
+        4.0,
+        -10.0,
+        -20.5,
+        13.0,
+        4.5,
+        21.5,
+        2.0,
+        -7.0,
+        21.5,
+        26.0,
+        -5.0,
+        -0.5,
+        -1.5,
+        -21.0,
+        -1.0,
+        -35.0,
+        1.5,
+        5.5,
+        8.5,
+        -9.5,
+        9.0,
+        -4.5,
+        22.0,
+        19.0,
+        15.0,
+        8.5,
+        -2.5,
+        2.0,
+        2.5,
+        -11.0,
+        -1.0,
+        18.5,
+        -2.0,
+        9.5,
+        3.5,
+        10.5,
+        -34.5,
+        -15.5,
+        16.0,
+        3.5,
+        -21.5,
+        1.5,
+        31.5,
+        -15.5,
+        -14.0,
+        -6.5,
+        29.5,
+        4.5,
+        -12.0,
+        3.0,
+        -3.5,
+        -20.0,
+        -7.0,
+        -1.5,
+        -5.5,
+        -14.0,
+        -8.0,
+        8.0,
+        -4.0,
+        -26.5,
+        30.5,
+        -10.5,
+        5.5,
+        -2.5,
+        -6.0,
+        1.0,
+        -4.0,
+        3.5,
+        -5.5,
+        8.0,
+        -11.5,
+        12.5,
+        10.0,
+        -6.5,
+        8.0,
+        -1.0,
+        3.0,
+        4.0,
+        -13.5,
+        2.0,
+        25.5,
+        0.5,
+        10.0,
+        0.0,
+        13.0,
+        -15.0,
+        -22.0
+      ],
+      "branch": "R-UNRESOLVED",
+      "riders": [
+        "\u26d4\u26d4 THE 0.2 AND 0.4 CONTEXT ROWS ARE NEVER POOLED WITH A RUNG OF THIS ROUND. They are on bands 155e9 / 156e9; every rung here is on its own fresh band, and CL-068 measured 1.8-2.2x OVER-DISPERSION on merely cross-band contrasts, in BOTH the elo and the deck-paired-margin statistics. There is no arithmetic that combines them.",
+        "\u26d4 NO CROSS-RUNG CONTRAST IS A BRANCH INPUT. The four rungs sit on four bands, so every rung-vs-rung difference is cross-band and carries CL-068's over-dispersion in full. The dose-response shape is printed as a NAMED COMPANION and is a DIRECTION, never a curve and never an optimum.",
+        "\u26d4 FOUR RUNGS ARE FOUR COMPARISONS. The multiplicity is DISCLOSED, not corrected: the bars are pre-registered and each rung is its own question. \u2b50 At the LB95 bar the family-wise FALSE-ADOPT rate under a global null is ~0.006% (4 x 0.0015%) \u2014 the adoption bar cannot fire on noise. That conservatism has a PRICE and READ_RULE \u00a78 states it: LADDER-DEAD fires only ~10% of the time under a true global null.",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind; the adoption chain (screen_lib.ADOPTION_CHAIN) has three more legs after this one and each is its own prereg, its own band and its own owner funding.",
+        "\u26d4 THE TIE ARBITER IS OFF ON BOTH SIDES OF EVERY RUNG. PRODUCTION.yaml has carried B=64 since 2026-08-20, so every reading here is about the ARBITER-FREE champion and its transfer to the deployed one is an ASSUMPTION, not a measurement.",
+        "\u26a0\ufe0f elo may never be quoted bare, and in THIS round it is not even a bar: the adoption bar is +1.5 pts/deck on the deck-paired margin and there is no exchange rate into elo that this round measures. The elo is reported beside the margin with its own paired CI, and a disagreement between the two is DISCLOSED rather than arbitrated.",
+        "\u26d4\u26d4 R-UNRESOLVED IS NOT A NULL AND NOT A BOUND. feedback_noisy_plateau_not_a_conclusion binds: this rung did not resolve its own bar in either direction.",
+        "\u26d4 IT DOES NOT DISCHARGE ANYTHING, and a round containing one cannot read LADDER-DEAD. READ_RULE \u00a78 pre-registers this as the LIKELIEST single-rung outcome under a true null at n=400 decks (~43%), and the likeliest ROUND outcome under a true global null (~90% chance at least one rung lands here).",
+        "\u26d4 AN UNRESOLVED RUNG MAY NOT BE EXTENDED, TOPPED UP OR RE-READ AT LARGER n ON ITS OWN BAND. That is the rodv3 failure mode (n bought after seeing the sign), and CL-068 means the extension could not be pooled with the original anyway. A re-run is a NEW round: new pair, new band, new owner funding."
+      ]
+    },
+    "CELL_FPU015": {
+      "cell": "CELL_FPU015",
+      "role": "laptop",
+      "knob": "fpu_reduction",
+      "dose": 0.15,
+      "band": 166000000000,
+      "purpose": "\u2b50 THE NEAR BRACKET POINT \u2014 the rung immediately below the incumbent 0.2. \u26a0\ufe0f A rung adjacent to a fired endpoint is where a winner's-curse crest would show up as a shortfall, and the read-out says so rather than reading a shortfall as a peak.",
+      "gates": [
+        {
+          "gate": "G-FPU",
+          "ok": true,
+          "detail": {
+            "requested_fpu_reduction": 0.15,
+            "fpu_absent": false,
+            "requested_c_puct_override": null,
+            "c_puct_absent": false,
+            "shared_c_puct": 1.5,
+            "frozen": {
+              "fpu_reduction": 0.15,
+              "c_puct": null
+            },
+            "addresses": {
+              "fpu": "manifest:config.cand_search.fpu_reduction",
+              "c_puct": "manifest:config.cand_search.c_puct"
+            }
+          },
+          "address": "manifest:config.cand_search.fpu_reduction",
+          "why": "the REQUEST matches this rung's frozen dose (fpu=0.15) and carries NO c_puct override"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "fpu_reduction": {
+                "candidate": 0.15,
+                "opponent": null
+              },
+              "c_puct": {
+                "candidate": 1.5,
+                "opponent": 1.5
+              }
+            },
+            "cell_knob": "fpu_reduction",
+            "frozen_value": 0.15
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 the dose BOUND on the candidate's resolved config, the opponent carries the champion's values, and c_puct is equal across the two sides"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "owned_alias": "fpu_reduction",
+            "frozen_value": 0.15,
+            "rows": {
+              "k_dets": {
+                "champion": 16,
+                "opponent": 16,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.k_dets",
+                  "manifest:config.opponent.k_dets"
+                ]
+              },
+              "sims_per_det": {
+                "champion": 1376,
+                "opponent": 1376,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.sims_per_det",
+                  "manifest:config.opponent.sims_per_det"
+                ]
+              },
+              "total_sims": {
+                "champion": 22016,
+                "opponent": 22016,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.total_sims",
+                  "manifest:config.opponent.total_sims"
+                ]
+              },
+              "c_puct": {
+                "champion": 1.5,
+                "opponent": 1.5,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.c_puct",
+                  "manifest:config.opponent.champ_cfg.c_puct"
+                ]
+              },
+              "tau_p": {
+                "champion": 5.0,
+                "opponent": 5.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.tau_p",
+                  "manifest:config.opponent.champ_cfg.tau_p"
+                ]
+              },
+              "value_norm": {
+                "champion": 15.0,
+                "opponent": 15.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.value_norm",
+                  "manifest:config.opponent.champ_cfg.value_norm"
+                ]
+              },
+              "leaf_quantize": {
+                "champion": "float",
+                "opponent": "float",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.leaf_quantize",
+                  "manifest:config.opponent.champ_cfg.leaf_quantize"
+                ]
+              },
+              "final_select": {
+                "champion": "visits",
+                "opponent": "visits",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.final_select",
+                  "manifest:config.opponent.champ_cfg.final_select"
+                ]
+              },
+              "fpu_reduction": {
+                "champion": 0.15,
+                "opponent": null,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.fpu_reduction",
+                  "manifest:config.opponent.champ_cfg.fpu_reduction"
+                ]
+              }
+            },
+            "notes": [
+              "\u2b50 fpu_reduction: candidate 0.15 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+            ]
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 fpu_reduction: candidate 0.15 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen \u2014 every OTHER alias is identical across the two sides"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "armed": [],
+            "tiearb_containers": [
+              "config.cand_tiearb",
+              "cand_tiearb"
+            ]
+          },
+          "address": "manifest (full walk)",
+          "why": "the tie arbiter is DISABLED on both sides \u2014 the rung's dose is the only moving part. \u26a0\ufe0f This DEVIATES from the deployed champion (PRODUCTION.yaml carries B=64 since 2026-08-20); the price rides on every branch (DESIGN \u00a72.3)."
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "expected": "a36d2e15a3b3d71d",
+            "cand_curve": [
+              -10.0,
+              -5.0,
+              -1.25,
+              0.0,
+              2.5,
+              3.75,
+              5.0,
+              6.25
+            ]
+          },
+          "address": "manifest:config.{cand,opp}_leaf_hash",
+          "why": "both sides carry the SAME leaf a36d2e15a3b3d71d (curve125) \u2014 fpu_reduction is not a leaf term"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "band_seed_start": 166000000000,
+            "n_decks": 400,
+            "seatings_per_deck": 2,
+            "frozen_band": 166000000000,
+            "addresses": [
+              "manifest:config.band_seed_start",
+              "manifest:config.n_decks",
+              "manifest:config.seatings_per_deck"
+            ]
+          },
+          "address": "manifest:config.band_seed_start",
+          "why": "the rung is on its OWN frozen band with the frozen deck count, 2 seatings per deck"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion) and the product multiplies out"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            },
+            "converted_sides": {
+              "value": [
+                "candidate",
+                "opponent"
+              ],
+              "address": "manifest:config.backend.converted_sides"
+            }
+          },
+          "address": "manifest:config.backend.* \u2014 \u26a0\ufe0f fpu_reduction is threaded on BOTH backends (unlike the J-rules surfaces and the tie arbiter, which are rust-only), so a python leg would NOT be knob-blind. It is still refused: the champion of record plays on rust, and a mixed-backend round is not one round.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+395b76700ab1+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "a9bb2311ab9a635d",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest \u2014 \u26a0\ufe0f carc_rs_version is permanently '0.1.0' and is NOT a discriminator. \u26a0\ufe0f\u26a0\ufe0f UNLIKE THE PARENT ROUND, THE WHEEL HAS MOVED since its golden gate was banked (the S1 R7/R6 merge touched carc_core::search and fair::search_worlds). DESIGN \u00a79 states why the parent's FPU_BITEXACT.json is therefore NOT inherited and a fresh bit-exact run at the launch wheel is a LAUNCH PRECONDITION.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "n": 800,
+            "frozen_n_games": 800,
+            "n_failed": 0,
+            "failure_rate": 0.0,
+            "failure_rate_void_bar": 0.02,
+            "n_common": 400,
+            "n_common_floor": 320.0,
+            "n_common_floor_fraction": 0.8,
+            "notes": [],
+            "addresses": [
+              "summary:n",
+              "summary:n_failed"
+            ]
+          },
+          "address": "summary.json",
+          "why": "\u2b50 n accounts for every frozen game, the failure rate is below the 2% void bar, and n_common clears the 80% floor"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.514375,
+            "band": [
+              0.35,
+              0.65
+            ]
+          },
+          "address": "summary:winrate",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "laptop-wsl",
+            "frozen_role": "laptop"
+          },
+          "address": "manifest:host",
+          "why": "host 'laptop-wsl' matches box role 'laptop' (via 'laptop')"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "witness": 1.835,
+              "summary": 1.835,
+              "agree": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "witness": 2.674384359398168,
+              "summary": 2.674384359398168,
+              "agree": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "witness": 400,
+              "summary": 400,
+              "agree": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "witness": 0.514375,
+              "summary": 0.514375,
+              "agree": true,
+              "address": "summary:winrate"
+            },
+            "elo": {
+              "witness": 9.991526564542234,
+              "summary": 9.991526564542234,
+              "agree": true,
+              "address": "summary:elo"
+            }
+          },
+          "address": "summary.json vs the raw records",
+          "why": "the fsum witness agrees on all five statistics"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "range": [
+              166000000000,
+              166000000399
+            ],
+            "n_seeds": 400,
+            "n_common": 400,
+            "frozen_n_decks": 400,
+            "n_common_floor": 320.0,
+            "out_of_range": [],
+            "half_played_decks": [],
+            "n_half_played": 0,
+            "half_played_rate_of_games": 0.0,
+            "half_played_rate_denominator": 800,
+            "failure_rate_void_bar": 0.02,
+            "range_clashes": [],
+            "notes": [],
+            "all_cell_ranges": [
+              [
+                164000000000,
+                164000000399,
+                "CELL_FPU005"
+              ],
+              [
+                165000000000,
+                165000000399,
+                "CELL_FPU010"
+              ],
+              [
+                166000000000,
+                166000000399,
+                "CELL_FPU015"
+              ],
+              [
+                167000000000,
+                167000000399,
+                "CELL_FPU030"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "\u2b50 every realized seed is inside this cell's own range, the one-seat-only rate is BELOW the 2%-of-games void bar, n_common clears the 80% floor, and this cell's band does not intersect any other's"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "M": 1.835,
+        "z": 2.674384359398168,
+        "n_paired": 400,
+        "se": 0.6861392206215791,
+        "UB95": 3.207278441243158,
+        "LB95": 0.46272155875684184,
+        "bar_effect": 1.5,
+        "bar_note": "\u2b50 ADOPT requires LB95 >= bar; BOUNDED requires UB95 < bar. \u26d4 The POINT ESTIMATE clears nothing on its own \u2014 that is the whole difference from a 2-sigma-hat bar (owner ruling 2026-08-30)."
+      },
+      "secondary_elo": {
+        "elo": 9.991526564542234,
+        "footing": "deck-paired",
+        "sigma_1_paired": 8.689481580269005,
+        "sigma_1_unpaired": 12.288782700807621,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.514375,
+        "W": 404,
+        "D": 15,
+        "L": 381,
+        "ci95_elo_paired": [
+          -7.387436595995776,
+          27.370489725080244
+        ],
+        "instrument_2sigma_elo_resolution": 17.4,
+        "resolution_footing": "deck-paired 2\u03c3 at 800 games / 400 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f\u26a0\ufe0f THIS IS A RESOLUTION, NOT A BAR. The adoption bar is +1.5 pts/deck on the deck-paired MARGIN and no branch reads this block. elo may never be quoted bare; a disagreement between the margin and the elo is DISCLOSED, not arbitrated."
+      },
+      "se_anomaly": {
+        "realized": 0.6861392206215791,
+        "modelled": 0.6905,
+        "ratio": 0.9936846062586229,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        -5.5,
+        -6.0,
+        15.0,
+        -18.0,
+        -22.5,
+        -30.0,
+        5.0,
+        6.5,
+        9.5,
+        4.0,
+        -6.0,
+        -6.5,
+        6.5,
+        -10.0,
+        4.0,
+        -9.5,
+        6.5,
+        -26.5,
+        24.0,
+        4.5,
+        22.0,
+        -3.5,
+        -12.0,
+        -4.5,
+        31.0,
+        0.5,
+        17.0,
+        0.0,
+        -21.0,
+        -2.5,
+        36.5,
+        29.0,
+        5.5,
+        -3.5,
+        0.5,
+        5.5,
+        -1.0,
+        -5.5,
+        -7.0,
+        12.0,
+        19.5,
+        -2.5,
+        11.0,
+        17.5,
+        10.5,
+        -5.0,
+        -2.0,
+        -2.5,
+        -2.0,
+        14.5,
+        7.5,
+        7.0,
+        11.5,
+        12.0,
+        -33.0,
+        13.5,
+        19.5,
+        -12.5,
+        -7.5,
+        21.5,
+        -4.5,
+        9.5,
+        -4.0,
+        2.0,
+        14.0,
+        4.5,
+        -18.0,
+        17.0,
+        -2.0,
+        12.5,
+        -4.0,
+        33.5,
+        -23.0,
+        11.0,
+        7.0,
+        3.5,
+        -4.5,
+        -13.0,
+        18.5,
+        -33.5,
+        -12.0,
+        -1.5,
+        14.5,
+        27.5,
+        21.0,
+        10.0,
+        10.5,
+        7.5,
+        -18.0,
+        4.5,
+        -14.0,
+        17.5,
+        -3.5,
+        10.5,
+        -16.5,
+        5.5,
+        11.5,
+        -5.0,
+        2.0,
+        11.0,
+        -11.0,
+        -3.0,
+        -2.5,
+        25.0,
+        21.5,
+        3.0,
+        -10.0,
+        -15.5,
+        8.5,
+        -14.0,
+        -14.5,
+        10.0,
+        3.5,
+        10.0,
+        -6.5,
+        -24.5,
+        10.0,
+        9.5,
+        -12.5,
+        -6.5,
+        25.5,
+        5.5,
+        -6.0,
+        11.0,
+        11.5,
+        3.0,
+        16.5,
+        22.0,
+        -2.0,
+        1.0,
+        -17.5,
+        4.5,
+        24.0,
+        -17.5,
+        1.5,
+        -3.0,
+        -5.5,
+        17.5,
+        5.5,
+        11.5,
+        30.5,
+        22.0,
+        11.0,
+        4.5,
+        12.5,
+        16.0,
+        6.5,
+        -13.0,
+        -3.0,
+        -10.0,
+        3.5,
+        -3.5,
+        1.5,
+        -3.5,
+        -9.5,
+        -5.0,
+        3.0,
+        9.0,
+        -9.5,
+        12.5,
+        11.0,
+        5.0,
+        -25.0,
+        -23.5,
+        12.5,
+        0.0,
+        -6.5,
+        -1.5,
+        -17.0,
+        4.0,
+        -2.0,
+        -18.0,
+        17.0,
+        29.5,
+        -20.0,
+        -21.5,
+        9.0,
+        -8.0,
+        4.0,
+        24.0,
+        9.5,
+        22.5,
+        -11.5,
+        26.5,
+        22.0,
+        -10.5,
+        -1.0,
+        -0.5,
+        8.5,
+        5.0,
+        -12.0,
+        6.0,
+        -7.5,
+        0.0,
+        22.5,
+        -13.0,
+        -12.5,
+        -10.0,
+        11.5,
+        -6.5,
+        -17.5,
+        -2.5,
+        -8.5,
+        -23.0,
+        -5.0,
+        -3.5,
+        8.0,
+        10.0,
+        -2.0,
+        -3.5,
+        -2.5,
+        15.0,
+        0.0,
+        -3.5,
+        -0.5,
+        -4.0,
+        8.0,
+        -4.0,
+        -15.5,
+        -9.0,
+        -13.5,
+        26.5,
+        -3.0,
+        6.5,
+        20.5,
+        16.5,
+        4.0,
+        5.0,
+        -9.5,
+        -5.5,
+        16.0,
+        0.5,
+        18.0,
+        -18.0,
+        -13.0,
+        6.5,
+        22.5,
+        15.5,
+        -7.5,
+        -8.0,
+        -2.0,
+        19.5,
+        -11.0,
+        6.5,
+        -16.0,
+        -17.5,
+        -10.0,
+        7.5,
+        10.5,
+        6.5,
+        5.5,
+        4.5,
+        -36.0,
+        -15.5,
+        3.5,
+        1.5,
+        -6.5,
+        9.5,
+        23.0,
+        -0.5,
+        13.0,
+        16.5,
+        -11.5,
+        9.0,
+        11.5,
+        -22.5,
+        1.5,
+        -11.0,
+        12.0,
+        -21.5,
+        25.5,
+        -4.5,
+        -22.0,
+        -6.0,
+        42.0,
+        -1.0,
+        9.5,
+        4.0,
+        -10.0,
+        18.5,
+        30.0,
+        1.5,
+        0.0,
+        39.5,
+        20.0,
+        -5.0,
+        -9.0,
+        19.0,
+        6.5,
+        -10.5,
+        8.5,
+        10.5,
+        9.5,
+        -12.0,
+        -16.0,
+        -16.5,
+        -35.5,
+        25.0,
+        7.5,
+        -1.5,
+        11.0,
+        5.5,
+        3.0,
+        5.5,
+        21.0,
+        41.0,
+        -4.0,
+        11.0,
+        -12.5,
+        11.5,
+        24.0,
+        8.0,
+        -23.0,
+        -6.0,
+        1.5,
+        -0.5,
+        20.0,
+        -1.0,
+        -13.0,
+        17.0,
+        -5.0,
+        -0.5,
+        9.0,
+        -4.5,
+        5.5,
+        0.0,
+        -8.0,
+        -15.5,
+        24.5,
+        21.0,
+        -0.5,
+        -0.5,
+        -25.5,
+        -20.0,
+        -12.5,
+        -3.5,
+        0.5,
+        5.5,
+        5.5,
+        1.5,
+        24.0,
+        -23.0,
+        -8.0,
+        12.5,
+        15.5,
+        3.0,
+        16.0,
+        -1.5,
+        14.0,
+        16.0,
+        -3.0,
+        -3.5,
+        -9.0,
+        -3.0,
+        -10.0,
+        7.5,
+        -10.5,
+        10.5,
+        1.5,
+        1.0,
+        8.0,
+        -5.0,
+        21.5,
+        12.0,
+        2.5,
+        5.0,
+        18.0,
+        10.0,
+        -1.5,
+        -30.0,
+        7.0,
+        -4.5,
+        -26.0,
+        -27.5,
+        -2.0,
+        11.0,
+        -8.0,
+        18.5,
+        -14.5,
+        19.5,
+        1.5,
+        -12.0,
+        -3.5,
+        -11.5,
+        0.0,
+        19.5,
+        -6.5,
+        9.0,
+        16.0,
+        -14.5,
+        -14.5,
+        2.0,
+        13.5,
+        -0.5,
+        -3.0,
+        0.5,
+        2.5,
+        12.0,
+        -0.5,
+        0.0
+      ],
+      "branch": "R-UNRESOLVED",
+      "riders": [
+        "\u26d4\u26d4 THE 0.2 AND 0.4 CONTEXT ROWS ARE NEVER POOLED WITH A RUNG OF THIS ROUND. They are on bands 155e9 / 156e9; every rung here is on its own fresh band, and CL-068 measured 1.8-2.2x OVER-DISPERSION on merely cross-band contrasts, in BOTH the elo and the deck-paired-margin statistics. There is no arithmetic that combines them.",
+        "\u26d4 NO CROSS-RUNG CONTRAST IS A BRANCH INPUT. The four rungs sit on four bands, so every rung-vs-rung difference is cross-band and carries CL-068's over-dispersion in full. The dose-response shape is printed as a NAMED COMPANION and is a DIRECTION, never a curve and never an optimum.",
+        "\u26d4 FOUR RUNGS ARE FOUR COMPARISONS. The multiplicity is DISCLOSED, not corrected: the bars are pre-registered and each rung is its own question. \u2b50 At the LB95 bar the family-wise FALSE-ADOPT rate under a global null is ~0.006% (4 x 0.0015%) \u2014 the adoption bar cannot fire on noise. That conservatism has a PRICE and READ_RULE \u00a78 states it: LADDER-DEAD fires only ~10% of the time under a true global null.",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind; the adoption chain (screen_lib.ADOPTION_CHAIN) has three more legs after this one and each is its own prereg, its own band and its own owner funding.",
+        "\u26d4 THE TIE ARBITER IS OFF ON BOTH SIDES OF EVERY RUNG. PRODUCTION.yaml has carried B=64 since 2026-08-20, so every reading here is about the ARBITER-FREE champion and its transfer to the deployed one is an ASSUMPTION, not a measurement.",
+        "\u26a0\ufe0f elo may never be quoted bare, and in THIS round it is not even a bar: the adoption bar is +1.5 pts/deck on the deck-paired margin and there is no exchange rate into elo that this round measures. The elo is reported beside the margin with its own paired CI, and a disagreement between the two is DISCLOSED rather than arbitrated.",
+        "\u26d4\u26d4 R-UNRESOLVED IS NOT A NULL AND NOT A BOUND. feedback_noisy_plateau_not_a_conclusion binds: this rung did not resolve its own bar in either direction.",
+        "\u26d4 IT DOES NOT DISCHARGE ANYTHING, and a round containing one cannot read LADDER-DEAD. READ_RULE \u00a78 pre-registers this as the LIKELIEST single-rung outcome under a true null at n=400 decks (~43%), and the likeliest ROUND outcome under a true global null (~90% chance at least one rung lands here).",
+        "\u26d4 AN UNRESOLVED RUNG MAY NOT BE EXTENDED, TOPPED UP OR RE-READ AT LARGER n ON ITS OWN BAND. That is the rodv3 failure mode (n bought after seeing the sign), and CL-068 means the extension could not be pooled with the original anyway. A re-run is a NEW round: new pair, new band, new owner funding."
+      ]
+    },
+    "CELL_FPU030": {
+      "cell": "CELL_FPU030",
+      "role": "laptop",
+      "knob": "fpu_reduction",
+      "dose": 0.3,
+      "band": 167000000000,
+      "purpose": "\u2b50 THE INTERIOR POINT ABOVE \u2014 between the fired 0.2 and the unresolved 0.4. \u26d4 It is NOT a test of the 0.2-to-0.4 direction: that contrast is cross-band and CL-068 forbids it.",
+      "gates": [
+        {
+          "gate": "G-FPU",
+          "ok": true,
+          "detail": {
+            "requested_fpu_reduction": 0.3,
+            "fpu_absent": false,
+            "requested_c_puct_override": null,
+            "c_puct_absent": false,
+            "shared_c_puct": 1.5,
+            "frozen": {
+              "fpu_reduction": 0.3,
+              "c_puct": null
+            },
+            "addresses": {
+              "fpu": "manifest:config.cand_search.fpu_reduction",
+              "c_puct": "manifest:config.cand_search.c_puct"
+            }
+          },
+          "address": "manifest:config.cand_search.fpu_reduction",
+          "why": "the REQUEST matches this rung's frozen dose (fpu=0.3) and carries NO c_puct override"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "fpu_reduction": {
+                "candidate": 0.3,
+                "opponent": null
+              },
+              "c_puct": {
+                "candidate": 1.5,
+                "opponent": 1.5
+              }
+            },
+            "cell_knob": "fpu_reduction",
+            "frozen_value": 0.3
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 the dose BOUND on the candidate's resolved config, the opponent carries the champion's values, and c_puct is equal across the two sides"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "owned_alias": "fpu_reduction",
+            "frozen_value": 0.3,
+            "rows": {
+              "k_dets": {
+                "champion": 16,
+                "opponent": 16,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.k_dets",
+                  "manifest:config.opponent.k_dets"
+                ]
+              },
+              "sims_per_det": {
+                "champion": 1376,
+                "opponent": 1376,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.sims_per_det",
+                  "manifest:config.opponent.sims_per_det"
+                ]
+              },
+              "total_sims": {
+                "champion": 22016,
+                "opponent": 22016,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.total_sims",
+                  "manifest:config.opponent.total_sims"
+                ]
+              },
+              "c_puct": {
+                "champion": 1.5,
+                "opponent": 1.5,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.c_puct",
+                  "manifest:config.opponent.champ_cfg.c_puct"
+                ]
+              },
+              "tau_p": {
+                "champion": 5.0,
+                "opponent": 5.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.tau_p",
+                  "manifest:config.opponent.champ_cfg.tau_p"
+                ]
+              },
+              "value_norm": {
+                "champion": 15.0,
+                "opponent": 15.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.value_norm",
+                  "manifest:config.opponent.champ_cfg.value_norm"
+                ]
+              },
+              "leaf_quantize": {
+                "champion": "float",
+                "opponent": "float",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.leaf_quantize",
+                  "manifest:config.opponent.champ_cfg.leaf_quantize"
+                ]
+              },
+              "final_select": {
+                "champion": "visits",
+                "opponent": "visits",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.final_select",
+                  "manifest:config.opponent.champ_cfg.final_select"
+                ]
+              },
+              "fpu_reduction": {
+                "champion": 0.3,
+                "opponent": null,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.fpu_reduction",
+                  "manifest:config.opponent.champ_cfg.fpu_reduction"
+                ]
+              }
+            },
+            "notes": [
+              "\u2b50 fpu_reduction: candidate 0.3 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+            ]
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 fpu_reduction: candidate 0.3 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen \u2014 every OTHER alias is identical across the two sides"
+        },
+        {
+          "gate": "G-ARB-OFF",
+          "ok": true,
+          "detail": {
+            "armed": [],
+            "tiearb_containers": [
+              "config.cand_tiearb",
+              "cand_tiearb"
+            ]
+          },
+          "address": "manifest (full walk)",
+          "why": "the tie arbiter is DISABLED on both sides \u2014 the rung's dose is the only moving part. \u26a0\ufe0f This DEVIATES from the deployed champion (PRODUCTION.yaml carries B=64 since 2026-08-20); the price rides on every branch (DESIGN \u00a72.3)."
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "expected": "a36d2e15a3b3d71d",
+            "cand_curve": [
+              -10.0,
+              -5.0,
+              -1.25,
+              0.0,
+              2.5,
+              3.75,
+              5.0,
+              6.25
+            ]
+          },
+          "address": "manifest:config.{cand,opp}_leaf_hash",
+          "why": "both sides carry the SAME leaf a36d2e15a3b3d71d (curve125) \u2014 fpu_reduction is not a leaf term"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "band_seed_start": 167000000000,
+            "n_decks": 400,
+            "seatings_per_deck": 2,
+            "frozen_band": 167000000000,
+            "addresses": [
+              "manifest:config.band_seed_start",
+              "manifest:config.n_decks",
+              "manifest:config.seatings_per_deck"
+            ]
+          },
+          "address": "manifest:config.band_seed_start",
+          "why": "the rung is on its OWN frozen band with the frozen deck count, 2 seatings per deck"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion) and the product multiplies out"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            },
+            "converted_sides": {
+              "value": [
+                "candidate",
+                "opponent"
+              ],
+              "address": "manifest:config.backend.converted_sides"
+            }
+          },
+          "address": "manifest:config.backend.* \u2014 \u26a0\ufe0f fpu_reduction is threaded on BOTH backends (unlike the J-rules surfaces and the tie arbiter, which are rust-only), so a python leg would NOT be knob-blind. It is still refused: the champion of record plays on rust, and a mixed-backend round is not one round.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+395b76700ab1+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "a9bb2311ab9a635d",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest \u2014 \u26a0\ufe0f carc_rs_version is permanently '0.1.0' and is NOT a discriminator. \u26a0\ufe0f\u26a0\ufe0f UNLIKE THE PARENT ROUND, THE WHEEL HAS MOVED since its golden gate was banked (the S1 R7/R6 merge touched carc_core::search and fair::search_worlds). DESIGN \u00a79 states why the parent's FPU_BITEXACT.json is therefore NOT inherited and a fresh bit-exact run at the launch wheel is a LAUNCH PRECONDITION.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "n": 800,
+            "frozen_n_games": 800,
+            "n_failed": 0,
+            "failure_rate": 0.0,
+            "failure_rate_void_bar": 0.02,
+            "n_common": 400,
+            "n_common_floor": 320.0,
+            "n_common_floor_fraction": 0.8,
+            "notes": [],
+            "addresses": [
+              "summary:n",
+              "summary:n_failed"
+            ]
+          },
+          "address": "summary.json",
+          "why": "\u2b50 n accounts for every frozen game, the failure rate is below the 2% void bar, and n_common clears the 80% floor"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.495625,
+            "band": [
+              0.35,
+              0.65
+            ]
+          },
+          "address": "summary:winrate",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "laptop-wsl",
+            "frozen_role": "laptop"
+          },
+          "address": "manifest:host",
+          "why": "host 'laptop-wsl' matches box role 'laptop' (via 'laptop')"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "witness": 1.05875,
+              "summary": 1.05875,
+              "agree": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "witness": 1.4804212695559027,
+              "summary": 1.4804212695559027,
+              "agree": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "witness": 400,
+              "summary": 400,
+              "agree": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "witness": 0.495625,
+              "summary": 0.495625,
+              "agree": true,
+              "address": "summary:winrate"
+            },
+            "elo": {
+              "witness": -3.040138961786649,
+              "summary": -3.040138961786649,
+              "agree": true,
+              "address": "summary:elo"
+            }
+          },
+          "address": "summary.json vs the raw records",
+          "why": "the fsum witness agrees on all five statistics"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "range": [
+              167000000000,
+              167000000399
+            ],
+            "n_seeds": 400,
+            "n_common": 400,
+            "frozen_n_decks": 400,
+            "n_common_floor": 320.0,
+            "out_of_range": [],
+            "half_played_decks": [],
+            "n_half_played": 0,
+            "half_played_rate_of_games": 0.0,
+            "half_played_rate_denominator": 800,
+            "failure_rate_void_bar": 0.02,
+            "range_clashes": [],
+            "notes": [],
+            "all_cell_ranges": [
+              [
+                164000000000,
+                164000000399,
+                "CELL_FPU005"
+              ],
+              [
+                165000000000,
+                165000000399,
+                "CELL_FPU010"
+              ],
+              [
+                166000000000,
+                166000000399,
+                "CELL_FPU015"
+              ],
+              [
+                167000000000,
+                167000000399,
+                "CELL_FPU030"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "\u2b50 every realized seed is inside this cell's own range, the one-seat-only rate is BELOW the 2%-of-games void bar, n_common clears the 80% floor, and this cell's band does not intersect any other's"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "M": 1.05875,
+        "z": 1.4804212695559027,
+        "n_paired": 400,
+        "se": 0.7151680550480096,
+        "UB95": 2.4890861100960193,
+        "LB95": -0.37158611009601916,
+        "bar_effect": 1.5,
+        "bar_note": "\u2b50 ADOPT requires LB95 >= bar; BOUNDED requires UB95 < bar. \u26d4 The POINT ESTIMATE clears nothing on its own \u2014 that is the whole difference from a 2-sigma-hat bar (owner ruling 2026-08-30)."
+      },
+      "secondary_elo": {
+        "elo": -3.040138961786649,
+        "footing": "deck-paired",
+        "sigma_1_paired": 8.68622216387212,
+        "sigma_1_unpaired": 12.284173189933727,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.495625,
+        "W": 391,
+        "D": 11,
+        "L": 398,
+        "ci95_elo_paired": [
+          -20.41258328953089,
+          14.332305365957591
+        ],
+        "instrument_2sigma_elo_resolution": 17.4,
+        "resolution_footing": "deck-paired 2\u03c3 at 800 games / 400 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f\u26a0\ufe0f THIS IS A RESOLUTION, NOT A BAR. The adoption bar is +1.5 pts/deck on the deck-paired MARGIN and no branch reads this block. elo may never be quoted bare; a disagreement between the margin and the elo is DISCLOSED, not arbitrated."
+      },
+      "se_anomaly": {
+        "realized": 0.7151680550480096,
+        "modelled": 0.6905,
+        "ratio": 1.035724916796538,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        21.0,
+        12.5,
+        16.5,
+        -13.5,
+        17.0,
+        -2.0,
+        -4.0,
+        2.0,
+        3.5,
+        -11.0,
+        3.5,
+        -12.5,
+        -16.5,
+        -15.5,
+        20.0,
+        24.5,
+        10.5,
+        -17.5,
+        6.0,
+        -5.5,
+        24.5,
+        53.5,
+        -19.0,
+        14.0,
+        26.0,
+        -17.5,
+        -5.0,
+        12.0,
+        -10.5,
+        10.0,
+        -2.5,
+        -5.5,
+        -16.0,
+        -14.5,
+        14.0,
+        7.5,
+        3.5,
+        -9.5,
+        -10.0,
+        2.0,
+        -9.0,
+        9.5,
+        11.0,
+        8.5,
+        -19.5,
+        -4.0,
+        6.5,
+        -22.5,
+        -4.0,
+        2.0,
+        22.0,
+        9.5,
+        -20.5,
+        -6.0,
+        5.0,
+        10.0,
+        15.5,
+        4.0,
+        -27.0,
+        2.0,
+        0.0,
+        4.5,
+        3.0,
+        -10.5,
+        -9.0,
+        -14.0,
+        8.5,
+        15.0,
+        -13.5,
+        -17.0,
+        17.0,
+        12.5,
+        -9.5,
+        2.0,
+        29.0,
+        22.0,
+        16.5,
+        -6.0,
+        20.5,
+        23.5,
+        -1.5,
+        4.5,
+        15.5,
+        2.5,
+        -5.5,
+        35.0,
+        16.5,
+        16.5,
+        -6.5,
+        -16.0,
+        13.5,
+        8.0,
+        -13.0,
+        8.0,
+        18.0,
+        30.5,
+        1.5,
+        12.0,
+        -5.0,
+        -13.5,
+        -2.0,
+        -33.0,
+        -3.0,
+        15.0,
+        12.5,
+        17.0,
+        16.5,
+        -17.5,
+        24.5,
+        7.0,
+        -5.5,
+        6.5,
+        0.5,
+        5.0,
+        -12.5,
+        15.5,
+        -20.0,
+        25.5,
+        -16.0,
+        3.5,
+        -8.5,
+        -6.0,
+        18.0,
+        1.0,
+        7.5,
+        -8.0,
+        -20.5,
+        18.5,
+        29.0,
+        -18.0,
+        10.0,
+        0.0,
+        13.0,
+        5.0,
+        -22.0,
+        -15.0,
+        -9.5,
+        24.0,
+        -16.0,
+        -12.0,
+        5.0,
+        -11.0,
+        -10.0,
+        17.5,
+        1.5,
+        -13.5,
+        -26.5,
+        -7.5,
+        2.0,
+        27.0,
+        10.0,
+        -0.5,
+        -14.0,
+        20.5,
+        5.0,
+        -13.0,
+        -5.5,
+        -27.0,
+        -21.0,
+        13.5,
+        32.0,
+        -6.0,
+        5.5,
+        8.0,
+        32.0,
+        16.0,
+        20.0,
+        15.5,
+        2.5,
+        -4.5,
+        21.5,
+        16.5,
+        13.0,
+        9.0,
+        8.0,
+        23.0,
+        18.0,
+        3.0,
+        -9.5,
+        -0.5,
+        3.5,
+        -20.0,
+        -26.0,
+        5.0,
+        27.0,
+        -5.5,
+        -17.5,
+        25.5,
+        -16.5,
+        -19.0,
+        16.0,
+        8.5,
+        20.5,
+        3.0,
+        -16.0,
+        -3.0,
+        0.0,
+        -16.0,
+        -7.0,
+        -29.0,
+        -5.0,
+        -1.0,
+        -14.5,
+        -3.0,
+        17.0,
+        -13.0,
+        -6.5,
+        -11.0,
+        3.5,
+        4.5,
+        13.0,
+        28.0,
+        18.0,
+        4.0,
+        -10.0,
+        7.5,
+        8.0,
+        4.5,
+        -6.5,
+        -6.0,
+        23.5,
+        -27.0,
+        12.0,
+        13.5,
+        -14.0,
+        12.0,
+        -18.5,
+        0.5,
+        19.0,
+        16.0,
+        4.5,
+        3.0,
+        4.5,
+        10.5,
+        -4.0,
+        7.0,
+        -24.5,
+        0.0,
+        -3.0,
+        7.0,
+        2.0,
+        12.0,
+        -11.0,
+        -0.5,
+        -17.0,
+        2.0,
+        10.0,
+        -2.0,
+        -3.0,
+        -31.5,
+        -11.5,
+        20.0,
+        -13.5,
+        9.0,
+        8.0,
+        20.0,
+        8.5,
+        8.0,
+        -4.0,
+        8.0,
+        6.0,
+        4.0,
+        -8.0,
+        -11.0,
+        -26.5,
+        12.5,
+        -33.0,
+        10.5,
+        11.5,
+        10.5,
+        -22.0,
+        14.5,
+        2.5,
+        -6.5,
+        8.5,
+        10.0,
+        -3.0,
+        -4.5,
+        3.0,
+        -15.0,
+        27.5,
+        10.0,
+        -5.5,
+        1.5,
+        -14.5,
+        -7.5,
+        -19.0,
+        -16.5,
+        14.0,
+        -4.0,
+        13.5,
+        -2.5,
+        -2.0,
+        3.5,
+        12.5,
+        8.0,
+        -13.0,
+        8.0,
+        -2.0,
+        7.5,
+        -15.5,
+        -12.0,
+        -5.0,
+        1.5,
+        -2.0,
+        -17.0,
+        -6.0,
+        3.5,
+        -4.0,
+        -20.0,
+        -17.0,
+        22.5,
+        16.5,
+        -13.5,
+        13.5,
+        -6.5,
+        -17.0,
+        -11.0,
+        5.0,
+        22.0,
+        -20.0,
+        -5.5,
+        22.5,
+        9.0,
+        6.5,
+        7.5,
+        -5.5,
+        -26.0,
+        -2.5,
+        21.5,
+        -7.5,
+        -12.5,
+        -17.0,
+        -27.5,
+        4.5,
+        -14.0,
+        -19.5,
+        -12.0,
+        -1.0,
+        -5.0,
+        14.5,
+        14.0,
+        -4.0,
+        7.5,
+        -2.5,
+        6.0,
+        0.5,
+        -6.0,
+        9.0,
+        12.0,
+        -14.5,
+        -2.5,
+        -9.0,
+        -18.5,
+        3.5,
+        -11.5,
+        -9.0,
+        15.0,
+        16.5,
+        -14.0,
+        24.5,
+        -15.5,
+        2.0,
+        30.5,
+        22.5,
+        -11.5,
+        7.0,
+        -33.0,
+        -6.5,
+        -18.0,
+        -4.0,
+        -5.0,
+        11.0,
+        -16.5,
+        -18.5,
+        8.0,
+        -17.5,
+        20.0,
+        9.0,
+        -12.5,
+        -4.5,
+        -17.0,
+        -16.5,
+        8.5,
+        12.5,
+        18.0,
+        -15.0,
+        21.0,
+        18.5,
+        -5.0,
+        5.5,
+        -3.5,
+        10.5,
+        2.0,
+        10.5,
+        25.5,
+        8.5,
+        -2.0,
+        -0.5,
+        15.5
+      ],
+      "branch": "R-UNRESOLVED",
+      "riders": [
+        "\u26d4\u26d4 THE 0.2 AND 0.4 CONTEXT ROWS ARE NEVER POOLED WITH A RUNG OF THIS ROUND. They are on bands 155e9 / 156e9; every rung here is on its own fresh band, and CL-068 measured 1.8-2.2x OVER-DISPERSION on merely cross-band contrasts, in BOTH the elo and the deck-paired-margin statistics. There is no arithmetic that combines them.",
+        "\u26d4 NO CROSS-RUNG CONTRAST IS A BRANCH INPUT. The four rungs sit on four bands, so every rung-vs-rung difference is cross-band and carries CL-068's over-dispersion in full. The dose-response shape is printed as a NAMED COMPANION and is a DIRECTION, never a curve and never an optimum.",
+        "\u26d4 FOUR RUNGS ARE FOUR COMPARISONS. The multiplicity is DISCLOSED, not corrected: the bars are pre-registered and each rung is its own question. \u2b50 At the LB95 bar the family-wise FALSE-ADOPT rate under a global null is ~0.006% (4 x 0.0015%) \u2014 the adoption bar cannot fire on noise. That conservatism has a PRICE and READ_RULE \u00a78 states it: LADDER-DEAD fires only ~10% of the time under a true global null.",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind; the adoption chain (screen_lib.ADOPTION_CHAIN) has three more legs after this one and each is its own prereg, its own band and its own owner funding.",
+        "\u26d4 THE TIE ARBITER IS OFF ON BOTH SIDES OF EVERY RUNG. PRODUCTION.yaml has carried B=64 since 2026-08-20, so every reading here is about the ARBITER-FREE champion and its transfer to the deployed one is an ASSUMPTION, not a measurement.",
+        "\u26a0\ufe0f elo may never be quoted bare, and in THIS round it is not even a bar: the adoption bar is +1.5 pts/deck on the deck-paired margin and there is no exchange rate into elo that this round measures. The elo is reported beside the margin with its own paired CI, and a disagreement between the two is DISCLOSED rather than arbitrated.",
+        "\u26d4\u26d4 R-UNRESOLVED IS NOT A NULL AND NOT A BOUND. feedback_noisy_plateau_not_a_conclusion binds: this rung did not resolve its own bar in either direction.",
+        "\u26d4 IT DOES NOT DISCHARGE ANYTHING, and a round containing one cannot read LADDER-DEAD. READ_RULE \u00a78 pre-registers this as the LIKELIEST single-rung outcome under a true null at n=400 decks (~43%), and the likeliest ROUND outcome under a true global null (~90% chance at least one rung lands here).",
+        "\u26d4 AN UNRESOLVED RUNG MAY NOT BE EXTENDED, TOPPED UP OR RE-READ AT LARGER n ON ITS OWN BAND. That is the rodv3 failure mode (n bought after seeing the sign), and CL-068 means the extension could not be pooled with the original anyway. A re-run is a NEW round: new pair, new band, new owner funding."
+      ]
+    }
+  },
+  "branches": {
+    "CELL_FPU005": "R-BOUNDED",
+    "CELL_FPU010": "R-UNRESOLVED",
+    "CELL_FPU015": "R-UNRESOLVED",
+    "CELL_FPU030": "R-UNRESOLVED"
+  },
+  "round_verdict": {
+    "verdict": "LADDER-UNRESOLVED",
+    "adopted": [],
+    "bounded": [
+      "CELL_FPU005"
+    ],
+    "unresolved": [
+      "CELL_FPU010",
+      "CELL_FPU015",
+      "CELL_FPU030"
+    ],
+    "voided": [],
+    "missing": [],
+    "bar": 1.5,
+    "why": "\u26d4 rung(s) ['CELL_FPU010', 'CELL_FPU015', 'CELL_FPU030'] read R-UNRESOLVED and none adopted. \u26d4\u26d4 THIS IS NOT A NULL AND NOT A BOUND (feedback_noisy_plateau_not_a_conclusion). The round bought no ladder verdict. \u26a0\ufe0f READ_RULE \u00a78 pre-registers this as the MOST LIKELY outcome under a true global null at n=400 decks/rung (~90%), and \u00a78.2 pre-registers its price."
+  },
+  "golden_gate": {
+    "verdict": "PASS",
+    "ok": true,
+    "failed": [],
+    "wheel": {
+      "binary_sha": "a9bb2311ab9a635d",
+      "build": "carc_rs-0.1.0+aa84a40ebafb+rustcunpinned",
+      "host": "Doctor",
+      "note": "\u26a0\ufe0f carc_rs_binary_sha is BOX-LOCAL: two boxes compiling identical source produce different bytes. EACH BOX therefore runs its OWN golden gate before its own rungs, and run_cells.sh compares this sha to that box's installed binary."
+    },
+    "checks": {
+      "ONE-WHEEL": true,
+      "TWO-TREES": true,
+      "SAME-SEEDS": true,
+      "SAME-BUDGET": true,
+      "IDENTITY": true,
+      "POSITIVE-0.05": true,
+      "POSITIVE-0.1": true,
+      "POSITIVE-0.15": true,
+      "POSITIVE-0.3": true,
+      "DOSE-DISTINCT": true,
+      "RUNG-SET": true,
+      "AUDIT-ADJUDICATED": true
+    },
+    "why": "\u2b50 bit-exact at fpu=None (the DEFAULT path is unmoved on THIS wheel) AND every rung's dose BINDS \u2014 including 0.05, the smallest, which is the one a dose-blind build would be hardest to distinguish from the champion. Without the positive half the first is worth nothing: the hard-coded None this family removed would have passed IDENTITY perfectly."
+  },
+  "riders": [
+    "\u26d4\u26d4 THE 0.2 AND 0.4 CONTEXT ROWS ARE NEVER POOLED WITH A RUNG OF THIS ROUND. They are on bands 155e9 / 156e9; every rung here is on its own fresh band, and CL-068 measured 1.8-2.2x OVER-DISPERSION on merely cross-band contrasts, in BOTH the elo and the deck-paired-margin statistics. There is no arithmetic that combines them.",
+    "\u26d4 NO CROSS-RUNG CONTRAST IS A BRANCH INPUT. The four rungs sit on four bands, so every rung-vs-rung difference is cross-band and carries CL-068's over-dispersion in full. The dose-response shape is printed as a NAMED COMPANION and is a DIRECTION, never a curve and never an optimum.",
+    "\u26d4 FOUR RUNGS ARE FOUR COMPARISONS. The multiplicity is DISCLOSED, not corrected: the bars are pre-registered and each rung is its own question. \u2b50 At the LB95 bar the family-wise FALSE-ADOPT rate under a global null is ~0.006% (4 x 0.0015%) \u2014 the adoption bar cannot fire on noise. That conservatism has a PRICE and READ_RULE \u00a78 states it: LADDER-DEAD fires only ~10% of the time under a true global null.",
+    "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. No branch licenses a production change of any kind; the adoption chain (screen_lib.ADOPTION_CHAIN) has three more legs after this one and each is its own prereg, its own band and its own owner funding.",
+    "\u26d4 THE TIE ARBITER IS OFF ON BOTH SIDES OF EVERY RUNG. PRODUCTION.yaml has carried B=64 since 2026-08-20, so every reading here is about the ARBITER-FREE champion and its transfer to the deployed one is an ASSUMPTION, not a measurement.",
+    "\u26a0\ufe0f elo may never be quoted bare, and in THIS round it is not even a bar: the adoption bar is +1.5 pts/deck on the deck-paired margin and there is no exchange rate into elo that this round measures. The elo is reported beside the margin with its own paired CI, and a disagreement between the two is DISCLOSED rather than arbitrated."
+  ],
+  "adoption_chain": [
+    "1. THIS LADDER \u2014 a rung reads R-ADOPT-CANDIDATE (LB95 >= +1.5 pts/deck) on its own fresh band, arbiter OFF both sides.",
+    "2. PRODUCTION H2H \u2014 the winning dose vs the DEPLOYED champion with the TIE ARBITER ARMED (B=64, PRODUCTION.yaml since 2026-08-20), on a FRESH band. \u26d4 This round is a B=0 result and the transfer is an ASSUMPTION.",
+    "3. CARCASUM EXTERNAL \u2014 the arm-on T-TRANSFER protocol, the only out-of-family check this program has.",
+    "4. E4 EPOCH on the phone.",
+    "\u26d4 EACH LEG IS ITS OWN PREREG, ITS OWN BAND AND ITS OWN OWNER FUNDING. A rung firing here funds NOTHING automatically."
+  ],
+  "companions": {
+    "_warning": "\u26d4 COMPANIONS \u2014 NEVER A BRANCH INPUT.",
+    "context_rows_0p2_and_0p4": {
+      "fpu_reduction=0.2 (fpu_resurrection CELL_FPU02, band 155e9)": {
+        "M": 2.95125,
+        "se": 0.6825808836692004,
+        "z": 4.3236634230592745,
+        "LB95": 1.586088232661599,
+        "UB95": 4.316411767338401,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 26.1,
+        "ci95_elo_paired": [
+          8.69,
+          43.53
+        ],
+        "winrate": 0.5375,
+        "branch": "F-RESURRECT",
+        "note": "\u2b50 THE INCUMBENT. Realized 2026-08-30 on the CLASSICAL champion at k16x1376=22016, arb OFF both sides, fixed_v1+R9, exact_k 2 marginalized, rust, leaf a36d2e15a3b3d71d. \u26d4 It licensed PROPOSING follow-on work and NOTHING ELSE: no production change, and 0.2 is a LADDER ENDPOINT \u2014 unbracketed from below, which is what this round fixes."
+      },
+      "fpu_reduction=0.4 (fpu_resurrection CELL_FPU04, band 156e9)": {
+        "M": 0.7543859649122807,
+        "se": 0.7153318548949373,
+        "z": 1.0545957931973815,
+        "LB95": -0.676277744877594,
+        "UB95": 2.1850496747021553,
+        "n_paired": 399,
+        "n_games": 799,
+        "elo": -1.74,
+        "ci95_elo_paired": [
+          -19.12,
+          15.64
+        ],
+        "winrate": 0.4975,
+        "branch": "F-UNRESOLVED (AMENDED \u2014 FPU-A1)",
+        "note": "\u26a0\ufe0f AMENDED from a frozen `U-VOID` by `fpu_resurrection_prep/AMENDMENTS.md` FPU-A1: the adjudicator's G-N/G-DECKS CONDITION COLUMNS were stricter than their own frozen PROSE and voided the cell over ONE deterministic `WindowTruncationError` (1/800 = 0.125%). \u26d4 `F-UNRESOLVED` DISCHARGES NOTHING \u2014 it is not a null and not a bound (feedback_noisy_plateau_not_a_conclusion). \u2b50 THIS ROUND'S G-N/G-DECKS ARE WRITTEN TO THAT PROSE so the same healthy cell would read, not void."
+      }
+    },
+    "context_warning": "\u26d4\u26d4 CONTEXT ROWS, NEVER A BRANCH INPUT AND NEVER POOLED. The 0.2 and 0.4 readings are on bands 155e9 / 156e9; every rung of this ladder is on its own fresh band. CL-068 measured 1.8-2.2x OVER-DISPERSION on merely CROSS-BAND contrasts, in BOTH the elo and the deck-paired-margin statistics \u2014 so a rung-vs-context difference is not a measurement, and the arithmetic that would combine them does not exist. \u2b50 What these rows legitimately did is a DESIGN act, spent before any number of this round exists: they fixed WHICH doses to ask about (0.2 was an unbracketed endpoint; the falling-with-dose direction says bracket it from BELOW) and WHAT BAR is worth paying for (+1.5 is no easier than 0.2's own LB95). \u26d4 No branch below reaches back into them.",
+    "prior_art": {
+      "verdict_fpu02_paired_n200 (2026-06-02)": {
+        "elo": 45.4,
+        "z": 1.85,
+        "n_games": 200,
+        "agent": "NeuralMCTS, pathb_loop/ckpt/iter_11.pt priors + v2_7 leaf, c=3.0",
+        "note": "a SCREEN (z<2), never confirmed; results.csv row 68"
+      },
+      "verdict_fpu04_paired_n200 (2026-06-02)": {
+        "elo": 31.4,
+        "z": 1.28,
+        "n_games": 200,
+        "agent": "same, fpu 0.4",
+        "note": "a SCREEN (z<2), never confirmed; results.csv row 69"
+      },
+      "m3 FPU curve (2026-07-02/03, results.csv rows 233-236)": {
+        "winrates": {
+          "0.4": 0.391,
+          "0.6": 0.496,
+          "0.8": 0.4825,
+          "1.0": 0.476
+        },
+        "n_games": 400,
+        "agent": "iter_02+warmstart ADDITIVE value-blend b=0.27 vs pure-v2.9 anchor, sims=100, band 6.0e9",
+        "note": "\u26a0\ufe0f measures FPU as a RESCUE for a bad learned value on a 100-sim neural agent \u2014 NOT as a lever on the classical champion's 1376-sim heuristic-prior search. \u26d4 CROSS-ERA as well as cross-band, which is strictly worse than CL-068's cross-band over-dispersion."
+      }
+    },
+    "prior_art_warning": "\u26d4 CROSS-ERA AND CROSS-BAND. Never pooled, never z-combined, never a gate input. CL-068 measured 1.8-2.2x over-dispersion on merely CROSS-BAND contrasts; these are also cross-AGENT (neural / value-blended vs the classical champion) and cross-BUDGET.",
+    "dose_response_shape": {
+      "rungs": [
+        {
+          "dose": 0.05,
+          "band": 164000000000,
+          "M": 0.08125,
+          "se": 0.6952380516520311,
+          "LB95": -1.3092261033040622,
+          "UB95": 1.4717261033040623,
+          "branch": "R-BOUNDED"
+        },
+        {
+          "dose": 0.1,
+          "band": 165000000000,
+          "M": 1.5025,
+          "se": 0.6980930770574859,
+          "LB95": 0.10631384588502812,
+          "UB95": 2.898686154114972,
+          "branch": "R-UNRESOLVED"
+        },
+        {
+          "dose": 0.15,
+          "band": 166000000000,
+          "M": 1.835,
+          "se": 0.6861392206215791,
+          "LB95": 0.46272155875684184,
+          "UB95": 3.207278441243158,
+          "branch": "R-UNRESOLVED"
+        },
+        {
+          "dose": 0.3,
+          "band": 167000000000,
+          "M": 1.05875,
+          "se": 0.7151680550480096,
+          "LB95": -0.37158611009601916,
+          "UB95": 2.4890861100960193,
+          "branch": "R-UNRESOLVED"
+        }
+      ],
+      "context_0.2": {
+        "M": 2.95125,
+        "se": 0.6825808836692004,
+        "z": 4.3236634230592745,
+        "LB95": 1.586088232661599,
+        "UB95": 4.316411767338401,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 26.1,
+        "ci95_elo_paired": [
+          8.69,
+          43.53
+        ],
+        "winrate": 0.5375,
+        "branch": "F-RESURRECT",
+        "note": "\u2b50 THE INCUMBENT. Realized 2026-08-30 on the CLASSICAL champion at k16x1376=22016, arb OFF both sides, fixed_v1+R9, exact_k 2 marginalized, rust, leaf a36d2e15a3b3d71d. \u26d4 It licensed PROPOSING follow-on work and NOTHING ELSE: no production change, and 0.2 is a LADDER ENDPOINT \u2014 unbracketed from below, which is what this round fixes."
+      },
+      "context_0.4": {
+        "M": 0.7543859649122807,
+        "se": 0.7153318548949373,
+        "z": 1.0545957931973815,
+        "LB95": -0.676277744877594,
+        "UB95": 2.1850496747021553,
+        "n_paired": 399,
+        "n_games": 799,
+        "elo": -1.74,
+        "ci95_elo_paired": [
+          -19.12,
+          15.64
+        ],
+        "winrate": 0.4975,
+        "branch": "F-UNRESOLVED (AMENDED \u2014 FPU-A1)",
+        "note": "\u26a0\ufe0f AMENDED from a frozen `U-VOID` by `fpu_resurrection_prep/AMENDMENTS.md` FPU-A1: the adjudicator's G-N/G-DECKS CONDITION COLUMNS were stricter than their own frozen PROSE and voided the cell over ONE deterministic `WindowTruncationError` (1/800 = 0.125%). \u26d4 `F-UNRESOLVED` DISCHARGES NOTHING \u2014 it is not a null and not a bound (feedback_noisy_plateau_not_a_conclusion). \u2b50 THIS ROUND'S G-N/G-DECKS ARE WRITTEN TO THAT PROSE so the same healthy cell would read, not void."
+      },
+      "warning": "\u26d4\u26d4 A DIRECTION, NOT A CURVE, AND NOT A BRANCH INPUT. Every rung sits on its OWN band, so EVERY comparison in this table \u2014 rung vs rung AND rung vs context row \u2014 is CROSS-BAND, and CL-068 measured 1.8-2.2x over-dispersion on exactly that class, in both the elo and the deck-paired-margin statistics. \u26d4 No optimum may be located here, no interpolation is licensed, and feedback_bracket_hyperparams' >=3-well-spread-points rule is NOT satisfied by four readings that do not share a footing."
+    },
+    "family_wise": "\u26d4 FOUR RUNGS = FOUR COMPARISONS, DISCLOSED NOT CORRECTED. \u2b50 At the LB95 adoption bar the family-wise FALSE-ADOPT rate under a global null is ~0.006% \u2014 this bar cannot fire on noise. \u26a0\ufe0f The price of that conservatism is in READ_RULE \u00a78: LADDER-DEAD fires only ~10% of the time under a true global null at n=400 decks/rung. A LONE firing rung beside three nulls is still read as feedback_results_table_source_of_truth's NOISE SIGNATURE.",
+    "read_distribution_at_launch_time_model": {
+      "delta=0 (true null)": {
+        "delta": 0.0,
+        "se": 0.6905,
+        "bar": 1.5,
+        "R-ADOPT-CANDIDATE": 1.5074438863060813e-05,
+        "R-BOUNDED": 0.545664310075223,
+        "R-NEGATIVE": 0.02275013194817921,
+        "R-UNRESOLVED": 0.43157048353773475,
+        "P(this rung is bounded below the bar)": 0.5684144420234022,
+        "P(LADDER-DEAD | all four rungs at this delta)": 0.1043903647447027
+      },
+      "delta=+1.5 (exactly at the bar)": {
+        "delta": 1.5,
+        "se": 0.6905,
+        "bar": 1.5,
+        "R-ADOPT-CANDIDATE": 0.02275013194817921,
+        "R-BOUNDED": 0.022735057509316148,
+        "R-NEGATIVE": 1.5074438863060813e-05,
+        "R-UNRESOLVED": 0.9544997361036416,
+        "P(this rung is bounded below the bar)": 0.02275013194817921,
+        "P(LADDER-DEAD | all four rungs at this delta)": 2.6787715598040045e-07
+      },
+      "delta=+2.951 (a repeat of the incumbent)": {
+        "delta": 2.95125,
+        "se": 0.6905,
+        "bar": 1.5,
+        "R-ADOPT-CANDIDATE": 0.5405176293530385,
+        "R-BOUNDED": 2.050275722220718e-05,
+        "R-NEGATIVE": 1.7585749523263416e-10,
+        "R-UNRESOLVED": 0.4594618677138818,
+        "P(this rung is bounded below the bar)": 2.0502933079702412e-05,
+        "P(LADDER-DEAD | all four rungs at this delta)": 1.7671115958750908e-19
+      },
+      "note": "\u26d4 MODELLED at se_model(400)=0.6905, PRE-REGISTERED in READ_RULE \u00a78 before game 1. Every BRANCH above is adjudicated at the rung's OWN REALIZED SE, never at this."
+    }
+  }
+}
