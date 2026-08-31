@@ -190,19 +190,27 @@ def test_legal_cache_wrong_mask_on_collision_then_correct_with_fix(monkeypatch) 
 # witness, and the byte-identity of the rollback.
 # ---------------------------------------------------------------------------
 
-def test_default_is_on_and_only_an_explicit_falsey_value_rolls_back() -> None:
-    """Correctness by default; the historical colliding key must be ASKED for.
+def test_default_is_off_and_only_an_explicit_truthy_value_enables_the_fix() -> None:
+    """⛔ REVERTED to DEFAULT-OFF 2026-08-30 (was DEFAULT-ON for part of that
+    day). The fix is intact but must be ASKED for, because
+    `string_representation` is also the rust mirror's reconcile contract and
+    `carc_core` still emits the legacy 9-tuple — default-on raises
+    `MirrorDesync` at ply 0. This assertion is the tripwire: it fails the moment
+    someone re-promotes, which is exactly when the rust half must be shown to
+    have landed. See the flag comment in `game_wrapper`.
+
     Tested through `resolve_fix_legal_cache_key` rather than the module global
     so an ambient `CARCASSONNE_FIX_LEGAL_CACHE_KEY` in the developer's shell
     cannot make this pass or fail for the wrong reason."""
-    assert gw.resolve_fix_legal_cache_key({}) is True, "unset must mean FIXED"
+    assert gw.resolve_fix_legal_cache_key({}) is False, "unset must mean LEGACY"
     for on in ("1", "true", "yes", "ON", " 1 "):
         assert gw.resolve_fix_legal_cache_key({gw.FIX_LEGAL_CACHE_KEY_ENV_VAR: on}) is True
     for off in ("0", "false", "no", "OFF", " 0 "):
         assert gw.resolve_fix_legal_cache_key({gw.FIX_LEGAL_CACHE_KEY_ENV_VAR: off}) is False
 
 
-def test_straight_road_is_the_second_witness_and_its_farm_SLOTS_reorder() -> None:
+def test_straight_road_is_the_second_witness_and_its_farm_SLOTS_reorder(
+        monkeypatch) -> None:
     """`straight_road` (the OM-D2 witness, 2026-08-30) is subtler than
     `city_left_right`: its two farm REGIONS are the same two fields at rot 0
     and rot 2 -- only their ORDER swaps. That still matters, because
@@ -228,8 +236,14 @@ def test_straight_road_is_the_second_witness_and_its_farm_SLOTS_reorder() -> Non
             "precondition: the same slot data, permuted -- which is exactly why "
             "an order-insensitive key would not have fixed this")
 
+    # ⚠️ The flag is set EXPLICITLY, not inherited from the default: this test
+    # asserts what THE FIX does, and the fix went default-OFF on 2026-08-30
+    # (the rust-mirror `MirrorDesync`; see the flag comment in `game_wrapper`).
+    # Reading the default here would silently retarget the assertion.
+    monkeypatch.setattr(gw, "_FIX_LEGAL_CACHE_KEY", True)
     _reset_rot_sig_cache(tile0, tile2)
     assert gw._tile_rotation_signature(tile0) != gw._tile_rotation_signature(tile2)
+    _reset_rot_sig_cache(tile0, tile2)
 
 
 def test_rollback_key_is_byte_identical_append_only(monkeypatch) -> None:

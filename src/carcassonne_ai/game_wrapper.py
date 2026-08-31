@@ -140,13 +140,29 @@ _WINDOW_STRICT = os.environ.get("CARCASSONNE_WINDOW_STRICT", "0") == "1"
 #     are per-PROCESS/per-`Game` constants and the memo is per-`Game`, so they
 #     cannot cross-contaminate one cache.
 #
-# THE FIX (this flag ON, the default): fold `_farm_slot_signature` into the
-# per-tile signature, and fold `next_tile`'s signature + `big_meeples` /
-# `abbots` into the state key. See `Game.string_representation`.
+# THE FIX (this flag ON — OPT-IN; see the default note below): fold
+# `_farm_slot_signature` into the per-tile signature, and fold `next_tile`'s
+# signature + `big_meeples` / `abbots` into the state key. See
+# `Game.string_representation`.
 #
-# DEFAULT-ON, flipped 2026-08-30 on the owner's "promote." A wrong mask is a
-# correctness defect, not a rules variant, so the R9 / `fixed_v1` "opt in
-# because it moves engine semantics" precedent does NOT apply: nothing here
+# ⛔ DEFAULT-OFF (reverted 2026-08-30, same night as the promote). The fix is
+# INTACT and correct; what it cannot yet be is DEFAULT, because
+# `Game.string_representation` is ALSO the rust mirror's reconcile contract.
+# `carc_core`'s `string_representation` still emits the legacy 9-tuple, so with
+# the fix on by default `RustFairAgent.check_sync` raises `MirrorDesync` at ply
+# 0 of every game — the python key grew three components the rust key has not.
+# There is no `FIX_LEGAL_CACHE_KEY` counterpart anywhere under `rust/carc/`.
+# Caught on first contact by the FPU-ladder golden gate (`REHEARSAL_CERT.md`,
+# §4); the cargo suite cannot see it, because the contract that breaks is
+# python<->rust. ⛔ THE RUST HALF IS OWED BEFORE ANY RE-PROMOTE: land the same
+# three components in `carc_core::game::string_representation` under the same
+# flag, then flip the default and re-run the gate. Until then this is a knob
+# that tooling wanting honest masks sets explicitly (`=1`).
+#
+# The original promote's reasoning still stands on its own terms and is kept
+# here because it is what the re-promote should be argued from: a wrong mask is
+# a correctness defect, not a rules variant, so the R9 / `fixed_v1` "opt in
+# because it moves engine semantics" precedent does NOT apply — nothing here
 # changes what a legal move IS, it only stops the memo returning another
 # board's answer. Every honestly-computed (cache-off) quantity is unchanged
 # bit-for-bit. The one thing that legitimately needs the OLD behaviour is
@@ -159,9 +175,12 @@ _WINDOW_STRICT = os.environ.get("CARCASSONNE_WINDOW_STRICT", "0") == "1"
 # bug-reproduction the thing that must declare itself is the house rule for
 # banked numbers: supersede-by-rerun, never retro-edit.
 #
-# ROLLBACK LEVER: `CARCASSONNE_FIX_LEGAL_CACHE_KEY=0` restores the historical
-# colliding key, byte-identical (the fixed components are APPENDED, so the
-# legacy string is unchanged, not merely equivalent). Latched at import like
+# OPT-IN LEVER: `CARCASSONNE_FIX_LEGAL_CACHE_KEY=1` enables the fix; unset (or
+# an explicit falsey value) is the historical colliding key, byte-identical
+# (the fixed components are APPENDED, so the legacy string is unchanged, not
+# merely equivalent). ⚠️ Do NOT set it for anything that drives a RUST mirror
+# under reconcile until the rust half lands — see the DEFAULT-OFF note above.
+# Latched at import like
 # `_WINDOW_STRICT`; recorded in every run manifest via `run_manifest`. Tests
 # monkeypatch `game_wrapper._FIX_LEGAL_CACHE_KEY` (and must then clear
 # `tile._rot_sig_cache`, which memoizes per Tile instance).
@@ -175,12 +194,13 @@ FIX_LEGAL_CACHE_KEY_ENV_VAR = "CARCASSONNE_FIX_LEGAL_CACHE_KEY"
 
 
 def resolve_fix_legal_cache_key(environ=None) -> bool:
-    """Resolve the key mode from the environment. Default ON; only an explicit
-    falsey value opts back into the historical colliding key. (A function so
-    the default and the rollback spelling are testable without re-importing
-    the module under a doctored environment.)"""
+    """Resolve the key mode from the environment. Default OFF; the fix must be
+    ASKED for with an explicit truthy value, because it moves a key the rust
+    mirror also computes (see the DEFAULT-OFF note above). (A function so the
+    default and both spellings are testable without re-importing the module
+    under a doctored environment.)"""
     raw = (os.environ if environ is None else environ).get(
-        FIX_LEGAL_CACHE_KEY_ENV_VAR, "1")
+        FIX_LEGAL_CACHE_KEY_ENV_VAR, "0")
     return str(raw).strip().lower() not in ("0", "false", "no", "off")
 
 

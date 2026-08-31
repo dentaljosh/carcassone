@@ -207,9 +207,13 @@ def legacy_cache_key(monkeypatch):
     """Run a test under the HISTORICAL (non-injective) legal-cache /
     transposition key.
 
-    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` went DEFAULT-ON on 2026-08-30 (the
-    180-symmetric-tile rotation collision — see the flag comment in
-    `game_wrapper`). `string_representation` is both the legal-mask memo key
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` (the 180-symmetric-tile rotation
+    collision — see the flag comment in `game_wrapper`) went DEFAULT-ON on
+    2026-08-30 and was REVERTED to DEFAULT-OFF the same night: the fix moves a
+    key `carc_core` also computes, and default-on raises `MirrorDesync` at ply
+    0. So this fixture is currently belt-and-braces rather than load-bearing —
+    ⚠️ KEEP IT: it is what makes these goldens survive the re-promote once the
+    rust half lands. `string_representation` is both the legal-mask memo key
     and the MCTS transposition key, so the fix legitimately moves any scripted
     python-MCTS line. Goldens banked under the old key keep their numbers
     (supersede-by-rerun, never retro-edit) and pin themselves with this
@@ -222,5 +226,25 @@ def legacy_cache_key(monkeypatch):
 
     gw.clear_rotation_signature_caches()
     monkeypatch.setattr(gw, "_FIX_LEGAL_CACHE_KEY", False)
+    yield
+    gw.clear_rotation_signature_caches()
+
+
+@pytest.fixture
+def injective_cache_key(monkeypatch):
+    """Run a test under the INJECTIVE (fixed) legal-cache / transposition key.
+
+    The mirror image of `legacy_cache_key`, and necessary since the fix went
+    DEFAULT-OFF on 2026-08-30 (the rust-mirror `MirrorDesync` — see the flag
+    comment in `game_wrapper`). A test that asserts what THE FIX does must say
+    so explicitly rather than read the ambient default, so that the default can
+    move in either direction without silently retargeting the assertion.
+
+    Same cache discipline as `legacy_cache_key`: `_tile_rotation_signature`
+    memoizes per Tile instance, so the caches are cleared on BOTH sides."""
+    import carcassonne_ai.game_wrapper as gw
+
+    gw.clear_rotation_signature_caches()
+    monkeypatch.setattr(gw, "_FIX_LEGAL_CACHE_KEY", True)
     yield
     gw.clear_rotation_signature_caches()

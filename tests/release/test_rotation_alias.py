@@ -50,9 +50,11 @@ def _alias_groups(game, board):
     return {k: v for k, v in groups.items() if len(v) > 1}
 
 
-def test_rotation_aliases_are_gone_under_the_injective_key():
+def test_rotation_aliases_are_gone_under_the_injective_key(injective_cache_key):
     """⭐ THE 2026-08-30 FIX, stated as a property: with
-    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` ON (the default) NO two distinct tile
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` ON (⚠️ no longer the default — pinned by
+    the `injective_cache_key` fixture, since the flag was reverted to
+    DEFAULT-OFF the same night over the rust-mirror `MirrorDesync`) NO two distinct tile
     actions fold to one transposition key over this sample. The alias below is
     not a benign canonicalization — the rotations emit DIFFERENT farmer
     action-ids, so folding them made the memo hand out a mask whose farmer bits
