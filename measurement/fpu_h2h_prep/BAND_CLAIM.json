@@ -1,0 +1,73 @@
+{
+  "_status": "⛔ PROPOSED, NOT CLAIMED. 0 rows have been appended to governance/BAND_REGISTRY.csv at this commit, and the sibling BAND_CLAIMED file does not exist. run_cells.sh REFUSES a real cell until it does. ⚠️ The sweep recorded here is EVIDENCE, not the claim: `_order_of_operations` requires a FRESH sweep immediately before the append.",
+
+  "_order_of_operations": [
+    "1. RE-RUN THE TREE SWEEP immediately before the append (not the sweep recorded here — a fresh one), using the COMBINED method in `sweep_2026_08_31.method`.",
+    "2. Append the ONE row in `_csv_rows` to governance/BAND_REGISTRY.csv.",
+    "3. THEN drop the sibling file BAND_CLAIMED.",
+    "⚠️⚠️ IN THAT ORDER. 146000000000 is the trap it exists for: absent from the registry but carrying references in the tree. The registry is NECESSARY AND NOT SUFFICIENT; the TREE SWEEP is the binding check."
+  ],
+
+  "bands": {
+    "168000000000": "CELL_H2H_FPU02 — candidate = the DEPLOYED champion + fpu_reduction 0.2; opponent = the DEPLOYED champion. 400 decks: 168000000000..168000000399 (x2 seatings = 800 games)."
+  },
+
+  "throwaway": {
+    "base": 168999999000,
+    "span": 1000,
+    "note": "⛔ NEVER IN THE CLAIM. The §9.2 smoke plays 168999999500+ (8 games) and the §9.3 IDENT legs play 168999999700+ (3 legs x 2 games, all on the SAME seeds by design). They buy no deck of the round and their archives are excluded from adjudication by the SMOKE_ prefix scan."
+  },
+
+  "sweep_2026_08_31": {
+    "highest_registered_id": 167000000000,
+    "highest_registered_owner": "FPU DOSE-LADDER, CELL_FPU030 (measurement/fpu_ladder_prep/, claimed 2026-08-31, SPENT the same day — LADDER-UNRESOLVED)",
+    "reserved_not_registered": {
+      "162000000000": "S1 G3 reserved (measurement/s1_asymmetry_prep/BAND_CLAIM_G3.json + tests/test_s1_g3_instrument.py). ⛔ NOT TAKEN.",
+      "163000000000": "S1 G3 reserved (same two files). ⛔ NOT TAKEN."
+    },
+    "method": [
+      "⭐ THE COMBINED SINGLE-PASS METHOD, carried verbatim from measurement/fpu_ladder_prep/BAND_CLAIM.json. ⛔ Do NOT run a per-band full-tree `grep -rIl`: the measurement/ artefact tree is multi-GB and the owner stopped exactly that in the ladder's build.",
+      "(a) TRACKED files -> `git grep -I -n -E '168000000000|169000000000|170000000000'` (reads PACKED OBJECTS, not the working tree; near-zero filesystem IO).",
+      "(b) UNTRACKED files -> exactly ONE filesystem pass over `git ls-files --others --exclude-standard` IN THE MAIN TREE. ⚠️ THIS HALF MUST BE RUN AGAINST THE MAIN TREE, NOT A WORKTREE: a git worktree has its own index and reports ZERO untracked files, so a sweep run from a worktree silently skips (b) entirely. That was observed and corrected during this build.",
+      "(c) CLASSIFY per band by reading only the (few) HIT FILES, never the tree again.",
+      "⭐ AND A BOUNDARY READING: a band id is an INTEGER DECK SEED, so a digit run that sits INSIDE A FLOAT MANTISSA or is glued to another digit can never be one. The classification pass reads one character either side of every hit."
+    ],
+    "combined_pass_result": {
+      "tracked_hit_lines": 4,
+      "untracked_files_scanned": 7630,
+      "untracked_bytes_scanned_mb": 141.3,
+      "untracked_hit_files": 0,
+      "hits": {
+        "168000000000": [
+          "measurement/fpu_ladder_prep/BAND_CLAIM.json:46 — the LADDER's own sweep record, `\"168000000000\": []`, i.e. a recorded NO-HIT for this id. ⭐ NOT A USE: the ladder swept one id past its own four and wrote down that it was free."
+        ],
+        "169000000000": [],
+        "170000000000": [
+          "measurement/omd2_chain_values_20260830/WITNESS_DIFFS.json:117,119 — `\"rust_bits\": \"4017000000000000\"` — a FLOAT BIT PATTERN, digits glued on both sides. ⛔ NOT A BAND REFERENCE.",
+          "measurement/probe_b_fair_targets/fair_targets_n200_K12_s800.jsonl:100 — inside a float mantissa. ⛔ NOT A BAND REFERENCE."
+        ]
+      }
+    },
+    "verdict": "⭐ 168000000000 is FREE and is the next MONOTONE id above the ladder's spent 167e9. 169e9 and 170e9 are also free and are recorded here so the next round does not re-derive them (170e9 carries two INCIDENTAL float-mantissa hits and a naive substring rule would refuse it forever — the boundary reading is what makes it takeable).",
+    "incidental_digit_runs_recorded_so_the_next_reader_does_not_rediscover_them": {
+      "what": "170000000000 appears as a substring of the IEEE-754 hex `4017000000000000` and inside a float mantissa in a JSONL row.",
+      "ruling": "⭐ NOT A BAND REFERENCE, AND THE READING IS NOT A JUDGEMENT CALL: a band id is an integer deck seed; a digit run glued to another digit, or straddling a decimal point, cannot be one.",
+      "⚠️": "Recorded because the house refusal rule is 'a band with ANY tree reference is not taken', and a naive substring sweep would refuse ids in this range forever."
+    },
+    "dropped_from_consideration": {
+      "146000000000": ["⚠️⚠️ THE TRAP THE CLAIM ORDER EXISTS FOR — absent from governance/BAND_REGISTRY.csv but carrying references in the tree. ⛔ NOT FREE."],
+      "158000000000": ["⛔ 0 registry rows but LIVE tree hits — carried forward from measurement/fpu_resurrection_prep/BAND_CLAIM.json via the ladder's, so the next reader does not rediscover it as 'free'."],
+      "160000000000": ["⛔ same."]
+    }
+  },
+
+  "_why_one_band": "⭐ ONE CELL, ONE BAND. There is nothing to pool and nothing to deck-match across: the primary is this cell's OWN deck-paired margin against zero, which is the WITHIN-band, deck-paired class CL-068 leaves robust. Every contrast with any earlier fpu cell is cross-band AND arbiter-off-vs-arbiter-on, and READ_RULE §1.3 forbids the arithmetic that would combine them.",
+
+  "_retirement": "⛔ 168000000000 retires `decision_influenced=yes` THE MOMENT THE READ-OUT LANDS, on every branch — including H-UNRESOLVED. READ_RULE §8.2: the cell may NOT be extended, topped up or re-read at larger n on this band (the rodv3 failure mode). A re-run is a NEW round: new pair, new band, new owner funding.",
+
+  "_csv_rows": [
+    "168000000000,\"FPU PRODUCTION-H2H, CELL_H2H_FPU02 — STEP 2 OF THE FPU ADOPTION CHAIN. One deck-paired cell, n=800 games (400 seat-balanced decks x 2 seatings), seeds 168000000000..168000000399. CANDIDATE = the DEPLOYED production champion (fair PIMC k16x1376=22016 + the deployed root TIE ARBITER B=64/J=4/argmax/salt tiearb2-deploy-v1/eps 0.0/phase_gate all) PLUS fpu_reduction=0.2 on the CANDIDATE SIDE ONLY (--cand-fpu-reduction; a SEARCH knob that moves NO leaf hash). OPPONENT = THE SAME DEPLOYED AGENT WITHOUT THE DOSE — ⭐⭐ THE TIE ARBITER IS ARMED ON **BOTH** SEATS AT THE FULL DEPLOYED SPEC, which became expressible only on 2026-08-31 (--opp-tiearb-*, scripts/classical_search/tiearb_gates.py); every earlier fpu cell ran arbiter-OFF and this leg is the one that PRICES that deviation. Leaf a36d2e15a3b3d71d BOTH SIDES, rules_profile fixed_v1 + CARCASSONNE_FIX_R9=1, exact_k 2 marginalized, rust backend, LAPTOP ONLY. BARS ARE EFFECT-SIZED per the owner ruling of 2026-08-30, and this is the CONFIRMATION bar rather than the ladder's screen bar: ADOPT requires LB95(M) >= +1.0 pts/deck, BOUNDED requires UB95(M) < +1.0. +1.0 is derived from the two production folds this program has accepted (k16 budget +1.229 pts/deck; arbiter B=64 +1.7167 pts/game). ⛔ H-ADOPT licenses PROPOSING a PRODUCTION.yaml fpu flip and funding step 3 (Carcasum external) — never an automatic adoption. Pair: measurement/fpu_h2h_prep/{DESIGN,READ_RULE}.md\",claim,claimed,PENDING,yes,measurement/fpu_h2h_prep/READ_RULE.md,\"Seeds 168000000000..168000000399 = 400 decks x 2 seatings. 168999999000..168999999999 inside this band is the THROWAWAY range (the §9.2 smoke at +500, the §9.3 IDENT legs at +700) and is NOT part of the claim. *** Tree sweep re-run immediately before this append (combined method: git grep over tracked + one filesystem pass over the MAIN TREE's untracked files). *** BLIND_COMMIT stamped by the follow-up commit appending this row. *** W_LAPTOP stamped from the 2026-08-31 laptop sweep; W is THROUGHPUT-ONLY and moves no bar, gate or branch. *** The GOLDEN GATE is INHERITED from measurement/fpu_ladder_prep/FPU_BITEXACT_LADDER.json with the wheel re-asserted at launch; its two gaps (fpu x arbiter together; a 0.2 control on this wheel) are paid by the --smoke IDENT legs.\""
+  ],
+
+  "_csv_row_note": "⚠️ The `claimed_date` field reads PENDING and the ORCHESTRATOR replaces it with the append date. ⛔ Do not pre-date it: the row is the record of an act that has not happened yet."
+}
