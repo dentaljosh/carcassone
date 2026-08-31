@@ -1,0 +1,61 @@
+{
+ "tile_description": "straight_road",
+ "A1": {
+  "coord": "<wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x79753792de50>",
+  "tile": {
+   "description": "straight_road",
+   "grass": [
+    "top",
+    "bottom"
+   ],
+   "edges": [
+    "None",
+    "None",
+    "None",
+    "None"
+   ],
+   "shield": false,
+   "chapel": false,
+   "flowers": false,
+   "farms": [
+    [
+     "top_right",
+     "top_left"
+    ],
+    [
+     "bottom_right",
+     "bottom_left"
+    ]
+   ]
+  }
+ },
+ "A2": {
+  "coord": "<wingedsheep.carcassonne.objects.coordinate.Coordinate object at 0x7975379df230>",
+  "tile": {
+   "description": "straight_road",
+   "grass": [
+    "bottom",
+    "top"
+   ],
+   "edges": [
+    "None",
+    "None",
+    "None",
+    "None"
+   ],
+   "shield": false,
+   "chapel": false,
+   "flowers": false,
+   "farms": [
+    [
+     "bottom_left",
+     "bottom_right"
+    ],
+    [
+     "top_left",
+     "top_right"
+    ]
+   ]
+  }
+ }
+}

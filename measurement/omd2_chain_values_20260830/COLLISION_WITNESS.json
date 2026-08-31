@@ -1,0 +1,35 @@
+{
+ "deck_seed": 28000000011,
+ "ply": 24,
+ "tile_actions": [
+  949,
+  951
+ ],
+ "decoded_tile_actions": {
+  "949": "<wingedsheep.carcassonne.objects.actions.tile_action.TileAction object at 0x717879fbb500>",
+  "951": "<wingedsheep.carcassonne.objects.actions.tile_action.TileAction object at 0x717879fb92e0>"
+ },
+ "string_representation_equal": true,
+ "honest_masks_equal": false,
+ "honest_legal_meeples_after_A1": [
+  2502,
+  2504,
+  2507,
+  2509,
+  2510
+ ],
+ "honest_legal_meeples_after_A2": [
+  2502,
+  2504,
+  2506,
+  2508,
+  2510
+ ],
+ "decoded_meeples_after_A2": {
+  "2502": "<wingedsheep.carcassonne.objects.actions.meeple_action.MeepleAction object at 0x717879fb9100>",
+  "2504": "<wingedsheep.carcassonne.objects.actions.meeple_action.MeepleAction object at 0x717879fb8770>",
+  "2506": "<wingedsheep.carcassonne.objects.actions.meeple_action.MeepleAction object at 0x717879fb9130>",
+  "2508": "<wingedsheep.carcassonne.objects.actions.meeple_action.MeepleAction object at 0x717879fb8710>",
+  "2510": "<wingedsheep.carcassonne.objects.actions.pass_action.PassAction object at 0x717879fb9220>"
+ }
+}
