@@ -1,0 +1,26 @@
+    Finished `release` profile [optimized] target(s) in 0.21s
+     Running `target/release/examples/registry_flat_gate`
+== registry flattening — bit-identity gates ==
+registry: base (R9 off)
+Decomp fields compared per position: 25 (19 structural + 6 city root arrays)
+GATE 0 (fresh game / empty-ish board): PASS
+GATE 1 (deterministic corpus): 2591 positions, 5182 leaf values, PASS
+GATE 2 (500 random games): 71959 positions, 143918 leaf values, PASS
+{
+  "r9": false,
+  "decomp_fields": 25,
+  "gate0_pass": true,
+  "gate1_positions": 2591,
+  "gate1_leaf_values": 5182,
+  "gate1_pass": true,
+  "gate2_games": 500,
+  "gate2_positions": 71959,
+  "gate2_leaf_values": 143918,
+  "gate2_pass": true,
+  "total_positions": 74550,
+  "total_leaf_values": 149100,
+  "all_pass": true
+}
+TOTAL: 74550 positions / 149100 leaf values / ALL PASS
+
+[exited with code 0]

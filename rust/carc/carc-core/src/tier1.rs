@@ -273,6 +273,92 @@ fn candidate_leaf(after: &mut GameState, player: usize, bufs: &mut ScorerBufs) -
     flat_base_score(after, player, &bufs.decomp)
 }
 
+// ── L1b: THE MEEPLE-PHASE DECOMPOSITION HOIST (tier1 / arbiter side) ───────
+//
+// The same call-site hoist the search path took on 2026-08-30
+// (`search::Searcher::evaluate`, "L1a"), applied to the OTHER full-rebuild
+// consumer — the tier1 playout scorer, which is where `arbitrate`'s cost lives.
+//
+// [`decompose_into`] is a pure function of the TILE BOARD: it reads
+// `state.placed_coords` and `state.board` and nothing else.  In
+// [`RuleBasedPlayer::best_by_virtual_score`] every candidate is scored on
+// `g.state.clone()` + `apply_action(candidate)`, so when the decision is in
+// [`Phase::Meeples`] — where the only legal actions are `Action::Meeple`
+// (`play_meeple`) and the meeple-phase `Action::Pass` (which falls through to
+// `remove_meeples_and_collect_points` / `draw_tile` / `next_player`) — NO
+// candidate places a tile, and every afterstate therefore has, bit for bit,
+// the same decomposition.  One `decompose_into` serves the whole decision.
+//
+// Bit-identity is by CONSTRUCTION; the gates
+// (`flat_tests::every_meeple_phase_candidate_shares_the_root_decomposition`
+// and `..._the_tier1_meeple_hoist_is_decision_identical`) are the falsifier,
+// not the argument.  No knob and no strength claim — the swap precedent.
+//
+// ⚠️ Two things are deliberately NOT hoisted:
+//
+//   * [`border_wrap_hazard`] stays PER CANDIDATE.  It would be sound to hoist
+//     it in the meeple phase (R12 says so explicitly), but it buys ≤ 72
+//     integer comparisons and hoisting it would change how many times
+//     [`BORDER_FALLBACKS`] is bumped — an OBSERVABLE, and one a gate reads.
+//   * The decomposition is filled LAZILY, off the first candidate that does
+//     not take the border fallback.  A meeple-phase decision whose board
+//     touches the wrapping border routes every candidate to the legacy scorer,
+//     and must not pay a decomposition it never reads.
+
+thread_local! {
+    /// ⚠️ GATES AND TESTS ONLY — see [`with_fresh_decomp`].
+    static FORCE_FRESH_DECOMP: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Restores [`FORCE_FRESH_DECOMP`] even if `f` unwinds.
+struct FreshDecompGuard(bool);
+impl Drop for FreshDecompGuard {
+    fn drop(&mut self) {
+        FORCE_FRESH_DECOMP.with(|c| c.set(self.0));
+    }
+}
+
+/// ⚠️ **GATES AND TESTS ONLY.** Runs `f` with the L1b meeple-phase
+/// decomposition hoist disabled **on this thread**, i.e. every tier1 candidate
+/// pays its own [`decompose_into`] exactly as the pre-L1b code did.
+///
+/// Not a configuration knob and nothing in production calls it: the hoist is
+/// bit-identical, so there is no shape to choose between.  It exists so an
+/// identity gate can run BOTH routes over the same roots and RNG streams
+/// instead of re-implementing the decision.  Shape and precedent:
+/// [`with_legacy_scorer`], [`crate::search::with_fresh_decomp`].
+#[doc(hidden)]
+pub fn with_fresh_decomp<R>(f: impl FnOnce() -> R) -> R {
+    let prev = FORCE_FRESH_DECOMP.with(|c| c.replace(true));
+    let _g = FreshDecompGuard(prev);
+    f()
+}
+
+/// The hoisted per-candidate scorer.  Identical to [`candidate_leaf`] except
+/// that the decomposition already in `bufs.decomp` — the one this decision's
+/// first non-border candidate produced — is reused instead of rebuilt.
+///
+/// `decomp_valid` is scoped to ONE decision by its caller; `bufs` is
+/// thread-local and outlives it, so the flag must never be hoisted with it.
+#[inline]
+fn candidate_leaf_hoisted(
+    after: &mut GameState,
+    player: usize,
+    bufs: &mut ScorerBufs,
+    decomp_valid: &mut bool,
+) -> i64 {
+    if border_wrap_hazard(after) {
+        BORDER_FALLBACKS.fetch_add(1, Ordering::Relaxed);
+        after.count_final_scores();
+        return after.scores[player] - after.scores[1 - player];
+    }
+    if !*decomp_valid {
+        decompose_into(after, &mut bufs.decomp, &mut bufs.scratch);
+        *decomp_valid = true;
+    }
+    flat_base_score(after, player, &bufs.decomp)
+}
+
 /// `game_wrapper.Game._legal_cache` — the per-`Game` legal-mask memo, keyed by
 /// the byte-exact `string_representation`.
 ///
@@ -561,6 +647,11 @@ impl RuleBasedPlayer {
         // The route is read ONCE per decision, not per candidate: it cannot
         // change inside a decision, and production never sets it at all.
         let force_legacy = FORCE_LEGACY.with(|c| c.get());
+        // L1b: read ONCE per decision, for the same reason — the phase cannot
+        // change inside a decision, and production never sets the gate flag.
+        let hoist = g.state.phase == Phase::Meeples && !FORCE_FRESH_DECOMP.with(|c| c.get());
+        // Scoped to THIS decision. `bufs` is thread-local and outlives it.
+        let mut decomp_valid = false;
         let mut scores: Vec<i64> = Vec::with_capacity(candidates.len());
         SCORER_BUFS.with(|cell| -> Result<(), String> {
             let bufs = &mut *cell.borrow_mut();
@@ -585,6 +676,8 @@ impl RuleBasedPlayer {
                 scores.push(if force_legacy {
                     scratch.count_final_scores();
                     scratch.scores[player] - scratch.scores[opp]
+                } else if hoist {
+                    candidate_leaf_hoisted(&mut scratch, player, bufs, &mut decomp_valid)
                 } else {
                     candidate_leaf(&mut scratch, player, bufs)
                 });
@@ -1002,6 +1095,230 @@ mod tests {
     use crate::engine::MeepleType;
     use crate::game::{DrawRule, GameConfig, StartRule};
     use crate::tiles::{self, TerrainType};
+
+    // ── L1b — THE TIER1 MEEPLE-PHASE DECOMPOSITION HOIST ─────────────────── //
+    //
+    // Same gate shape as the search side's L1a (`search::l1a_hoist_tests`):
+    // the STRUCTURAL claim, the CONSUMED claim, and a positive control that
+    // proves the gates can fail.
+
+    /// A reproducible action picker, identical in shape to the L1a gates'.
+    struct Lcg(u64);
+    impl Lcg {
+        fn new(seed: u64) -> Self {
+            Lcg(seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407))
+        }
+        fn below(&mut self, n: usize) -> usize {
+            self.0 = self
+                .0
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            ((self.0 >> 33) as usize) % n.max(1)
+        }
+    }
+
+    fn walk_game(seed: u64, mut visit: impl FnMut(&Game)) {
+        let mut g = Game::from_seed(&seed.to_string());
+        let mut rng = Lcg::new(seed);
+        let mut guard = 0usize;
+        while !g.state.is_terminated() {
+            guard += 1;
+            assert!(guard < 400, "game {seed} did not terminate");
+            visit(&g);
+            let legal = g.legal_actions();
+            assert!(!legal.is_empty(), "no legal action at a non-terminal state");
+            let a = legal[rng.below(legal.len())];
+            g.advance(a).unwrap();
+        }
+    }
+
+    /// GATE (a) — the STRUCTURAL claim the hoist rests on: at a meeple-phase
+    /// tier1 decision, every candidate's `apply_action` afterstate has, bit for
+    /// bit, the ROOT's decomposition.
+    ///
+    /// Compared on all 25 `Decomp` fields via `decomp_diff`, the same
+    /// comparator the registry-flattening and L1-delta rounds use, so all three
+    /// grade the identical surface.
+    #[test]
+    fn every_meeple_phase_candidate_shares_the_root_decomposition() {
+        use crate::leaf::decomp::decomp_diff;
+        let mut d_root = Decomp::default();
+        let mut d_cand = Decomp::default();
+        let mut sc = Scratch::default();
+        let mut n_candidates = 0usize;
+        let mut n_decisions = 0usize;
+
+        for seed in 28_500_000_000u64..28_500_000_024 {
+            walk_game(seed, |g| {
+                if g.state.phase != Phase::Meeples {
+                    return;
+                }
+                n_decisions += 1;
+                decompose_into(&g.state, &mut d_root, &mut sc);
+                let last_tile_coord = g.state.last_tile_action.map(|lta| lta.coord);
+                for &action_idx in &g.legal_actions() {
+                    let action = decode(
+                        action_idx,
+                        &g.offset,
+                        g.state.phase,
+                        g.state.next_tile,
+                        last_tile_coord,
+                    )
+                    .expect("legal action must decode");
+                    let mut after = g.state.clone();
+                    after.apply_action(action);
+                    decompose_into(&after, &mut d_cand, &mut sc);
+                    n_candidates += 1;
+                    if let Err(field) = decomp_diff(&d_root, &d_cand) {
+                        panic!(
+                            "seed {seed}: meeple candidate {action_idx} moved the \
+                             decomposition on field `{field}` — THE HOIST IS UNSOUND"
+                        );
+                    }
+                }
+            });
+        }
+        assert!(n_decisions > 200, "corpus too small: {n_decisions} decisions");
+        assert!(
+            n_candidates > 1_000,
+            "corpus too small: {n_candidates} candidates"
+        );
+    }
+
+    /// POSITIVE CONTROL — a TILE-phase candidate generally DOES move the
+    /// decomposition.  Without this, gate (a) could be passing vacuously.
+    #[test]
+    fn a_tile_phase_candidate_generally_moves_the_decomposition() {
+        use crate::leaf::decomp::decomp_diff;
+        let mut d_root = Decomp::default();
+        let mut d_cand = Decomp::default();
+        let mut sc = Scratch::default();
+        let mut n = 0usize;
+        let mut n_moved = 0usize;
+
+        for seed in 28_500_100_000u64..28_500_100_004 {
+            walk_game(seed, |g| {
+                if g.state.phase != Phase::Tiles || g.state.empty_board() {
+                    return;
+                }
+                decompose_into(&g.state, &mut d_root, &mut sc);
+                let last_tile_coord = g.state.last_tile_action.map(|lta| lta.coord);
+                for &action_idx in &g.legal_actions() {
+                    let action = decode(
+                        action_idx,
+                        &g.offset,
+                        g.state.phase,
+                        g.state.next_tile,
+                        last_tile_coord,
+                    )
+                    .expect("legal action must decode");
+                    let mut after = g.state.clone();
+                    after.apply_action(action);
+                    decompose_into(&after, &mut d_cand, &mut sc);
+                    n += 1;
+                    if decomp_diff(&d_root, &d_cand).is_err() {
+                        n_moved += 1;
+                    }
+                }
+            });
+        }
+        assert!(n > 500, "control corpus too small: {n}");
+        assert_eq!(
+            n_moved, n,
+            "a tile placement must ALWAYS move the decomposition — the \
+             comparator is blind if it does not"
+        );
+    }
+
+    /// GATE (b) — the CONSUMED claim: `decide()` with the hoist on and off
+    /// ([`with_fresh_decomp`]) must agree on the action, the candidate set AND
+    /// every per-candidate int64 leaf score, at every decision of a randomized
+    /// corpus.
+    ///
+    /// Scores are exact integers, so this is bit-identity with no tolerance.
+    /// A fresh `RuleBasedPlayer` per leg keeps the two arms' RNG streams
+    /// aligned without depending on how many draws the decision made.
+    #[test]
+    fn the_tier1_meeple_hoist_is_decision_identical() {
+        let mut n_meeple = 0usize;
+        let mut n_tile = 0usize;
+        for seed in 28_500_200_000u64..28_500_200_016 {
+            walk_game(seed, |g| {
+                let hoisted = RuleBasedPlayer::new(7).decide(g, None).unwrap();
+                let fresh = with_fresh_decomp(|| RuleBasedPlayer::new(7).decide(g, None).unwrap());
+                assert_eq!(hoisted.action, fresh.action, "seed {seed}: action");
+                assert_eq!(hoisted.candidates, fresh.candidates, "seed {seed}: candidates");
+                assert_eq!(hoisted.legal, fresh.legal, "seed {seed}: legal");
+                assert_eq!(hoisted.player, fresh.player, "seed {seed}: player");
+                assert_eq!(hoisted.scores, fresh.scores, "seed {seed}: leaf scores");
+                if g.state.phase == Phase::Meeples {
+                    n_meeple += 1;
+                } else {
+                    n_tile += 1;
+                }
+            });
+        }
+        assert!(n_meeple > 200, "too few meeple decisions: {n_meeple}");
+        assert!(n_tile > 200, "too few tile decisions: {n_tile}");
+    }
+
+    /// GATE (c) — end to end: a whole `tier1_playout` must be bit-identical
+    /// (margin as raw f64 bits, and ply count) with the hoist on vs off, across
+    /// both memo shapes.
+    #[test]
+    fn the_tier1_meeple_hoist_leaves_the_playout_bit_identical() {
+        for (seed, ps) in [("28100000001", 12345i64), ("28100000027", 999), ("28100000045", 7)] {
+            for cache in [false, true] {
+                let root = Game::from_seed(seed);
+                let legal = root.legal_actions();
+                let mut c1 = if cache { Some(LegalMaskCache::new()) } else { None };
+                let mut c2 = if cache { Some(LegalMaskCache::new()) } else { None };
+                let (m_hoist, p_hoist) =
+                    tier1_playout(&root, legal[0], 0, ps, 400, c1.as_mut()).unwrap();
+                let (m_fresh, p_fresh) = with_fresh_decomp(|| {
+                    tier1_playout(&root, legal[0], 0, ps, 400, c2.as_mut()).unwrap()
+                });
+                assert_eq!(
+                    m_hoist.to_bits(),
+                    m_fresh.to_bits(),
+                    "seed {seed} cache={cache}: margin bits"
+                );
+                assert_eq!(p_hoist, p_fresh, "seed {seed} cache={cache}: plies");
+            }
+        }
+    }
+
+    /// The hoist must not leak across decisions: `SCORER_BUFS` is thread-local
+    /// and outlives a decision, so a stale `decomp_valid` would silently score
+    /// a later board against an earlier decomposition.  Interleaving decisions
+    /// from DIFFERENT boards on one thread is what would expose that.
+    #[test]
+    fn the_hoisted_decomposition_does_not_leak_across_decisions() {
+        let mut boards: Vec<Game> = Vec::new();
+        walk_game(28_500_300_001, |g| {
+            if g.state.phase == Phase::Meeples && boards.len() < 40 {
+                boards.push(g.clone());
+            }
+        });
+        assert!(boards.len() >= 20, "need meeple boards, got {}", boards.len());
+        // Reference: each board scored in isolation (one decision per fresh
+        // player), which is what a leaking buffer cannot reproduce.
+        let want: Vec<Vec<i64>> = boards
+            .iter()
+            .map(|g| with_fresh_decomp(|| RuleBasedPlayer::new(3).decide(g, None).unwrap().scores))
+            .collect();
+        // Interleaved, on ONE thread, hoist ON — every board scored twice, in
+        // an order that guarantees consecutive decisions come from different
+        // boards.
+        for pass in 0..2 {
+            for (i, g) in boards.iter().enumerate() {
+                let got = RuleBasedPlayer::new(3).decide(g, None).unwrap().scores;
+                assert_eq!(got, want[i], "pass {pass} board {i}: stale hoisted decomp");
+            }
+        }
+    }
 
     /// `random.Random(s); r._randbelow(1)` returns 0 but CONSUMES draws — the
     /// stream must be advanced exactly as CPython advances it.
@@ -1456,6 +1773,116 @@ mod tests {
         println!("  legacy (count_final_scores) : {:.3} ms/playout", legacy * 1e3);
         println!("  flat   (decompose_into)     : {:.3} ms/playout", flat * 1e3);
         println!("  factor                      : {:.2}x", legacy / flat);
+    }
+
+    /// L1b's realized factor: whole tier1 playouts with the meeple-phase
+    /// decomposition hoist ON vs OFF, back to back on the same roots and RNG
+    /// streams, interleaved by replicate.
+    ///
+    /// A PAIRED ratio on one process — the only shape that says anything at all
+    /// beside another tenant, and even then only a DIRECTION (contention pulls
+    /// a paired ratio toward 1, so the exclusive figure is likely higher; that
+    /// is exactly what the L1a search-side read found).
+    ///
+    /// `cargo test -p carc-core --release -- --ignored --nocapture tier1_meeple_hoist_bench`
+    #[test]
+    #[ignore = "timing bench: exclusive tenant only"]
+    fn tier1_meeple_hoist_bench() {
+        use std::time::Instant;
+        let mut roots: Vec<(Game, i32, i64)> = Vec::new();
+        for s in 0..8i64 {
+            let seed = (28_100_000_001i64 + s * 977).to_string();
+            for &root_ply in &[6usize, 30, 60, 90] {
+                let mut root = Game::from_seed(&seed);
+                for _ in 0..root_ply {
+                    let l = root.legal_actions();
+                    let a = l[l.len() / 2];
+                    root.advance(a).unwrap();
+                }
+                if root.state.is_terminated() {
+                    continue;
+                }
+                let legal = root.legal_actions();
+                roots.push((root, legal[legal.len() / 2], 5_000 + s * 13 + root_ply as i64));
+            }
+        }
+        for (r, p, ps) in roots.iter().take(2) {
+            let _ = tier1_playout(r, *p, 0, *ps, 400, None).unwrap();
+            let _ = with_fresh_decomp(|| tier1_playout(r, *p, 0, *ps, 400, None)).unwrap();
+        }
+
+        let reps = 3;
+        let mut t_fresh = 0f64;
+        let mut t_hoist = 0f64;
+        for _ in 0..reps {
+            let t = Instant::now();
+            for (r, p, ps) in &roots {
+                let _ = with_fresh_decomp(|| tier1_playout(r, *p, 0, *ps, 400, None)).unwrap();
+            }
+            t_fresh += t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            for (r, p, ps) in &roots {
+                let _ = tier1_playout(r, *p, 0, *ps, 400, None).unwrap();
+            }
+            t_hoist += t.elapsed().as_secs_f64();
+        }
+        let n = (roots.len() * reps) as f64;
+        println!("\n=== L1b tier1 meeple hoist, W1, n={} playouts/arm ===", n);
+        println!("  fresh (decompose per candidate) : {:.3} ms/playout", t_fresh / n * 1e3);
+        println!("  hoisted (once per decision)     : {:.3} ms/playout", t_hoist / n * 1e3);
+        println!("  factor                          : {:.3}x", t_fresh / t_hoist);
+    }
+
+    /// WHY the L1b factor is what it is: the census of where tier1's scored
+    /// candidates actually live.
+    ///
+    /// The hoist can only save `(scored candidates − 1)` decompositions per
+    /// MEEPLE decision that scores more than one candidate.  Tile decisions —
+    /// the many-candidate ones — are untouched by construction.  This prints
+    /// the exact ceiling so the realized factor is read against a mechanism
+    /// rather than a hope.  Cheap and deterministic; not a timing bench.
+    #[test]
+    #[ignore = "diagnostic census, not a gate"]
+    fn tier1_decompose_call_census() {
+        let (mut dec_tile, mut dec_meeple) = (0usize, 0usize);
+        let (mut cand_tile, mut cand_meeple) = (0usize, 0usize);
+        let mut rule1 = 0usize;
+        let mut saved = 0usize;
+        for seed in 28_500_400_000u64..28_500_400_040 {
+            walk_game(seed, |g| {
+                let d = RuleBasedPlayer::new(11).decide(g, None).unwrap();
+                let n = d.scores.len();
+                if n == 0 {
+                    rule1 += 1;
+                    return;
+                }
+                if g.state.phase == Phase::Meeples {
+                    dec_meeple += 1;
+                    cand_meeple += n;
+                    saved += n - 1;
+                } else {
+                    dec_tile += 1;
+                    cand_tile += n;
+                }
+            });
+        }
+        let total = cand_tile + cand_meeple;
+        println!("\n=== tier1 decompose-call census (40 games) ===");
+        println!("  no-score decisions (Rule 1 / single candidate) : {rule1}");
+        println!("  TILE   decisions {dec_tile:6}  candidates {cand_tile:8}");
+        println!("  MEEPLE decisions {dec_meeple:6}  candidates {cand_meeple:8}");
+        println!(
+            "  meeple share of all scored candidates          : {:.2}%",
+            100.0 * cand_meeple as f64 / total as f64
+        );
+        println!(
+            "  decompositions the hoist REMOVES              : {saved} of {total} = {:.2}%",
+            100.0 * saved as f64 / total as f64
+        );
+        println!(
+            "  => ceiling on the whole-playout factor         : {:.4}x (if decompose were 100% of cost)",
+            total as f64 / (total - saved) as f64
+        );
     }
 
     /// The memo's KEY is the byte-exact Python `string_representation`, so two

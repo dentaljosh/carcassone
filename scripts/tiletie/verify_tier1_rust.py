@@ -201,6 +201,16 @@ def main() -> int:
                          "mid-run main-tree write). The widening campaign passes "
                          "--out .../tiearb_widening_20260817/shared_run/"
                          "GATE_BITEXACT_HEAD.json.")
+    ap.add_argument("--legs-limit", type=int, default=0, metavar="N",
+                    help="SMOKE MODE. Run only the first N legs of the committed "
+                         "draw (deterministic prefix, ascending chunk then leg). "
+                         "`pass` is graded against the COMMITTED constants and so "
+                         "is necessarily False in smoke mode — that is by design "
+                         "(PHASE_A.md: a truncated run must FAIL, not trivially "
+                         "satisfy). What a smoke reads instead is `smoke_pass`: "
+                         "every compared playout bit-identical, every seed witness "
+                         "ok, zero errors, and the SUBSET digests equal. It is a "
+                         "pre-flight for a contended box, NEVER the gate.")
     args = ap.parse_args()
 
     import carc_rs
@@ -208,6 +218,14 @@ def main() -> int:
     sample = draw_sample()
     rids_sorted = sorted(r for v in sample.values() for r in v)
     jobs = [(c, l, r) for (c, l), rs in sorted(sample.items()) for r in rs]
+
+    smoke = args.legs_limit > 0
+    if smoke:
+        jobs = jobs[: args.legs_limit]
+        kept = {r for (_, _, r) in jobs}
+        rids_sorted = [r for r in rids_sorted if r in kept]
+        print(f"[G-BITEXACT] ⚠️  SMOKE MODE: {len(jobs)} of {N_LEGS_EXPECTED} legs. "
+              f"`pass` will be False by design; read `smoke_pass`.", flush=True)
 
     print(f"[G-BITEXACT] {len(jobs)} legs (expected {N_LEGS_EXPECTED}), "
           f"{N_PLAYOUTS_EXPECTED} playouts expected, workers={args.workers}", flush=True)
@@ -265,8 +283,25 @@ def main() -> int:
         and h_r.hexdigest() == h_p.hexdigest()
     )
 
+    # SMOKE grading: the same bit-identity assertion, scoped to what was run.
+    # It never grants the gate — `pass` above still needs the full committed
+    # counts — but a FALSE here means the full run cannot pass either.
+    smoke_pass = (
+        smoke
+        and len(errors) == 0
+        and len(good) == len(jobs)
+        and n_cmp > 0
+        and n_val_ok == n_cmp
+        and n_plies_ok == n_cmp
+        and n_seed_ok == len(jobs)
+        and h_r.hexdigest() == h_p.hexdigest()
+    )
+
     out = {
-        "gate": "G-BITEXACT",
+        "gate": "G-BITEXACT-SMOKE" if smoke else "G-BITEXACT",
+        "smoke": bool(smoke),
+        "smoke_legs_limit": int(args.legs_limit),
+        "smoke_pass": bool(smoke_pass) if smoke else None,
         "design": "measurement/tiearb2_stage2_20260817/PHASE_A.md#3",
         "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "pass": bool(passed),
@@ -319,6 +354,14 @@ def main() -> int:
     out_path.write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps({k: v for k, v in out.items() if k not in ("rids", "per_cell")},
                      indent=2))
+    if smoke:
+        print(f"[G-BITEXACT-SMOKE] {'PASS' if smoke_pass else 'FAIL'} "
+              f"({len(good)}/{args.legs_limit} legs, {n_cmp} playouts, subset digests "
+              f"{'equal' if h_r.hexdigest() == h_p.hexdigest() else 'DIFFER'}) "
+              f"-> {out_path}", flush=True)
+        print("[G-BITEXACT-SMOKE] ⚠️  NOT the gate. The merge precondition is the "
+              "FULL 240-leg run reproducing 0c2e39fe… in a quiet window.", flush=True)
+        return 0 if smoke_pass else 1
     print(f"[G-BITEXACT] {'PASS' if passed else 'FAIL'} -> {out_path}", flush=True)
     return 0 if passed else 1
 
