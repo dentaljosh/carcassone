@@ -1,0 +1,315 @@
+{
+ "PASS": true,
+ "cache": {
+  "entries": 590610,
+  "first_game": {
+   "hits": 503,
+   "misses": 1852,
+   "size": 1852
+  },
+  "hit_rate": 0.20696345729075052,
+  "hits": 154135,
+  "misses": 590610
+ },
+ "colliding_tiles": [
+  "chapel",
+  "city_left_right",
+  "straight_road"
+ ],
+ "counters": {
+  "children_meeple": 680011,
+  "compared": 701578,
+  "meeple_plies": 21567,
+  "mismatch": 12712,
+  "tile_plies": 21600
+ },
+ "coverage_missing": [],
+ "env": {
+  "CARCASSONNE_FIX_LEGAL_CACHE_KEY": "0",
+  "CARCASSONNE_FIX_R9": "0"
+ },
+ "fix_legal_cache_key": false,
+ "games": 300,
+ "gates": {
+  "G-COVER": true,
+  "G-WITNESS-fires": true,
+  "G-WITNESS-tiles": true
+ },
+ "mismatch_examples": [
+  {
+   "action": 1041,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 14,
+   "fresh_minus_cached": [
+    2507
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 1,
+   "row": 4,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1042,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 14,
+   "fresh_minus_cached": [
+    2509
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 2,
+   "row": 4,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1043,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 14,
+   "fresh_minus_cached": [
+    2508
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 3,
+   "row": 4,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1141,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 14,
+   "fresh_minus_cached": [
+    2507
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 1,
+   "row": 5,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1142,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 14,
+   "fresh_minus_cached": [
+    2509
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 2,
+   "row": 5,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1143,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 14,
+   "fresh_minus_cached": [
+    2508
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 3,
+   "row": 5,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1157,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 18,
+   "fresh_minus_cached": [
+    2507
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 1,
+   "row": 5,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1158,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 18,
+   "fresh_minus_cached": [
+    2509
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 2,
+   "row": 5,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1159,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 18,
+   "fresh_minus_cached": [
+    2508
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 3,
+   "row": 5,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1237,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 13,
+   "fresh_minus_cached": [
+    2507
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 1,
+   "row": 6,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1238,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 13,
+   "fresh_minus_cached": [
+    2509
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 2,
+   "row": 6,
+   "seed": 880000000,
+   "tile": "chapel"
+  },
+  {
+   "action": 1239,
+   "cached_minus_fresh": [
+    2506
+   ],
+   "col": 13,
+   "fresh_minus_cached": [
+    2508
+   ],
+   "kind": "sibling",
+   "ply": 18,
+   "rotation": 3,
+   "row": 6,
+   "seed": 880000000,
+   "tile": "chapel"
+  }
+ ],
+ "mode": "legacy",
+ "n_mismatch": 12712,
+ "r9": false,
+ "secs": 226.5,
+ "seed_start": 880000000,
+ "symmetric_tiles": {
+  "chapel": {
+   "edges": [
+    "grass",
+    "grass",
+    "grass",
+    "grass"
+   ]
+  },
+  "city_left_right": {
+   "edges": [
+    "grass",
+    "city",
+    "grass",
+    "city"
+   ]
+  },
+  "city_narrow": {
+   "edges": [
+    "grass",
+    "city",
+    "grass",
+    "city"
+   ]
+  },
+  "city_narrow_shield": {
+   "edges": [
+    "grass",
+    "city",
+    "grass",
+    "city"
+   ]
+  },
+  "city_top_bottom_flowers": {
+   "edges": [
+    "city",
+    "grass",
+    "city",
+    "grass"
+   ]
+  },
+  "crossroads": {
+   "edges": [
+    "road",
+    "road",
+    "road",
+    "road"
+   ]
+  },
+  "full_city_with_shield": {
+   "edges": [
+    "city",
+    "city",
+    "city",
+    "city"
+   ]
+  },
+  "straight_road": {
+   "edges": [
+    "road",
+    "grass",
+    "road",
+    "grass"
+   ]
+  },
+  "straight_road_flowers": {
+   "edges": [
+    "road",
+    "grass",
+    "road",
+    "grass"
+   ]
+  }
+ },
+ "witness_tile_placements": {
+  "city_left_right": 18588,
+  "straight_road": 68986
+ }
+}

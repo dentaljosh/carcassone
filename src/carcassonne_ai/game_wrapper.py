@@ -103,42 +103,88 @@ _CACHE_COLLIDE_CHECK = os.environ.get("CARCASSONNE_CACHE_COLLIDE_CHECK", "0") ==
 # global (tests monkeypatch `game_wrapper._WINDOW_STRICT`).
 _WINDOW_STRICT = os.environ.get("CARCASSONNE_WINDOW_STRICT", "0") == "1"
 
-# --- Legal-cache / transposition key: injective rotation fix (DEFAULT OFF) ---
-# `_tile_rotation_signature`'s per-tile key component is `(4 outer edges,
-# shield, chapel, flowers)`. That is NOT injective for a 180-degree-
-# rotationally-symmetric tile — witness `city_left_right`, whose edges read
-# `('grass', 'city', 'grass', 'city')` at both rotation 0 and rotation 2 —
-# even though the tile's FARM SLOTS rotate (`farmer_positions` /
-# `tile_connections` are permuted, and which absolute Side a given corner ends
-# up on changes). Two genuinely different boards can therefore collide on one
-# `_legal_cache` key (== one `string_representation`, which doubles as the
-# MCTS transposition key), and the second board to ask gets served the
-# FIRST board's mask. Localised 2026-08-17 by tiearb2 Stage-2's G-BITEXACT
-# (57/15,360 banked playout values moved by it); parked as commit `05ed019c`;
-# see docs/PROGRAM_ROADMAP_2026-07-07.md 2026-08-17 "by-catch" entry and
-# rust/carc/carc-core/src/tier1.rs's `LegalMaskCache` docstring.
+# --- Legal-cache / transposition key: injective rotation fix (DEFAULT **ON**) -
+# THE DEFECT. `_tile_rotation_signature`'s per-tile key component used to be
+# `(4 outer edges, shield, chapel, flowers)`. That is NOT injective for a
+# 180-degree-rotationally-symmetric tile — witnesses `city_left_right`, whose
+# edges read `('grass', 'city', 'grass', 'city')` at both rotation 0 and
+# rotation 2, and `straight_road` (`('grass','road','grass','road')`) — even
+# though the tile's FARM SLOTS rotate (`farmer_positions` / `tile_connections`
+# are permuted, and which absolute Side a given corner ends up on changes).
+# Two genuinely different boards therefore collided on one `_legal_cache` key
+# (== one `string_representation`, which doubles as the MCTS transposition
+# key), and the second board to ask was served the FIRST board's mask —
+# offering a farmer corner that is not legal there and withholding the one
+# that is. Downstream tools did not merely mis-key: they evaluated ILLEGAL
+# afterstates.
 #
-# CARCASSONNE_FIX_LEGAL_CACHE_KEY=1 folds the rotating farm-slot geometry into
-# the per-tile signature (see `_farm_slot_signature`), making the key
-# injective on rotation: new play/analysis can opt in for correct masks.
+# THE DEPENDENCY SET the key must be injective over (derived from
+# `_compute_mask` -> `ActionUtil.get_possible_actions` ->
+# `PossibleMoveFinder.possible_meeple_actions` / `TilePositionFinder`):
+#   * every PLACED tile's full action-relevant geometry — outer edges AND the
+#     rotating farm-slot geometry, because `FarmUtil.find_farm` /
+#     `CityUtil.find_city` / `RoadUtil.find_road` traverse NEIGHBOURS, so the
+#     farm slots of every reachable tile (not just the last one) select the
+#     region, and `farmer_connection.farmer_positions[0]` selects the emitted
+#     action's Side — plus its coordinate;
+#   * `last_tile_action` (coordinate; its tile is the placed tile above);
+#   * all players' `placed_meeples` (region-occupancy veto) and the current
+#     player's supply — `meeples`, and also `big_meeples` / `abbots`, which
+#     gate whole action families (structurally 0 in the locked 2p base+farmers
+#     scope, but they are in the enumerator, so they are in the key);
+#   * `phase`, `current_player`, `scores`, `len(deck)`, and the drawn
+#     `next_tile` (identity, now by full signature not just `description`);
+#   * `board.offset`, which `encode` uses — determined by the placed-coord
+#     centroid + the per-Game window size, so it is implied, not stored;
+#   * `supplementary_rules` (FARMERS on/off) and the R9 farm-data latch — both
+#     are per-PROCESS/per-`Game` constants and the memo is per-`Game`, so they
+#     cannot cross-contaminate one cache.
 #
-# DEFAULT OFF, and this is a DELIBERATE correctness-vs-reproducibility choice,
-# not R9's "moves engine semantics so opt in" precedent (this IS a bug fix,
-# not a rules variant) -- the reason is narrower and harder: `string_
-# representation` is BOTH the legal-cache key and the MCTS transposition key,
-# and it is exactly what the tiearb2 Stage-2 rust port's `LegalMaskCache`
-# (`legal_mask_cache=True`) was built to reproduce BIT-FOR-BIT against the
-# BURNED, unregeneratable Stage-1b banked corpus (rust/carc/carc-core/src/
-# tier1.rs, tests/test_tier1_rust.py::test_the_memo_collision_is_real_and_is_
-# what_the_bank_carries). Flipping the historical signature by default would
-# silently change what every replay/analysis/MCTS-transposition path computes
-# for every 180-symmetric-tile position ever banked, with no way to
-# regenerate the ground truth to re-verify against. An opt-in flag lets new
-# play/analysis get the correct mask while every replay path that says
-# nothing keeps computing exactly what it always has. Read as a module
-# global (tests monkeypatch `game_wrapper._FIX_LEGAL_CACHE_KEY`), matching
-# `_WINDOW_STRICT` above.
-_FIX_LEGAL_CACHE_KEY = os.environ.get("CARCASSONNE_FIX_LEGAL_CACHE_KEY", "0") == "1"
+# THE FIX (this flag ON, the default): fold `_farm_slot_signature` into the
+# per-tile signature, and fold `next_tile`'s signature + `big_meeples` /
+# `abbots` into the state key. See `Game.string_representation`.
+#
+# DEFAULT-ON, flipped 2026-08-30 on the owner's "promote." A wrong mask is a
+# correctness defect, not a rules variant, so the R9 / `fixed_v1` "opt in
+# because it moves engine semantics" precedent does NOT apply: nothing here
+# changes what a legal move IS, it only stops the memo returning another
+# board's answer. Every honestly-computed (cache-off) quantity is unchanged
+# bit-for-bit. The one thing that legitimately needs the OLD behaviour is
+# REPLAY of a corpus that was banked under it — above all the tiearb2 Stage-2
+# rust port's `LegalMaskCache` (`legal_mask_cache=True`), built to reproduce
+# the BURNED, unregeneratable Stage-1b bank BIT-FOR-BIT
+# (rust/carc/carc-core/src/tier1.rs; tests/test_tier1_rust.py::test_the_memo_
+# collision_is_real_and_is_what_the_bank_carries — that test drives the RUST
+# memo, which carries its own key and is unaffected by this flag). Making
+# bug-reproduction the thing that must declare itself is the house rule for
+# banked numbers: supersede-by-rerun, never retro-edit.
+#
+# ROLLBACK LEVER: `CARCASSONNE_FIX_LEGAL_CACHE_KEY=0` restores the historical
+# colliding key, byte-identical (the fixed components are APPENDED, so the
+# legacy string is unchanged, not merely equivalent). Latched at import like
+# `_WINDOW_STRICT`; recorded in every run manifest via `run_manifest`. Tests
+# monkeypatch `game_wrapper._FIX_LEGAL_CACHE_KEY` (and must then clear
+# `tile._rot_sig_cache`, which memoizes per Tile instance).
+#
+# Localised 2026-08-17 by tiearb2 Stage-2's G-BITEXACT (57/15,360 banked
+# playout values moved), parked as commit `05ed019c`; re-witnessed 2026-08-30
+# by OM-D2 (`measurement/omd2_chain_values_20260830/`), which showed the
+# banked meeple-tie census reading a PassAction where the honest mask offered
+# a farmer, on 10/10 witnesses.
+FIX_LEGAL_CACHE_KEY_ENV_VAR = "CARCASSONNE_FIX_LEGAL_CACHE_KEY"
+
+
+def resolve_fix_legal_cache_key(environ=None) -> bool:
+    """Resolve the key mode from the environment. Default ON; only an explicit
+    falsey value opts back into the historical colliding key. (A function so
+    the default and the rollback spelling are testable without re-importing
+    the module under a doctored environment.)"""
+    raw = (os.environ if environ is None else environ).get(
+        FIX_LEGAL_CACHE_KEY_ENV_VAR, "1")
+    return str(raw).strip().lower() not in ("0", "false", "no", "off")
+
+
+_FIX_LEGAL_CACHE_KEY = resolve_fix_legal_cache_key()
 
 
 def _state_fingerprint(state) -> dict:
@@ -1022,19 +1068,35 @@ class Game:
             if s.last_tile_action is not None
             else None
         )
-        result = repr(
-            (
-                tuple(placed),
-                meeples,
-                tuple(s.scores),
-                tuple(s.meeples),
-                s.current_player,
-                s.phase.value,
-                len(s.deck),
-                s.next_tile.description if s.next_tile is not None else None,
-                last_tile_coord,
-            )
+        key = (
+            tuple(placed),
+            meeples,
+            tuple(s.scores),
+            tuple(s.meeples),
+            s.current_player,
+            s.phase.value,
+            len(s.deck),
+            s.next_tile.description if s.next_tile is not None else None,
+            last_tile_coord,
         )
+        if _FIX_LEGAL_CACHE_KEY:
+            # The remaining non-injective components, APPENDED so the legacy
+            # (flag-off) string stays byte-identical to its whole history. See
+            # the CARCASSONNE_FIX_LEGAL_CACHE_KEY block at the top of this file
+            # for the derivation of the dependency set:
+            #   * next_tile by full rotation signature, not just `description`
+            #     (the vendored engine has had a description collision before);
+            #   * big_meeples / abbots supplies, which gate whole action
+            #     families in PossibleMoveFinder.possible_meeple_actions.
+            # (The rotating farm-slot geometry of every PLACED tile rides
+            # inside `_tile_rotation_signature` above — that is the component
+            # the 180-symmetric-tile collision actually turned on.)
+            key = key + (
+                _tile_rotation_signature(s.next_tile) if s.next_tile is not None else None,
+                tuple(getattr(s, "big_meeples", ()) or ()),
+                tuple(getattr(s, "abbots", ()) or ()),
+            )
+        result = repr(key)
         board._str_repr_cache = result
         return result
 
@@ -1045,9 +1107,15 @@ def _farm_slot_signature(tile) -> tuple:
     `farmer_positions` / `tile_connections` / `city_sides`
     (SideModificationUtil.turn_farmer_connection), so this differs between
     rotation 0 and rotation 2 of a tile whose 4 outer edges happen to read the
-    same both ways (e.g. `city_left_right`). Only consulted when
-    `CARCASSONNE_FIX_LEGAL_CACHE_KEY=1` — see that flag's comment for why the
-    default path never calls this."""
+    same both ways (e.g. `city_left_right`, `straight_road`). Folded into the
+    key by default since 2026-08-30; skipped only under the
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY=0` legacy rollback — see that flag's
+    comment.
+
+    Order matters and is deliberate: `PossibleMoveFinder.__possible_farmer_
+    position` emits `farmer_connection.farmer_positions[0]` as the placement
+    Side, so two rotations whose farm REGIONS coincide but whose slot ordering
+    differs still emit different actions and must not share a key."""
     out = []
     for fc in getattr(tile, "farms", ()) or ():
         out.append((
@@ -1056,6 +1124,25 @@ def _farm_slot_signature(tile) -> tuple:
             tuple(getattr(s, "value", str(s)) for s in fc.city_sides),
         ))
     return tuple(out)
+
+
+def clear_rotation_signature_caches() -> None:
+    """Drop every memoized `_tile_rotation_signature`.
+
+    TEST SUPPORT ONLY. `_tile_rotation_signature` memoizes on the Tile
+    instance, and `Tile.turn()` itself memoizes its rotated instances on the
+    base tile (`_turn_cache`), so a signature computed under one setting of
+    `_FIX_LEGAL_CACHE_KEY` survives a mid-session flip of the flag and is read
+    back stale. Production never flips the flag mid-process (it is
+    import-latched), so nothing production calls this; any test that
+    monkeypatches `game_wrapper._FIX_LEGAL_CACHE_KEY` MUST call it on both
+    sides of the flip."""
+    from wingedsheep.carcassonne.tile_sets.base_deck import base_tiles
+
+    for tile in base_tiles.values():
+        tile._rot_sig_cache = None
+        for rotated in (getattr(tile, "_turn_cache", None) or {}).values():
+            rotated._rot_sig_cache = None
 
 
 def _tile_rotation_signature(tile) -> tuple:
@@ -1068,10 +1155,11 @@ def _tile_rotation_signature(tile) -> tuple:
     read `('grass', 'city', 'grass', 'city')` at both rotation 0 and rotation
     2), where the edges alone collide even though the farm slots have
     rotated. See the `CARCASSONNE_FIX_LEGAL_CACHE_KEY` flag comment above —
-    DEFAULT OFF, so this defect is reproduced by default (it is what the
-    tiearb2 Stage-2 rust port's `legal_mask_cache=True` certifies against);
-    set the flag to fold `_farm_slot_signature` in and make the key
-    injective on rotation.
+    DEFAULT ON since 2026-08-30, so `_farm_slot_signature` is folded in and
+    the key is injective on rotation. `CARCASSONNE_FIX_LEGAL_CACHE_KEY=0`
+    restores the historical colliding signature for replay of corpora banked
+    under it (the tiearb2 Stage-2 rust port's `legal_mask_cache=True` carries
+    its OWN key in rust and does not read this flag).
 
     Defense-in-depth: also pin shield/chapel/flowers. The vendored engine
     has had at least one description-collision bug (city_diagonal_top_left_road

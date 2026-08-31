@@ -1,0 +1,116 @@
+{
+ "PASS": true,
+ "cache": {
+  "entries": 696247,
+  "first_game": {
+   "hits": 159,
+   "misses": 2196,
+   "size": 2196
+  },
+  "hit_rate": 0.06559077732445781,
+  "hits": 48873,
+  "misses": 696247
+ },
+ "colliding_tiles": [],
+ "counters": {
+  "children_meeple": 680386,
+  "compared": 701953,
+  "meeple_plies": 21567,
+  "tile_plies": 21600
+ },
+ "coverage_missing": [],
+ "env": {
+  "CARCASSONNE_FIX_LEGAL_CACHE_KEY": "1",
+  "CARCASSONNE_FIX_R9": "0"
+ },
+ "fix_legal_cache_key": true,
+ "games": 300,
+ "gates": {
+  "G-COVER": true,
+  "G-MASK": true
+ },
+ "mismatch_examples": [],
+ "mode": "fixed",
+ "n_mismatch": 0,
+ "r9": false,
+ "secs": 290.7,
+ "seed_start": 880000000,
+ "symmetric_tiles": {
+  "chapel": {
+   "edges": [
+    "grass",
+    "grass",
+    "grass",
+    "grass"
+   ]
+  },
+  "city_left_right": {
+   "edges": [
+    "grass",
+    "city",
+    "grass",
+    "city"
+   ]
+  },
+  "city_narrow": {
+   "edges": [
+    "grass",
+    "city",
+    "grass",
+    "city"
+   ]
+  },
+  "city_narrow_shield": {
+   "edges": [
+    "grass",
+    "city",
+    "grass",
+    "city"
+   ]
+  },
+  "city_top_bottom_flowers": {
+   "edges": [
+    "city",
+    "grass",
+    "city",
+    "grass"
+   ]
+  },
+  "crossroads": {
+   "edges": [
+    "road",
+    "road",
+    "road",
+    "road"
+   ]
+  },
+  "full_city_with_shield": {
+   "edges": [
+    "city",
+    "city",
+    "city",
+    "city"
+   ]
+  },
+  "straight_road": {
+   "edges": [
+    "road",
+    "grass",
+    "road",
+    "grass"
+   ]
+  },
+  "straight_road_flowers": {
+   "edges": [
+    "road",
+    "grass",
+    "road",
+    "grass"
+   ]
+  }
+ },
+ "witness_tile_placements": {
+  "city_left_right": 18504,
+  "straight_road": 69156
+ }
+}

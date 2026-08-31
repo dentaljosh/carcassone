@@ -200,3 +200,27 @@ def _isolate_bare_default_config(request, monkeypatch):
             monkeypatch.setattr(t, "DEFAULT_CONFIG", bare, raising=False)
         if hasattr(t, "V28"):
             monkeypatch.setattr(t, "V28", v28, raising=False)
+
+
+@pytest.fixture
+def legacy_cache_key(monkeypatch):
+    """Run a test under the HISTORICAL (non-injective) legal-cache /
+    transposition key.
+
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` went DEFAULT-ON on 2026-08-30 (the
+    180-symmetric-tile rotation collision — see the flag comment in
+    `game_wrapper`). `string_representation` is both the legal-mask memo key
+    and the MCTS transposition key, so the fix legitimately moves any scripted
+    python-MCTS line. Goldens banked under the old key keep their numbers
+    (supersede-by-rerun, never retro-edit) and pin themselves with this
+    fixture, which is therefore the ONLY licensed reason to use it.
+
+    `_tile_rotation_signature` memoizes per Tile instance and `Tile.turn()`
+    memoizes rotated instances, so the caches are cleared on BOTH sides of the
+    flip — otherwise a stale post-flip signature leaks in either direction."""
+    import carcassonne_ai.game_wrapper as gw
+
+    gw.clear_rotation_signature_caches()
+    monkeypatch.setattr(gw, "_FIX_LEGAL_CACHE_KEY", False)
+    yield
+    gw.clear_rotation_signature_caches()

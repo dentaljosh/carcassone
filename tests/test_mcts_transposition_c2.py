@@ -37,7 +37,16 @@ def _uniform_evaluator(game):
     return _ev
 
 
-def test_mcts_transposition_visit_dedup():
+def test_mcts_transposition_visit_dedup(legacy_cache_key):
+    """⚠️ Pinned to the LEGACY transposition key (`legacy_cache_key`).
+
+    This test's teeth are `nodes_with_collision > 0` — it needs distinct actions to
+    fold onto one child node. Since the 2026-08-30
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` default flip they no longer do (that WAS the
+    bug: the 180-symmetric-tile rotations were folded together and the memo served
+    the wrong farmer bits). The C2 dedup machinery it exercises is still live code —
+    a legacy-key replay of a corpus banked under the old key still produces aliases —
+    so the contract is kept and pinned rather than deleted."""
     game = Game()
     ev = _uniform_evaluator(game)
 

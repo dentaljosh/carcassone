@@ -50,8 +50,29 @@ def _alias_groups(game, board):
     return {k: v for k, v in groups.items() if len(v) > 1}
 
 
-def test_rotation_aliases_fold_to_same_key_and_play_equivalent_child():
-    """Aliased actions (symmetric tile rotations at one coord) fold to the SAME
+def test_rotation_aliases_are_gone_under_the_injective_key():
+    """⭐ THE 2026-08-30 FIX, stated as a property: with
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` ON (the default) NO two distinct tile
+    actions fold to one transposition key over this sample. The alias below is
+    not a benign canonicalization — the rotations emit DIFFERENT farmer
+    action-ids, so folding them made the memo hand out a mask whose farmer bits
+    belong to the other rotation (illegal here, and missing the legal one). See
+    the flag comment in `game_wrapper` and
+    `measurement/legal_cache_key_20260830/`."""
+    for game, board in _positions():
+        groups = _alias_groups(game, board)
+        assert not groups, (
+            f"injective key still folds distinct actions together: {groups}")
+
+
+def test_rotation_aliases_fold_to_same_key_and_play_equivalent_child(legacy_cache_key):
+    """HISTORICAL CONTRACT, pinned to the legacy key (`legacy_cache_key`) — kept
+    because it documents exactly what the old key did and why the "benign"
+    reading below was wrong: it asserted only that the move COUNT matched, which
+    is true even when every farmer id is wrong. The count-blindness is why this
+    test passed for months while the defect was live.
+
+    Aliased actions (symmetric tile rotations at one coord) fold to the SAME
     transposition key (= same MCTS node) and a PLAY-EQUIVALENT child: same legal-move
     COUNT, scores, phase and mover.
 
@@ -99,10 +120,15 @@ def test_champion_prior_mass_conserved():
         assert -1.0 <= float(value) <= 1.0
 
 
-def test_mcts_does_not_double_count_aliased_visits():
+def test_mcts_does_not_double_count_aliased_visits(legacy_cache_key):
     """After a search, summing root-child visits per action-SLOT double-counts an aliased
     child (which sits in >=2 slots). The deduped-by-object sum is the honest visit mass;
-    they differ exactly when a visited alias exists (the C2 fix)."""
+    they differ exactly when a visited alias exists (the C2 fix).
+
+    Pinned to the LEGACY key: under the injective default there are no aliases left for
+    the dedup path to handle (asserted separately above), so this test would have no
+    teeth. The C2 dedup stays in the code because a `legal_mask_cache=0` replay of a
+    banked corpus still produces aliases."""
     cfg = HeuristicPriorConfig(c_puct=1.5, tau_p=5.0, leaf_quantize="float",
                                final_select="visits")
     saw_collision = False

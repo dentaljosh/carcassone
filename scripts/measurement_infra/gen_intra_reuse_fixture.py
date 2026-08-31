@@ -7,7 +7,14 @@ sequence, the same per-decision POOLED VISIT distributions, and the same final b
 That is the guard that the champion's fair search is byte-for-byte unchanged when
 ``CARCASSONNE_INTRA_TURN_REUSE`` is not set.
 
-    .venv/bin/python scripts/measurement_infra/gen_intra_reuse_fixture.py
+    CARCASSONNE_FIX_LEGAL_CACHE_KEY=0 \
+      .venv/bin/python scripts/measurement_infra/gen_intra_reuse_fixture.py
+
+⚠️ The banked golden predates the 2026-08-30 `CARCASSONNE_FIX_LEGAL_CACHE_KEY`
+default flip, and `string_representation` is the MCTS transposition key, so the
+replaying test is pinned to the legacy key (`legacy_cache_key` fixture). Regenerate
+with `CARCASSONNE_FIX_LEGAL_CACHE_KEY=0` to stay comparable, or re-pin the test to the
+new key and regenerate WITHOUT it — but do not mix the two.
 
 The pooled visit distribution is the RIGHT fingerprint for this feature: intra-turn carry
 changes nothing about which determinizations are drawn or how the tile decision searches,

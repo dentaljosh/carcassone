@@ -353,9 +353,14 @@ def test_flag_defaults_off():
     assert NeuralMCTS(game=Game(), evaluator=lambda b: (None, 0.0)).meeple_dedup is False
 
 
-def test_bit_exact_off_matches_pre_change_fixture(golden):
+def test_bit_exact_off_matches_pre_change_fixture(golden, legacy_cache_key):
     """Replay the recorded scenario with the flag OFF: identical actions AND identical
-    root visit counts to the pre-MEEPLE_DEDUP tree. Any diff is a production regression."""
+    root visit counts to the pre-MEEPLE_DEDUP tree. Any diff is a production regression.
+
+    ⚠️ Pinned to the LEGACY transposition key (`legacy_cache_key`) — this golden (which
+    includes a literal `final_key` string) predates the 2026-08-30
+    `CARCASSONNE_FIX_LEGAL_CACHE_KEY` default flip, and `string_representation` IS the
+    key. See tests/test_intra_reuse.py's twin for the full rationale."""
     cfg = scenario_config()
     game = Game(enable_legal_moves_cache=True)
     random.seed(golden["deck_seed"])
