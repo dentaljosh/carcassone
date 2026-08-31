@@ -53,8 +53,18 @@ def _init_worker(profile: str, include_ref: bool, include_max: bool):
     _STATE["legs"] = L.leg_specs(include_ref=include_ref, include_max=include_max)
 
 
-def run_one(row: dict, leaf_rs, legs, b: int, threads: int) -> dict:
-    """One fired ply, all legs. Returns the raw record or an error record."""
+def run_one(row: dict, leaf_rs, legs, b: int, threads: int, bitexact: bool = True) -> dict:
+    """One fired ply, all legs. Returns the raw record or an error record.
+
+    `bitexact` runs the in-run `G-BITEXACT` re-derivation. It costs a FULL extra
+    symmetric arbitration (`b x arms` playouts), i.e. ~25 % of a four-leg ply,
+    so the launcher strides it (`--bitexact-stride`) rather than paying it at
+    every ply: the bit-identity is a STRUCTURAL property pinned by
+    `tiearb::tests::symmetric_leg_is_bit_identical_to_the_deployed_arbiter`, and
+    the in-run check is corroboration on real positions, not the proof. Plies
+    that skip it report `G_BITEXACT: null` and are excluded from the guard's
+    denominator — never silently counted as passing.
+    """
     import carc_rs
 
     t0 = time.time()
@@ -101,28 +111,30 @@ def run_one(row: dict, leaf_rs, legs, b: int, threads: int) -> dict:
     crn_ok = list(out["world_seeds"]) == want_seeds
     # ---- G-COMPLETE ------------------------------------------------------ #
     complete = all(int(lg["worlds_completed"]) == b for lg in out["legs"])
-    # ---- G-BITEXACT ------------------------------------------------------ #
-    solo = carc_rs.tiearb_arbitrate_legs(
-        str(row["deck_seed"]),
-        list(row["prefix_actions"]),
-        int(row["ply"]),
-        int(row["champ_pick"]),
-        leaf_rs,
-        [(L.LEG_SYM, [], None)],
-        b=b,
-        j=L.ARM_CAP_J,
-        eps=L.EPS,
-        salt=L.SALT_OF_RECORD,
-        max_plies=L.MAX_PLIES,
-        threads=1,
-    )
-    sym = next(lg for lg in out["legs"] if lg["name"] == L.LEG_SYM)
-    bitexact = (
-        solo is not None
-        and list(solo["arms"]) == list(out["arms"])
-        and [float(x).hex() for x in solo["legs"][0]["means"]]
-        == [float(x).hex() for x in sym["means"]]
-    )
+    # ---- G-BITEXACT (strided; see the docstring) -------------------------- #
+    bitexact_ok = None
+    if bitexact:
+        solo = carc_rs.tiearb_arbitrate_legs(
+            str(row["deck_seed"]),
+            list(row["prefix_actions"]),
+            int(row["ply"]),
+            int(row["champ_pick"]),
+            leaf_rs,
+            [(L.LEG_SYM, [], None)],
+            b=b,
+            j=L.ARM_CAP_J,
+            eps=L.EPS,
+            salt=L.SALT_OF_RECORD,
+            max_plies=L.MAX_PLIES,
+            threads=1,
+        )
+        sym = next(lg for lg in out["legs"] if lg["name"] == L.LEG_SYM)
+        bitexact_ok = bool(
+            solo is not None
+            and list(solo["arms"]) == list(out["arms"])
+            and [float(x).hex() for x in solo["legs"][0]["means"]]
+            == [float(x).hex() for x in sym["means"]]
+        )
 
     return {
         "rid": f"{row['deck_seed']}_p{row['ply']}",
@@ -154,22 +166,38 @@ def run_one(row: dict, leaf_rs, legs, b: int, threads: int) -> dict:
         },
         "G_CRN": crn_ok,
         "G_COMPLETE": complete,
-        "G_BITEXACT": bitexact,
-        "ok": bool(crn_ok and complete and bitexact),
+        # `None` == not checked at this ply (strided). A skipped check is NOT a
+        # pass: the analyzer counts checked/passed separately.
+        "G_BITEXACT": bitexact_ok,
+        "ok": bool(crn_ok and complete and (bitexact_ok is not False)),
         "elapsed_s": time.time() - t0,
     }
 
 
 class _Worker:
-    """Picklable pool callable carrying `b`. A spawn-context child cannot
-    inherit a module global set in the parent after startup, so `b` rides in on
-    the callable while the leaf and the legs are built by the initializer."""
+    """Picklable pool callable carrying `b` and the bit-exact stride. A
+    spawn-context child cannot inherit a module global set in the parent after
+    startup, so these ride in on the callable while the (expensive) leaf and
+    legs are built once by the initializer.
 
-    def __init__(self, b: int):
+    The stride is applied on a STABLE key — the frame's own row index, passed in
+    with the row — so which plies get the `G-BITEXACT` check does not depend on
+    `imap_unordered`'s completion order and is reproducible across re-runs."""
+
+    def __init__(self, b: int, stride: int):
         self.b = b
+        self.stride = max(1, stride)
 
-    def __call__(self, row):
-        return run_one(row, _STATE["leaf"], _STATE["legs"], self.b, 1)
+    def __call__(self, item):
+        idx, row = item
+        return run_one(
+            row,
+            _STATE["leaf"],
+            _STATE["legs"],
+            self.b,
+            1,
+            bitexact=(idx % self.stride == 0),
+        )
 
 
 def main(argv=None) -> int:
@@ -183,6 +211,15 @@ def main(argv=None) -> int:
     ap.add_argument("--profile", default="walled")
     ap.add_argument("--no-ref", action="store_true", help="omit the R_ref leg (smoke only)")
     ap.add_argument("--no-max", action="store_true", help="omit the R_max leg (smoke only)")
+    ap.add_argument(
+        "--bitexact-stride",
+        type=int,
+        default=1,
+        help="run the in-run G-BITEXACT re-derivation on every Nth frame row "
+        "(1 = every ply). It costs a full extra symmetric arbitration, so a "
+        "stride trades corroboration breadth for ~25%% of the wall clock; the "
+        "identity itself is pinned by a rust test.",
+    )
     a = ap.parse_args(argv)
 
     if a.b != L.B_WORLDS:
@@ -205,6 +242,7 @@ def main(argv=None) -> int:
     out_path = a.out_dir / f"legs_{os.uname().nodename}.jsonl"
     t0 = time.time()
     n_ok = 0
+    n_done = 0
     with out_path.open("w") as fh:
         if a.workers > 1:
             import multiprocessing as mp
@@ -215,14 +253,28 @@ def main(argv=None) -> int:
                 initializer=_init_worker,
                 initargs=(a.profile, not a.no_ref, not a.no_max),
             ) as pool:
-                for rec in pool.imap_unordered(_Worker(a.b), rows, chunksize=1):
+                worker = _Worker(a.b, a.bitexact_stride)
+                for rec in pool.imap_unordered(worker, list(enumerate(rows)), chunksize=1):
                     fh.write(json.dumps(rec) + "\n")
+                    fh.flush()
                     n_ok += bool(rec.get("ok"))
+                    n_done += 1
+                    if n_done % 25 == 0:
+                        print(
+                            f"[{time.strftime('%H:%M:%S')}] {n_done}/{len(rows)} "
+                            f"ok={n_ok} elapsed={time.time()-t0:.0f}s",
+                            flush=True,
+                        )
         else:
-            for row in rows:
-                rec = run_one(row, leaf_rs, legs, a.b, a.threads)
+            for idx, row in enumerate(rows):
+                rec = run_one(
+                    row, leaf_rs, legs, a.b, a.threads,
+                    bitexact=(idx % max(1, a.bitexact_stride) == 0),
+                )
                 fh.write(json.dumps(rec) + "\n")
+                fh.flush()
                 n_ok += bool(rec.get("ok"))
+                n_done += 1
     elapsed = time.time() - t0
 
     mani = L.manifest(
@@ -237,12 +289,29 @@ def main(argv=None) -> int:
             "n_voided": len(rows) - n_ok,
             "workers": a.workers,
             "threads": a.threads,
+            "bitexact_stride": a.bitexact_stride,
             "elapsed_s": elapsed,
             "out": str(out_path),
         }
     )
     (a.out_dir / "manifest.json").write_text(json.dumps(mani, indent=2))
     print(json.dumps({k: mani[k] for k in ("n_rows", "n_ok", "n_voided", "elapsed_s")}, indent=2))
+    # ⭐ THE DONE SIGNAL. Written LAST, only after manifest.json is on disk, so
+    # its existence means "every row is flushed and the manifest describes them".
+    # A watcher polls for this file; it must never be created on a partial run.
+    (a.out_dir / "DONE").write_text(
+        json.dumps(
+            {
+                "n_rows": len(rows),
+                "n_ok": n_ok,
+                "n_voided": len(rows) - n_ok,
+                "elapsed_s": elapsed,
+                "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "exit": 0 if n_ok == len(rows) else 3,
+            },
+            indent=2,
+        )
+    )
     return 0 if n_ok == len(rows) else 3
 
 

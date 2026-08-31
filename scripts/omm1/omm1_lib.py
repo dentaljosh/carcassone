@@ -118,14 +118,38 @@ TILE_CENSUS = (
 #: PREREG §7 `G-LEAF`.
 LEAF_HASH_OF_RECORD = "a36d2e15a3b3d71d"
 
-#: PREREG §3. Adjudication is on the POOLED row; the split is diagnostic.
-CORPORA = (
-    ("champ449", REPO / "measurement" / "champ_action_logs" / "champ_games.jsonl"),
+#: ⚠️ READ-ONLY fallback root for corpora that are NOT in git.
+#: `measurement/tiearb2_20260816/corpus/champ_games_tiearb2.jsonl` (850 games,
+#: 2.1 MB) exists in the main working tree but is untracked, so it is absent
+#: from every build worktree (DEVIATIONS `OM-D3`). Setting `OMM1_MAIN_TREE`
+#: lets a worktree run read it from the main checkout WITHOUT copying it in and
+#: without the worktree ever writing there. The resolved path of every corpus
+#: is stamped into the manifest, so a reader can always see which tree each
+#: half of the POOLED row came from.
+MAIN_TREE = Path(os.environ.get("OMM1_MAIN_TREE", "")) if os.environ.get("OMM1_MAIN_TREE") else None
+
+_CORPUS_RELPATHS = (
+    ("champ449", Path("measurement") / "champ_action_logs" / "champ_games.jsonl"),
     (
         "tiearb2_850",
-        REPO / "measurement" / "tiearb2_20260816" / "corpus" / "champ_games_tiearb2.jsonl",
+        Path("measurement") / "tiearb2_20260816" / "corpus" / "champ_games_tiearb2.jsonl",
     ),
 )
+
+
+def _resolve_corpus(rel: Path) -> Path:
+    """Worktree first, then the read-only main tree. Never the other way round:
+    a file that IS tracked must come from the tree under test."""
+    local = REPO / rel
+    if local.exists():
+        return local
+    if MAIN_TREE is not None and (MAIN_TREE / rel).exists():
+        return MAIN_TREE / rel
+    return local  # let `load_games` raise with the worktree path in the message
+
+
+#: PREREG §3. Adjudication is on the POOLED row; the split is diagnostic.
+CORPORA = tuple((label, _resolve_corpus(rel)) for label, rel in _CORPUS_RELPATHS)
 
 #: BLIND DISCIPLINE (the widening census's rule, inherited). The only keys this
 #: instrument may read out of a corpus record. `score_p0`/`score_p1` are outcome
@@ -307,7 +331,35 @@ def manifest(extra: dict | None = None) -> dict:
             "fired_plies_per_game_walled": FIRED_PLIES_PER_GAME_WALLED,
         },
         "host": os.uname().nodename,
+        "corpora_resolved": {label: str(p) for label, p in CORPORA},
+        "main_tree_fallback": str(MAIN_TREE) if MAIN_TREE else None,
+        "wheel": wheel_provenance(),
     }
     if extra:
         m.update(extra)
     return m
+
+
+def wheel_provenance() -> dict:
+    """Which `carc_rs` actually ran, and where it came from.
+
+    A shadow `pip install --target` build is invisible to `pip freeze`, so the
+    run must stamp its own wheel identity or a reader cannot tell a worktree
+    build from the venv's pinned one. `OMM1_WHEEL_SHA256` is exported by the
+    launcher from `build_wheel.sh`'s output.
+    """
+    try:
+        import carc_rs
+
+        path = getattr(carc_rs, "__file__", None)
+        ver = getattr(carc_rs, "__version__", None)
+    except Exception as exc:  # pragma: no cover - a broken import is fatal upstream
+        return {"error": f"{type(exc).__name__}: {exc}"}
+    return {
+        "module_path": path,
+        "version": ver,
+        "sha256": os.environ.get("OMM1_WHEEL_SHA256"),
+        "wheel_file": os.environ.get("OMM1_WHEEL_FILE"),
+        "is_shadow_build": bool(path and "/pyext_rel/" in path),
+        "has_legs_api": hasattr(carc_rs, "tiearb_arbitrate_legs"),
+    }

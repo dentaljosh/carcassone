@@ -167,7 +167,42 @@ Two consequences a reader should hold:
 
 ---
 
-## `OM-D5` — the gate was BUILT beside a live eval, and was not RUN
+## `OM-D6` — the run DID happen (2026-08-30 eve), and `OM-D3` is DISCHARGED
+
+**Class: execution-layer. Supersedes `OM-D5`'s "was not RUN" for stage 1.**
+
+The local box freed at ~20:20 EDT when G3's local arm sealed (the laptop arm
+stayed live and was **not** touched). Coordinator-authorised launch, local only.
+
+- **Wheel:** built from THIS worktree with `maturin --release` and installed to
+  a **shadow** `pip install --target` dir, never the shared `.venv` (whose wheel
+  tonight's rounds pin). sha256 `f9e8813be08f73c8b4ecb929d651b5aa586ac72933e1f00787a7d61c77ff6bb3`,
+  stamped into every manifest via `omm1_lib.wheel_provenance()`, which also
+  records `is_shadow_build`. The venv's `carc_rs` was re-imported afterwards and
+  is unchanged.
+- **`OM-D3` DISCHARGED.** `OMM1_MAIN_TREE` gives a read-only fallback root, so
+  the untracked `tiearb2_850` corpus was read from the main checkout. The frame
+  covers the full **1,299 games**, `corpora_missing: []`, and the resolved path
+  of each corpus is stamped in the manifest so a reader can see which tree each
+  half of the POOLED row came from. `--allow-missing-corpus` was NOT needed.
+- **`G-FIRE` PASS on the full frame:** 48,317 fired plies, 37.20/game,
+  fired/tied fraction **0.822**, per-ply join over **16,722** keys with
+  **71** disagreements = agreement **0.99575**. That is the same rate as the
+  120-game slice (0.99550), so `OM-D2`'s residual is **stable and does not grow
+  with n** — it is a fixed-rate divergence, not a drift.
+- **Sample:** `n = 1,299`, one seeded ply per game; **no game had zero fires**,
+  so the clustering argument holds with no games dropped.
+- Cost measured at **0.0175 worker-s/playout**, ~5.4× cheaper than the frozen
+  §8 projection (which used the pre-swap `c_tier1_rust`). See PREREG §8.1. The
+  saving was spent on running `G-BITEXACT` at **every** ply instead of a strided
+  subset.
+
+⛔ Adjudication is NOT done here. `analyze_gate.py` is run at the orchestrator
+level against the frozen §6 branches.
+
+---
+
+## `OM-D5` — the gate was BUILT beside a live eval (stage-1 run later authorised)
 
 **Class: execution-layer.**
 

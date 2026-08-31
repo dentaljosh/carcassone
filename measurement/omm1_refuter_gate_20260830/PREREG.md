@@ -418,6 +418,34 @@ DRAM-bound tier1 rollout campaign and the memory
 saturated eval box. The instrument is frozen and tested; the run waits for a
 quiet window and an owner box assignment.
 
+### 8.1 MEASURED cost (post-freeze addendum, 2026-08-30 20:35 EDT)
+
+⚠️ **The table above is ~5.4× PESSIMISTIC.** It was built from
+`c_tier1_rust = 0.17823232` worker-s/playout, which
+[`../arb_costopt_prep/`](../arb_costopt_prep/PREREG.md) measured on the
+**pre-swap** playout engine. The `flat_base_score` tier1 swap has since merged
+(roadmap 2026-08-29: "playouts realized 10.9× cheaper post-swap"), so the
+projection was against an engine that no longer exists.
+
+Measured on this instrument, 16 fired plies at `B = 64`, four legs, release
+wheel `f9e8813b`, W=16 (`LEGS`'s sibling `BENCH/`):
+
+| | measured |
+|---|---:|
+| worker-s per playout | **0.0175** |
+| playouts per ply (4 legs, `Ā` 3.25 here) | 832 (+208 when the `G-BITEXACT` re-derivation runs) |
+| worker-s per ply | **14.59** (mean over records, not the wall clock — the order-statistic trap) |
+| ⇒ n = 1,299 at W=30 | **≈ 20 min**, not 1.5 h |
+
+Two consequences, both taken: the run uses the FULL frame (`n = 1,299`, every
+game contributes its one sampled ply — no game had zero fires), and
+`G-BITEXACT` runs at **stride 1, i.e. on every ply**, rather than the sampled
+subset the cost table would have forced. The `--bitexact-stride` knob remains
+for a future tighter window; a skipped check reports `null` and is excluded
+from the guard's denominator, never counted as a pass.
+
+**This changes no statistic and no bar.** Cost is not an input to §5 or §6.
+
 ---
 
 ## §9 STAGE 2 — PREREG SKELETON (⛔ UNFUNDED, DESIGN ONLY)
