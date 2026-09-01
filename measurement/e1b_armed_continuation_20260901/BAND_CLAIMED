@@ -1,0 +1,7 @@
+NO BAND SPENT. E-1b re-prices frozen banked plies and draws no new decks;
+every world is a permutation of an archived game's unseen tail under the
+archive's own deck_seed (verified: continue_armed.py::world_rng is
+byte-identical to E-1a's incl. WORLD_SEED=20260828). No BAND_REGISTRY.csv
+append is owed. No results.csv elo row will be written. Acknowledged by the
+orchestrator 2026-09-01, after reading continue_armed.py::world_rng and
+PREREG.md §11 per the placeholder's instruction 1.
