@@ -1,0 +1,24 @@
+{
+ "blind_commit": "PENDING",
+ "how": "A commit cannot name its own hash. The FREEZE commit lands PREREG.md, the harness, the adjudicator, the tests, the frozen targets and CRN_BASELINE.json with this field reading PENDING; a SECOND, stamping commit replaces it with the freeze commit's 40-hex sha. `launch_local.sh` REFUSES to launch while it still says PENDING.",
+ "freeze_branch": "tiearb2-stage2 (worktree agent-a0f7c023593bcfffe)",
+ "what_is_frozen": [
+  "PREREG.md — design, bars, branch map, gates, non-inference limits",
+  "targets_continuation.jsonl — a BYTE-IDENTICAL copy of E-1a's frozen 91-ply target set (sha256 5c371bdf9b027e347ff56ad44c722adbd2b6f3a8f867ffd2ed3197baa17140bb)",
+  "CRN_BASELINE.json — E-1a's 728 CRN witnesses + its already-public per-world prices, the G-ROOT comparator and the family-paired secondary's frozen reference",
+  "continue_armed.py — the runner and its frozen constants",
+  "adjudicate_e1b.py — the gates and the READ_RULE executor",
+  "test_e1b.py + selftest_fixture/ — the contract tests and the REAL-EMITTER fixtures"
+ ],
+ "state_at_freeze": {
+  "armed_cell_units_played": 0,
+  "smoke_units_played": 4,
+  "smoke_disclosure": "PREREG.md §0.1 item 4 + DEVIATIONS.md D-0 — 4 of 728 units (0.55%), outcomes tabulated, units kept",
+  "E1B_json_exists": false,
+  "band_claimed": false,
+  "results_csv_rows": 0,
+  "PRODUCTION_yaml_touched": false,
+  "governance_touched": false,
+  "src_engine_rust_touched": false
+ }
+}

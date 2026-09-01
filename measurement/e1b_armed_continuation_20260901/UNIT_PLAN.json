@@ -1,0 +1,74 @@
+{
+ "box": "local",
+ "worlds": 8,
+ "n_plies": 91,
+ "n_units": 728,
+ "files": [
+  {
+   "path": "units_local_fixed_v1.txt",
+   "profile": "fixed_v1",
+   "n_plies": 90,
+   "n_units": 720
+  },
+  {
+   "path": "units_local_walled.txt",
+   "profile": "walled",
+   "n_plies": 1,
+   "n_units": 8
+  }
+ ],
+ "predicted_continuation_plies": 120544,
+ "strata": {
+  "control": 30,
+  "invasion": 21,
+  "defense": 28,
+  "farm_capture": 12
+ },
+ "profiles": {
+  "fixed_v1": 90,
+  "walled": 1
+ },
+ "smoke": {
+  "files": [
+   {
+    "path": "smokeunits_local_fixed_v1.txt",
+    "profile": "fixed_v1",
+    "n_plies": 4,
+    "n_units": 4
+   }
+  ],
+  "worlds": 1,
+  "plies": [
+   {
+    "game": "1786939252_94231.json",
+    "ply": 134,
+    "stratum": "farm_capture",
+    "profile": "fixed_v1",
+    "remaining_plies": 7
+   },
+   {
+    "game": "1786904828_407067.json",
+    "ply": 134,
+    "stratum": "defense",
+    "profile": "fixed_v1",
+    "remaining_plies": 8
+   },
+   {
+    "game": "1786454767_166575.json",
+    "ply": 108,
+    "stratum": "invasion",
+    "profile": "fixed_v1",
+    "remaining_plies": 34
+   },
+   {
+    "game": "1786454767_166575.json",
+    "ply": 100,
+    "stratum": "control",
+    "profile": "fixed_v1",
+    "remaining_plies": 42
+   }
+  ],
+  "predicted_continuation_plies": 182,
+  "note": "PRODUCTION knobs, tiny unit count, SEPARATE out dir."
+ }
+}

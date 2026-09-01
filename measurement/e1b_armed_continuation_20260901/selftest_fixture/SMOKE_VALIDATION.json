@@ -1,0 +1,120 @@
+{
+ "schema": "e1b-armed-continuation/v1",
+ "smoke": true,
+ "n_units": 4,
+ "n_priced": 4,
+ "n_plies": 4,
+ "strata": {
+  "control": 1,
+  "invasion": 1,
+  "defense": 1,
+  "farm_capture": 1
+ },
+ "manifest": "out_SMOKE_local_selftest/manifest.json",
+ "GATES": [
+  {
+   "gate": "G-MANIFEST",
+   "status": "PASS",
+   "address": "out_SMOKE_local_selftest/manifest.json::schema,arming,budget_pin",
+   "says": "frozen config matches the adjudicator",
+   "note": ""
+  },
+  {
+   "gate": "G-LEAF",
+   "status": "PASS",
+   "address": "out_SMOKE_local_selftest/manifest.json::leaf_manifest",
+   "says": "hashes=['158f17ff76adaa02', '6dfffd57051690f2', 'a36d2e15a3b3d71d'] leaf={'curve125': [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25], 'bonus_cap': 8.0, 'opp_bonus_cap': 8.0, 'value_blend': 0.0, 'residual_scale': 0.0}",
+   "note": ""
+  },
+  {
+   "gate": "G-NEGCTRL",
+   "status": "PASS",
+   "address": "out_SMOKE_local_selftest/manifest.json::negative_control",
+   "says": "dose0={'total': 0, 'own_mover': 0, 'boosted': 0} dose_dstar={'total': 30795, 'own_mover': 17250, 'boosted': 13545}",
+   "note": ""
+  },
+  {
+   "gate": "G-WITNESS",
+   "status": "PASS",
+   "address": "unit_*.json::arms[*].scope_witness",
+   "says": "8/8 armed arms expressed in play; mean coverage 1.0; exact partition on 8/8",
+   "note": "",
+   "advisory_low_coverage": false,
+   "mean_coverage": 1.0,
+   "n_arms": 8
+  },
+  {
+   "gate": "G-ARMING",
+   "status": "PASS",
+   "address": "unit_*.json::arms[*].arming_resolved",
+   "says": "dose 0.25 / mask 31 / scope opp on every arm",
+   "note": ""
+  },
+  {
+   "gate": "G-BUDGET",
+   "status": "PASS",
+   "address": "unit_*.json::arms[*].arming_resolved",
+   "says": "k8x1376 exact-K2 on every arm",
+   "note": ""
+  },
+  {
+   "gate": "G-ROOT",
+   "status": "PASS",
+   "address": "unit_*.json::pair.root_identity_ok",
+   "says": "4 priced worlds sit on E-1a's exact roots and worlds",
+   "note": ""
+  },
+  {
+   "gate": "G-VOID",
+   "status": "PASS",
+   "address": "unit_*.json::pair.status/reason",
+   "says": "void 0 (0.0000) reasons {}",
+   "note": ""
+  }
+ ],
+ "failures": [],
+ "PASS": true,
+ "prices": [
+  {
+   "game": "1786454767_166575.json",
+   "ply": 100,
+   "world": 0,
+   "stratum": "control",
+   "delta_pts_mover": -10,
+   "e1a_delta": -7,
+   "coverage": 1.0
+  },
+  {
+   "game": "1786454767_166575.json",
+   "ply": 108,
+   "world": 0,
+   "stratum": "invasion",
+   "delta_pts_mover": -11,
+   "e1a_delta": -3,
+   "coverage": 1.0
+  },
+  {
+   "game": "1786904828_407067.json",
+   "ply": 134,
+   "world": 0,
+   "stratum": "defense",
+   "delta_pts_mover": 0,
+   "e1a_delta": 0,
+   "coverage": 1.0
+  },
+  {
+   "game": "1786939252_94231.json",
+   "ply": 134,
+   "world": 0,
+   "stratum": "farm_capture",
+   "delta_pts_mover": 0,
+   "e1a_delta": 0,
+   "coverage": 1.0
+  }
+ ],
+ "jr_expansions_totals": {
+  "total": 975426,
+  "own_mover": 436997,
+  "boosted": 538429
+ }
+}

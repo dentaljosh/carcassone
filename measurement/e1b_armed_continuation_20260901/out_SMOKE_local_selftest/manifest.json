@@ -1,0 +1,171 @@
+{
+ "schema": "e1b-armed-continuation/v1",
+ "what": "E-1b \u2014 the 91 banked E-1a plies re-priced under the S1-armed (scope=opp, d*=0.25) continuation, both seats. Judge-free: every price is a difference of REALIZED final scores.",
+ "written_at": "2026-09-01T09:52:40-0400",
+ "host": "Doctor",
+ "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+ "world_seed": 20260828,
+ "continuation_seed": 0,
+ "m_worlds": 8,
+ "arming": {
+  "dose": 0.25,
+  "mask": 31,
+  "scope": "opp",
+  "surface": "jrules_prior (surface B), rust-only",
+  "provenance": "S1 G1 verdict G1-EXPRESSES d*=0.25; S1 G3 arms at dose 0.25 mask 31 with G-WITNESS passing"
+ },
+ "budget_pin": {
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "total_sims": 11008,
+  "exact_max_k": 2,
+  "why": "E-1a's realized budget. PINNED, not inherited."
+ },
+ "production_yaml_observed": {
+  "champion_id": "puct_priors_v29_bmild_cap8",
+  "k_dets": 16,
+  "sims_per_det": 1376,
+  "total_sims": 22016,
+  "backend": "rust",
+  "leaf_hash": "a36d2e15a3b3d71d",
+  "drift_vs_pin": true,
+  "note": "PRODUCTION.yaml's fair_deploy moved to k16x1376=22016 on 2026-08-30, AFTER E-1a. E-1b pins E-1a's budget so the continuation FAMILY is the only variable; the drift is recorded here, not silently inherited."
+ },
+ "leaf_hash_of_record": "a36d2e15a3b3d71d",
+ "leaf_manifest": {
+  "leaf": {
+   "curve125": [
+    -10.0,
+    -5.0,
+    -1.25,
+    0.0,
+    2.5,
+    3.75,
+    5.0,
+    6.25
+   ],
+   "bonus_cap": 8.0,
+   "opp_bonus_cap": 8.0,
+   "value_blend": 0.0,
+   "residual_scale": 0.0
+  },
+  "leaf_hashes": {
+   "harness_leaf_hash": "a36d2e15a3b3d71d",
+   "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+   "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "leaf_value_panel": {
+   "empty_meeples_3v7_float": -6.25,
+   "empty_meeples_7v3_float": 6.25,
+   "empty_meeples_0v7_int": -16,
+   "empty_meeples_5v5_float": 0.0
+  },
+  "leaf_value_panel_rust": {
+   "empty_meeples_3v7_float": -6.25,
+   "empty_meeples_7v3_float": 6.25,
+   "empty_meeples_0v7_int": -16,
+   "empty_meeples_5v5_float": 0.0
+  },
+  "champion_id": "puct_priors_v29_bmild_cap8",
+  "backend": {
+   "name": "rust",
+   "default": "python",
+   "scope": "engine only \u2014 the same PRODUCTION.yaml knobs, the same leaf (panel re-verified through carc_rs), the same k_dets worlds merged in the same order",
+   "note": "BEHAVIOR-IDENTICAL BY GATE (rustport G4/G6), not by construction: G4 reproduced the deployed champion bit-exactly (0/305,515 checks) and G6 read 14,384/14,384 identical actions over 100 full games. governance/PRODUCTION.yaml names this as the champion's execution backend of record (2026-08-01); it is an ENGINE, not a player \u2014 no strength claim moves with it.",
+   "carc_rs_version": "0.1.0",
+   "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+   "carc_rs_build": "carc_rs-0.1.0+9fa813bbe0d4+rustcunpinned",
+   "carc_rs_binary_sha": "a61d0d303e7f1639",
+   "code_rev": "9fa813bb-dirty",
+   "code_rev_dirty": true,
+   "rust_toolchain": null,
+   "tile_data_source_sha256": "3f1f8f376e5c2dfd1a444543faff41e31242b861476ca3ff4498b6c900a64f3c",
+   "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800"
+  },
+  "runtime_budget_override": {
+   "sims_per_det": 1376,
+   "k_dets": 8,
+   "total_sims": 11008,
+   "note": "the budget the agent ACTUALLY runs; fair_deploy above is the PRODUCTION.yaml intent (the champion of record). A budget BELOW the intent is a WEAKER agent and must be graded as such."
+  },
+  "code_commit": "9fa813bbe0d4a70c2551cce6e9e332025d40aacd",
+  "search": {
+   "c_puct": 1.5,
+   "tau_p": 5.0,
+   "leaf_quantize": "float",
+   "final_select": "visits",
+   "value_norm": 15.0,
+   "reuse_tree": true,
+   "reuse_tree_effective": false,
+   "fpu_reduction": null,
+   "config_hash": "9f8aa04932bda996"
+  }
+ },
+ "tiearb": null,
+ "tiearb_note": "OFF, both seats \u2014 E-1a ran before the 2026-08-30 desktop arbiter fold, and make_production_champion does not read fair_deploy.tiearb, so an unmodified rebuild is arbiter-free. Holding it OFF keeps the family the only variable.",
+ "targets": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a0f7c023593bcfffe/measurement/e1b_armed_continuation_20260901/targets_continuation.jsonl",
+ "targets_sha256": "5c371bdf9b027e347ff56ad44c722adbd2b6f3a8f867ffd2ed3197baa17140bb",
+ "crn_baseline": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a0f7c023593bcfffe/measurement/e1b_armed_continuation_20260901/CRN_BASELINE.json",
+ "crn_baseline_sha256": "bc005e2d331611c25fb68b6b029ca9fe558dcbb3145278bd556295179f7ff018",
+ "negative_control": {
+  "unarmed_dose0": {
+   "census": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+   },
+   "arming": {
+    "dose": 0.0,
+    "mask": 31,
+    "scope": "all",
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "exact_max_k": 2,
+    "threads": 1,
+    "seed": 0
+   },
+   "decisions": 4,
+   "s": 0.544
+  },
+  "armed_dose_dstar": {
+   "census": {
+    "total": 30795,
+    "own_mover": 17250,
+    "boosted": 13545
+   },
+   "arming": {
+    "dose": 0.25,
+    "mask": 31,
+    "scope": "opp",
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "exact_max_k": 2,
+    "threads": 1,
+    "seed": 0
+   },
+   "decisions": 4,
+   "s": 0.644
+  },
+  "ok": true,
+  "reads": "dose 0 -> all-zero census AND dose d* -> boosted>0 on the same opening: the counters are dose-gated and live"
+ },
+ "r9_env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "execution": {
+  "backend": "rust",
+  "rust_threads": 1,
+  "job_mem_cap_gb": 6.0,
+  "arm_cap_secs": 1800,
+  "arm_wall_cap_s_frozen": 600
+ },
+ "code": {
+  "rev": "9fa813bbe0d4a70c2551cce6e9e332025d40aacd",
+  "branch": "worktree-agent-a0f7c023593bcfffe",
+  "dirty": false
+ },
+ "python": "3.12.3",
+ "band": "TBD-AT-LAUNCH \u2014 see BAND_CLAIMED.placeholder"
+}
