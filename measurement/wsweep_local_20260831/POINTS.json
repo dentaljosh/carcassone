@@ -1,0 +1,65 @@
+[
+ {
+  "W": 24,
+  "n": 78,
+  "rc": 0,
+  "wall_s": 2240,
+  "steady_games": 54,
+  "paired_games": 42,
+  "A_mean_el_s": 598.1,
+  "A_games_h": 144.5,
+  "P_mean_el_s": 590.0,
+  "P_games_h": 146.4,
+  "P_sem_pct": 2.14,
+  "B_games_h": 111.8,
+  "C_gross_games_h": 125.4,
+  "loadavg_med": 24.01,
+  "min_avail_MB": 38085,
+  "running_med": 24
+ },
+ {
+  "W": 30,
+  "n": 78,
+  "rc": 0,
+  "wall_s": 1960,
+  "steady_games": 48,
+  "paired_games": 42,
+  "A_mean_el_s": 671.2,
+  "A_games_h": 160.9,
+  "P_mean_el_s": 666.8,
+  "P_games_h": 162.0,
+  "P_sem_pct": 2.13,
+  "B_games_h": 125.5,
+  "C_gross_games_h": 143.3,
+  "loadavg_med": 30.03,
+  "min_avail_MB": 37975,
+  "running_med": 30
+ },
+ {
+  "W": 36,
+  "n": 78,
+  "rc": 0,
+  "wall_s": 2043,
+  "steady_games": 42,
+  "paired_games": 42,
+  "A_mean_el_s": 797.7,
+  "A_games_h": 162.5,
+  "P_mean_el_s": 797.7,
+  "P_games_h": 162.5,
+  "P_sem_pct": 2.16,
+  "B_games_h": 100.5,
+  "C_gross_games_h": 137.4,
+  "loadavg_med": 36.05,
+  "min_avail_MB": 37453,
+  "running_med": 36
+ }
+]
+
+primary estimator = P_games_h   (paired over 42 common games)
+   W  paired g/h   sem%  steady g/h  satur g/h  gross g/h  s/game   %peak   load   run  availMB
+  24       146.4   2.14       144.5      111.8      125.4    24.6   90.1%  24.01    24    38085
+  30       162.0   2.13       160.9      125.5      143.3    22.2   99.7%  30.03    30    37975
+  36       162.5   2.16       162.5      100.5      137.4    22.2  100.0%  36.05    36    37453
+
+SMALLEST W within 5% of peak = 30 (162.0 games/h, 99.7% of peak)
+argmax W = 36 (NOT the settle rule)
