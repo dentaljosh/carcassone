@@ -114,6 +114,19 @@ def pooled_records(cell: dict) -> list:
 
 
 def _docs(cell: dict) -> dict:
+    # R2-D1 (2026-09-01, pre-launch, execution-layer): round 2 wraps every load
+    # in {root, shards, records} (load_sharded_cell), but this helper only knew
+    # round 1's flat shape — so a SINGLE-shard cell (the smoke, the IDENT legs)
+    # resolved NO manifest and every manifest-reading gate read ABSENT-is-FAIL
+    # against a healthy emitted archive. The selftest missed it because its
+    # fixtures fed the gates FLAT cells (the PG-A1 fixture-shape trap). A
+    # single-shard wrapper now falls through to its lone shard's docs;
+    # multi-shard cells keep per-shard gate invocation via _fold.
+    if "shards" in cell and not cell.get("manifest"):
+        shards = [s for s in cell["shards"].values() if s]
+        if len(shards) == 1:
+            return {"manifest": shards[0].get("manifest") or {},
+                    "summary": shards[0].get("summary") or {}}
     return {"manifest": cell.get("manifest") or {},
             "summary": cell.get("summary") or {}}
 
@@ -1751,25 +1764,36 @@ def main() -> int:
         def _bare(g):
             return {"gate": g["gate"], "ok": g["ok"], "address": g["address"]}
 
+        def _unfold(det):
+            # R2-D2 (2026-09-01): adjudicate folds per-shard gate details under
+            # detail.per_chunk (see _fold); _knob previously read the FLAT
+            # round-1 shape and found nothing — the smoke verdict then refused
+            # a healthy archive with every gate ok=True. A single-chunk fold
+            # unwraps to its lone chunk's detail.
+            if isinstance(det, dict) and "per_chunk" in det:
+                vals = [v for v in det["per_chunk"].values() if v]
+                return vals[0] if len(vals) == 1 else det
+            return det
+
         def _knob(c):
-            d = next((g["detail"] for g in c["gates"]
-                      if g["gate"] == "G-FPU"), None)
+            d = _unfold(next((g["detail"] for g in c["gates"]
+                      if g["gate"] == "G-FPU"), None))
             out = {}
             if isinstance(d, dict):
                 out = {k: d.get(k) for k in ("requested_fpu_reduction",
                                              "requested_c_puct_override",
                                              "shared_c_puct", "frozen")}
-            t = next((g["detail"] for g in c["gates"]
-                      if g["gate"] == "G-TWOSIDED"), None)
+            t = _unfold(next((g["detail"] for g in c["gates"]
+                      if g["gate"] == "G-TWOSIDED"), None))
             if isinstance(t, dict):
                 out["resolved_two_sided"] = t.get("resolved")
-            ts = next((g["detail"] for g in c["gates"]
-                       if g["gate"] == "G-TIEARB-SIDES"), None)
+            ts = _unfold(next((g["detail"] for g in c["gates"]
+                       if g["gate"] == "G-TIEARB-SIDES"), None))
             if isinstance(ts, dict):
                 out["tiearb_sides"] = ts.get("resolved")
                 out["tiearb_expected_both_seats"] = ts.get("expected_both_seats")
-            tf = next((g["detail"] for g in c["gates"]
-                       if g["gate"] == "G-TIEARB-FIRE"), None)
+            tf = _unfold(next((g["detail"] for g in c["gates"]
+                       if g["gate"] == "G-TIEARB-FIRE"), None))
             if isinstance(tf, dict):
                 out["tiearb_fires"] = tf.get("sides")
             return out or None
