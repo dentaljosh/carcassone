@@ -448,16 +448,26 @@ def test_band_claim_row_matches_the_registry_schema(L):
         == "measurement/fpu_h2h_prep/READ_RULE.md"
 
 
-def test_the_band_is_not_already_in_the_registry(L):
-    """⚠️ The registry is NECESSARY AND NOT SUFFICIENT — the tree sweep is the
-    binding check, re-run immediately before the append — but a band already in
-    it is decisively taken."""
-    txt = (REPO / "governance" / "BAND_REGISTRY.csv").read_text()
-    ids = {line.split(",", 1)[0] for line in txt.splitlines()[1:] if line}
-    assert str(L.BAND) not in ids
+def test_the_bands_status_is_claimed_or_spent(L):
+    """⚠️ Was `test_the_band_is_not_already_in_the_registry`: written and frozen
+    at CLAIM TIME (before the round played), when the band was correctly not
+    yet in the registry. The round has since run to completion and the band
+    moved claimed -> spent (governance/BAND_REGISTRY.csv), so the original
+    `str(L.BAND) not in ids` assertion fails permanently in any full-suite run
+    from here on. Relaxed to accept either live-claim state while STILL
+    asserting band identity (band number + label), so a truly wrong/missing
+    row is still caught."""
+    with open(REPO / "governance" / "BAND_REGISTRY.csv", newline="") as f:
+        by_band = {row["band_seed_start"]: row for row in csv.DictReader(f)}
+    row = by_band.get(str(L.BAND))
+    assert row is not None, f"band {L.BAND} is not registered at all"
+    assert row["status"] in ("claimed", "spent"), (
+        f"band {L.BAND} status is {row['status']!r}, expected claimed or spent")
+    assert "CELL_H2H_FPU02" in row["label"], \
+        "the registry row at this band number is not this round's claim"
     for spent in ("164000000000", "165000000000", "166000000000",
                   "167000000000"):
-        assert spent in ids, "the ladder's bands should be registered"
+        assert spent in by_band, "the ladder's bands should be registered"
 
 
 def test_the_throwaway_range_never_touches_the_cells_decks(L):
