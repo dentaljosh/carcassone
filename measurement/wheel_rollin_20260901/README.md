@@ -13,9 +13,12 @@ rustc 1.96.0 (pinned).
   firstInstallTime preserved). APK sha256 `c373726b…`, wheel content-version
   `carc-rs-1.43281.30596`. ⚠️ versionCode stays 3 — discriminate builds by sha only.
   New BUILD epoch (bit-identical play expected); landed mid-E-5 batch.
-- **Laptop venv: DEFERRED** — the live carcasum remote server (the E-5 opponent,
-  PID 405720, up 2d9h+) runs from the shared venv; no install over a live tenant.
-  Owner may authorize a between-games bounce, else wait for the batch to close.
+- **Laptop venv: ✅ INSTALLED 2026-09-01 (owner "do the laptop bounce now")** — wheel
+  built on-box from HEAD 31ea3c75 (rust unchanged since 9fa813bb), ~15 s server
+  downtime: exact-pid kill → pip install → `tests/release/test_factory_manifest.py`
+  23/23 (leaf triple) → server relaunched pinned (`playouts=103500`, new PID 612074,
+  ANCHOR gate + probe PASS). **FLEET NOW WHEEL-UNIFORM** (local + laptop + phone);
+  two-box rounds unblocked.
 
 ## s/move at 22016 (PRODUCTION.yaml `measured_s_per_move` re-measure, owed since 2026-08-30)
 - `informal_probe_searchonly/` — the roll-in agent's quick probe: **2179.5 ms/move**
