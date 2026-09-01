@@ -1,0 +1,64 @@
+# BANDS — TBD AT LAUNCH. THIS AGENT CLAIMED NOTHING.
+
+`run_cells.sh` refuses a REAL cell until a sibling file named **`BAND_CLAIMED`**
+(no extension) exists next to this one. That file is the orchestrator's to drop,
+and only after it has done the work below. (`--plan`, `--dry-run` and `--smoke`
+are exempt: the smoke plays the throwaway sub-range and spends no band.)
+
+## What this round spends, unlike E-1b
+
+⛔ **This leg DOES draw fresh decks — TWO bands, one per cell.** Each cell is 400
+NEW deck seeds played at both seatings (800 games), and a band that influences a
+decision retires from confirmatory use. Both must be registered.
+
+| cell | dose | proposed band | seeds |
+|---|---|---|---|
+| `CELL_TAU3` | `--cand-tau-p 3.0` | **170000000000** | 170000000000 .. 170000000399 |
+| `CELL_TAU8` | `--cand-tau-p 8.0` | **171000000000** | 171000000000 .. 171000000399 |
+
+Throwaway (smokes + golden gate, **no band**): `171999999000` + offsets
+{0 (CELL_TAU3 smoke), 100 (CELL_TAU8 smoke), 800..811 (the golden gate)}.
+
+⚠️ These ids are the next two monotone free ones **as of the freeze** (169e9 was
+spent by `measurement/fpu_h2h_r2_prep` on 2026-08-31). They are **PROPOSED**. The
+orchestrator re-derives them — another round may have landed in between.
+
+## What the orchestrator must do
+
+1. **Re-run the TREE SWEEP**, not just a registry grep. ⚠️⚠️ The registry is
+   NECESSARY AND NOT SUFFICIENT — `146000000000` is the standing trap: absent
+   from `governance/BAND_REGISTRY.csv` but carrying references in the tree. The
+   sweep is the binding check and must be re-run **immediately before** the CSV
+   append, not earlier in the session.
+   ⚠️ Sweep ONCE with a combined pattern (`feedback_batched_tree_sweeps`) — a
+   per-band grep loop once read 278 GB and thrashed RAM+SSD beside a live round.
+2. Confirm the two ids are still free and still monotone. If not, pick the next
+   two free ids and **edit `BAND_TAU3` / `BAND_TAU8` in `WORKERS.conf`** — that
+   file is the ONE place they live, and `test_taup_leg.py` asserts it agrees with
+   `leg_lib.py`, so both must move together and the tests must be re-run.
+3. Append **TWO rows** to `governance/BAND_REGISTRY.csv`, one per cell.
+4. Drop the acknowledgement file, e.g.
+
+   ```bash
+   D=measurement/taup_audit_leg_20260901
+   cat > $D/BAND_CLAIMED <<'EOF'
+   BANDS CLAIMED <date> by the orchestrator, after re-running the tree sweep
+   immediately before the append:
+     CELL_TAU3 -> <band>  (400 decks x 2 seatings)
+     CELL_TAU8 -> <band>  (400 decks x 2 seatings)
+   TWO rows appended to governance/BAND_REGISTRY.csv. Both bands retire from
+   confirmatory use once this leg's read-out influences a decision.
+   EOF
+   ```
+
+5. Then stamp `BLIND_COMMIT.json` **and** `WORKERS.conf`'s `BLIND_COMMIT=` with
+   the freeze commit's 40-hex sha — the launcher checks both, and
+   `test_taup_leg.py` asserts the two documents agree.
+6. Re-run the golden gate over the **FULL frozen 12-seed set**
+   (`goldengate/run_gate.sh`, ~4-5 min). The banked `TAUP_BITEXACT.json` is a
+   4-seed PREVIEW pass (`DEVIATIONS.md` D-2) and the launcher REFUSES to spend a
+   band on it — deliberately.
+
+⛔ This agent did not create `BAND_CLAIMED`, did not touch
+`governance/BAND_REGISTRY.csv` or `governance/PRODUCTION.yaml`, and did not
+launch either cell.

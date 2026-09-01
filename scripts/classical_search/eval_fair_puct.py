@@ -1043,7 +1043,7 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
     # fpu_resurrection_prep). `None` — which is what the OPPONENT builder and
     # every historical caller pass — leaves this function byte-identical to the
     # pre-round version. A dict may carry:
-    #     {"fpu_reduction": float|None, "c_puct": float|None}
+    #     {"fpu_reduction": float|None, "c_puct": float|None, "tau_p": float|None}
     #
     # ⛔⛔ WHY `c_puct` HAS TO LIVE HERE AND CANNOT RIDE `--c-puct`. `--c-puct`
     # is a SHARED knob: `champ_cfg_dict` is built from it and `_make_opponent`
@@ -1053,14 +1053,31 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
     # the correction (see DEVIATIONS.md D1). The override is applied ONLY at the
     # candidate construction site in `_play_one_inner` / `_smoke`.
     #
+    # ⭐⭐ `tau_p` IS THE THIRD MEMBER OF THE SAME FAMILY, AND THE LAST UNCLOSED
+    # LIMB OF THE 2026-08-29 FALSE-NEGATIVE AUDIT (measurement/
+    # taup_audit_leg_20260901). `--tau-p` has EXACTLY the defect `--c-puct` has —
+    # it builds `champ_cfg_dict`, `_make_opponent` feeds that same dict through
+    # `_cfg_from_dict`, so it moves BOTH SIDES and a "candidate tau_p" cell built
+    # on it is a champion-vs-champion null wearing a real cell's name. The audit
+    # named the fix and did NOT build it: `measurement/fpu_resurrection_prep/
+    # screen_lib.py::TAU_PAIR_SPEC["plumbing"]` says verbatim "A tau round needs
+    # `--cand-tau-p` added to `cand_search` exactly as `--cand-c-puct` was. ⛔ NOT
+    # built here." This is that addition, and it is a LINE-FOR-LINE mirror of the
+    # `c_puct` override two lines up — deliberately, so the two can never drift.
+    #
     # ⚠️ `fpu_reduction=None` inside the dict is NOT "unset" — it is the
     # champion's legacy optimistic q=0, and it is also the field default, so the
     # two coincide. `c_puct=None` IS "unset" and falls through to the shared
     # `--c-puct`, which is what keeps an fpu-only cell single-variable.
+    # `tau_p=None` is "unset" in the SAME sense as `c_puct=None`: it falls
+    # through to the shared `--tau-p` (production 5.0), so a tau-free cell is
+    # byte-identical to every historical one.
     _cs = {}
     if cand_search is not None:
         if cand_search.get("c_puct") is not None:
             c_puct = float(cand_search["c_puct"])
+        if cand_search.get("tau_p") is not None:
+            tau_p = float(cand_search["tau_p"])
         if cand_search.get("fpu_reduction") is not None:
             _cs["fpu_reduction"] = float(cand_search["fpu_reduction"])
     return HeuristicPriorConfig(
@@ -3440,9 +3457,11 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                            jrules_filter=cand_jrules_filter,
                            tiearb=cand_tiearb, cand_search=cand_search)
     if cand_search is not None and (cand_search.get("fpu_reduction") is not None
-                                    or cand_search.get("c_puct") is not None):
+                                    or cand_search.get("c_puct") is not None
+                                    or cand_search.get("tau_p") is not None):
         print(f"[smoke] CANDIDATE-ONLY PUCT KNOBS LIVE: {cand_search} — resolved "
               f"cfg carries fpu={cfg.fpu_reduction!r} c_puct={cfg.c_puct!r} "
+              f"tau_p={cfg.tau_p!r} "
               f"(leaf hash does NOT move; the wiring gate is the manifest's "
               f"config.cand_search)")
     if cand_tiearb is not None and cand_tiearb.get("enabled"):
@@ -4184,6 +4203,20 @@ def main(argv=None) -> int:
                          "SAME `_cfg_from_dict`, so --c-puct moves BOTH SIDES and a "
                          "'candidate c_puct' cell built on it would be a "
                          "champion-vs-champion null wearing a real cell's name.")
+    ap.add_argument("--cand-tau-p", type=float, default=None,
+                    help="PRIOR SOFTMAX TEMPERATURE over Δleaf on the CANDIDATE "
+                         "ONLY. Unset (default) == the shared --tau-p (production "
+                         "5.0), byte-identical to every historical cell. LOWER is "
+                         "SHARPER priors (more mass on the top afterstate gain), "
+                         "HIGHER is SOFTER. ⛔⛔ --tau-p CANNOT DO THIS, for the "
+                         "IDENTICAL reason --c-puct cannot: it builds "
+                         "`champ_cfg_dict`, which `_make_opponent` feeds through the "
+                         "SAME `_cfg_from_dict`, so --tau-p moves BOTH SIDES. ⭐ THE "
+                         "LAST UNCLOSED LIMB OF THE 2026-08-29 FALSE-NEGATIVE AUDIT: "
+                         "`--cand-c-puct` was added and its cell ran, but no "
+                         "candidate-side tau_p cell had ever been EXPRESSIBLE on the "
+                         "classical champion. See measurement/taup_audit_leg_20260901 "
+                         "and fpu_resurrection_prep/screen_lib.py TAU_PAIR_SPEC.")
     # --- THE PHASE FIRE-GATE (measurement/phasegate_prep) --------------------
     ap.add_argument("--cand-tiearb-phase-gate",
                     choices=("all", "early", "mid", "late", "none"), default="all",
@@ -4857,23 +4890,45 @@ def main(argv=None) -> int:
         fpu_reduction=(None if args.cand_fpu_reduction is None
                        else float(args.cand_fpu_reduction)),
         c_puct=(None if args.cand_c_puct is None else float(args.cand_c_puct)),
+        # ⭐ measurement/taup_audit_leg_20260901 — the audit's last limb. Same
+        # ALWAYS-PRESENT convention: `null` is the POSITIVE statement "the shared
+        # --tau-p", never a missing key.
+        tau_p=(None if args.cand_tau_p is None else float(args.cand_tau_p)),
         # The SHARED --c-puct, recorded beside the override so a reader can see
         # at a glance whether the two sides' c_puct differ WITHOUT having to
         # cross-reference config.champion vs config.opponent.champ_cfg.
         shared_c_puct=float(args.c_puct),
+        # The SHARED --tau-p, recorded for the identical reason. ⚠️ ADDITIVE:
+        # every banked adjudicator reads `cand_search` BY KEY NAME
+        # (fpu_resurrection_prep/screen_lib.py, fpu_h2h_r2_prep/analyze_h2h.py),
+        # never by key SET, so an older gate reading a newer manifest is
+        # unaffected — and a newer gate reading an OLDER manifest correctly sees
+        # MISSING, which those libraries deliberately distinguish from None.
+        shared_tau_p=float(args.tau_p),
     )
     _fpu_live = _cand_search["fpu_reduction"] is not None
     _cpuct_live = _cand_search["c_puct"] is not None
-    if _fpu_live or _cpuct_live:
+    _taup_live = _cand_search["tau_p"] is not None
+    if _fpu_live or _cpuct_live or _taup_live:
         if args.info != "fair":
-            ap.error("--cand-fpu-reduction / --cand-c-puct apply to the FAIR "
-                     f"candidate (--info fair); got --info {args.info}")
+            ap.error("--cand-fpu-reduction / --cand-c-puct / --cand-tau-p apply "
+                     "to the FAIR candidate (--info fair); got --info "
+                     f"{args.info}")
         if _fpu_live and not math.isfinite(_cand_search["fpu_reduction"]):
             ap.error(f"--cand-fpu-reduction {args.cand_fpu_reduction!r} is not "
                      "finite (unset == the champion's legacy optimistic q=0)")
         if _cpuct_live and not (math.isfinite(_cand_search["c_puct"])
                                 and _cand_search["c_puct"] > 0.0):
             ap.error(f"--cand-c-puct {args.cand_c_puct!r} must be finite and > 0")
+        # ⚠️ tau_p is a softmax DENOMINATOR: 0.0 divides, and a negative value
+        # INVERTS the prior (it would put the mass on the WORST afterstate gain
+        # while every log line still says "priors"). Both are refused here, at
+        # launch, rather than in a worker 40 minutes in.
+        if _taup_live and not (math.isfinite(_cand_search["tau_p"])
+                               and _cand_search["tau_p"] > 0.0):
+            ap.error(f"--cand-tau-p {args.cand_tau_p!r} must be finite and > 0 "
+                     "(it is the softmax denominator over Δleaf; 0 divides and a "
+                     "negative value silently INVERTS the priors)")
         # Construct once so a malformed value dies at LAUNCH (__post_init__
         # validates) rather than in a worker, and — on the rust backend — so the
         # value is proven to REACH `SearchConfigRs` before a single deck is spent.
@@ -4882,10 +4937,30 @@ def main(argv=None) -> int:
                                         None, cand_search=_cand_search)
         _want_fpu = _cand_search["fpu_reduction"]
         _want_c = (_cand_search["c_puct"] if _cpuct_live else float(args.c_puct))
-        if _probe_cfg_f.fpu_reduction != _want_fpu or _probe_cfg_f.c_puct != _want_c:
+        _want_tau = (_cand_search["tau_p"] if _taup_live else float(args.tau_p))
+        if (_probe_cfg_f.fpu_reduction != _want_fpu
+                or _probe_cfg_f.c_puct != _want_c
+                or _probe_cfg_f.tau_p != _want_tau):
             ap.error(f"the resolved HeuristicPriorConfig carries fpu="
-                     f"{_probe_cfg_f.fpu_reduction!r} c_puct={_probe_cfg_f.c_puct!r}, "
-                     f"not the requested fpu={_want_fpu!r} c_puct={_want_c!r}")
+                     f"{_probe_cfg_f.fpu_reduction!r} c_puct={_probe_cfg_f.c_puct!r} "
+                     f"tau_p={_probe_cfg_f.tau_p!r}, not the requested "
+                     f"fpu={_want_fpu!r} c_puct={_want_c!r} tau_p={_want_tau!r}")
+        # ⭐⭐ THE TWO-SIDED CHECK, DONE AT LAUNCH RATHER THAN LEFT TO THE
+        # ADJUDICATOR. `champ_cfg_dict` is what `_make_opponent` builds the
+        # OPPONENT from; a candidate-only knob that leaked into it would produce
+        # a champion-vs-champion cell that every other gate passes. This asserts
+        # the leak did not happen for all three knobs, from the OPPONENT's own
+        # resolved config rather than from a flag.
+        _probe_opp = _build_champ_cfg(args.c_puct, args.tau_p, args.leaf_quantize,
+                                      args.final_select, args.value_norm, None,
+                                      cand_search=None)
+        if (_probe_opp.c_puct != float(args.c_puct)
+                or _probe_opp.tau_p != float(args.tau_p)
+                or _probe_opp.fpu_reduction is not None):
+            ap.error("the OPPONENT-dialect config (cand_search=None) resolved to "
+                     f"c_puct={_probe_opp.c_puct!r} tau_p={_probe_opp.tau_p!r} "
+                     f"fpu={_probe_opp.fpu_reduction!r} — a candidate-only knob "
+                     "has LEAKED into the shared build path")
         if _backend == "rust":
             from carcassonne_ai.rust_agent import search_config_rs as _sc_rs_f
             _probe_sc_f = _sc_rs_f(_probe_cfg_f, 8)
@@ -4916,6 +4991,18 @@ def main(argv=None) -> int:
             if _mc is None or float(_mc.group(1)) != _want_c:
                 ap.error(f"⛔ the rust SearchConfigRs resolved a c_puct other than "
                          f"the requested {_want_c!r}. repr: {_rep}")
+            # ⭐ THE tau_p READBACK — the same numeric parse, for the same reason
+            # (`carc-py/src/lib.rs` prints `tau_p={}` with rust's Display for f64,
+            # so 5.0 prints as "5" and a substring compare would MISS a healthy
+            # config). tau_p rides the SAME positional SearchConfigRs slot the
+            # champion has always used, so unlike fpu there is no hard-coded-None
+            # history here — but the readback costs nothing and it is what turns
+            # "the flag was accepted" into "the value reached the backend that
+            # plays".
+            _mt = re.search(r"tau_p=([-0-9.eE+]+)", _rep)
+            if _mt is None or float(_mt.group(1)) != _want_tau:
+                ap.error(f"⛔ the rust SearchConfigRs resolved a tau_p other than "
+                         f"the requested {_want_tau!r}. repr: {_rep}")
         print(f"[cand-search] CANDIDATE-ONLY PUCT KNOBS LIVE: {_cand_search} "
               f"(leaf hash does NOT move; the wiring gate is the manifest's "
               f"config.cand_search — G-FPU / G-CPUCT)", flush=True)
@@ -5157,6 +5244,11 @@ def main(argv=None) -> int:
                      else f"-fpu{args.cand_fpu_reduction:g}")
     _cand_oracle += ("" if args.cand_c_puct is None
                      else f"-candc{args.cand_c_puct:g}")
+    # ⚠️ NOT `_tau{...}` — the tag ALREADY carries `_tau{args.tau_p:g}` from the
+    # SHARED knob below, and two different numbers spelled the same way in one
+    # dirname is exactly the Trap-1 confusion this suffix exists to prevent.
+    _cand_oracle += ("" if args.cand_tau_p is None
+                     else f"-candtau{args.cand_tau_p:g}")
     tag = (f"fair_{args.info}_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}"
            f"_kd{args.k_dets}_s{args.sims}{_cand_oracle}_{_vs}_k{args.exact_k}")
     if cand_leaf_cfg is not None:
@@ -5449,12 +5541,21 @@ def main(argv=None) -> int:
         # a FAIL rather than a default. `fpu_reduction: null` is a POSITIVE
         # statement ("the champion's legacy optimistic q=0"), and `c_puct: null`
         # means "the shared --c-puct" (recorded beside it as `shared_c_puct`).
+        # ⭐ `tau_p` joined this dict on 2026-09-01 (measurement/
+        # taup_audit_leg_20260901, gate `G-TAUP`) under the IDENTICAL convention:
+        # `tau_p: null` means "the shared --tau-p", recorded beside it as
+        # `shared_tau_p`. ⚠️ Purely ADDITIVE — every banked gate digs this dict
+        # by key NAME, so older adjudicators are unaffected and newer ones see a
+        # pre-2026-09-01 manifest as MISSING (which they distinguish from null).
         # Same inverted-liveness situation as surfaces B/C and the arbiter: NO
         # leaf hash moves, so `cand_leaf_hash` EQUALS the opponent's on a live
         # cell and a moved-hash check proves nothing. The SECOND, independent
-        # witness is the two-sided read `config.champion.{fpu_reduction,c_puct}`
-        # vs `config.opponent.champ_cfg.{fpu_reduction,c_puct}` — derived from
-        # the RESOLVED HeuristicPriorConfig of each side rather than from a flag.
+        # witness is the two-sided read
+        # `config.champion.{fpu_reduction,c_puct,tau_p}` vs
+        # `config.opponent.champ_cfg.{fpu_reduction,c_puct,tau_p}` — derived from
+        # the RESOLVED HeuristicPriorConfig of each side rather than from a flag
+        # (`HeuristicPriorConfig.as_manifest` has always carried `tau_p`, so this
+        # witness needs no emitter change).
         "cand_search": _cand_search,
         # E1 exact-K WIN objective (CANDIDATE side only; None == OFF == margin ==
         # every historical cell). Same inverted-liveness convention as surface B:
