@@ -573,7 +573,7 @@ if w != [(1000,0),(1000,1),(1001,0),(1001,1),(1002,0),(1002,1)]:
 if bad:
     print('⛔⛔ THIS BOX CANNOT EXPRESS THE CELL: ' + '; '.join(bad))
     print('The source here predates the fpu plumbing (2026-08-29) and/or the '
-          'opponent-side tie-arbiter plumbing (2026-08-31), or the harness'\''s '
+          'opponent-side tie-arbiter plumbing (2026-08-31), or the paired '
           'paired work-builder has changed shape. A chunk run from this box '
           'would be champion-vs-champion, a CONFOUNDED arb+fpu cell claiming '
           'one variable, or a cell on the wrong seeds. Sync the bundle.')
