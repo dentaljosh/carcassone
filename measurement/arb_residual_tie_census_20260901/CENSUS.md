@@ -30,6 +30,31 @@ full-set tie = per-rid max mean shared across observed picks). Arms-per-rid obse
 5–13; pairs banked ≈6.2/rid so the full-set figure uses observed-arm subsets — a
 slight UNDER-count of the true full-set rate.
 
+## Phase stratification (owner "take the free one", 2026-09-01 — ARMS_R5 k_remaining join, 1,060/1,060 coverage)
+
+| phase (deployed gate buckets) | tied/all | rate |
+|---|---|---|
+| early (k>48) | 5/371 | 1.3% |
+| mid (24<k<48) | 3/338 | 0.9% |
+| late (k<24) | 73/325 | **22.5%** |
+| edge (k=24,48) | 0/26 | 0.0% |
+
+Tied-ply k_remaining: **median 2**, mean 7.8. Cumulative: k≤2 = 57% of all residual
+ties (all-ply base 5%), k≤4 = 74%, k≤8 = 84%.
+
+**VERDICT (descriptive): POCKET-CLOSED-BY-CENSUS.** The majority of residual ties sit
+at k_remaining ≤ 2 — INSIDE the deployed exact-solver handoff, where the arbiter never
+plays and the ply is already solved exactly. Outside solver range (k>2) the residual-tie
+rate is ~3.5% of fired plies, clustered at k 3–8 just above the handoff. The only lever
+shape left is marginalized-solve-as-TIEBREAKER at k 3–5 on leaf-tied arms — which sits
+in CL-076's shadow (exact-K depth CLOSED; deeper solve buys no wins as a play policy,
+a fortiori as a tie-break on indifferent arms) with a few-elo ceiling at ~3% incidence.
+Deployed-probe context: actual fires split evenly by phase (20/19/19 in the 2026-09-01
+probe) precisely because the solver latch removes the tie-dense k≤2 plies. Corpus
+caveat: the census corpus (widening program, self-play plies) includes k≤2 plies that
+deployment never arbitrates — deployed residual-tie incidence is therefore LOWER than
+the headline 6-7%, ~3-4% of fired plies.
+
 **Companion correction landed the same session (owner: "found it starts to flatten
 around 100k?"):** rung2 (`../carcasum_rung2_prep/`, results.csv carcasum_rung2_*)
 says Carcasum does NOT flatten by 100k — champion margin +5.64 → +4.40 → +2.60 →
