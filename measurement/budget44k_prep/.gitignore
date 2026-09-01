@@ -1,0 +1,16 @@
+# Runtime artifacts this pair emits INTO its own directory — never the frozen
+# design/instrument files themselves. (The defect fixed in 9dc5da13: a launcher
+# whose own runtime files collide with its own dirty-guard.)
+#
+# ⚠️ EVERY PATTERN IS ROOT-ANCHORED (leading `/`), deliberately. An unanchored
+# `PINNED_SRC_REV` would also swallow `selftest_fixture/*/PINNED_SRC_REV`,
+# which are FROZEN FIXTURE FILES the selftest reads and must stay TRACKED.
+/RUN_LIVE_*.json
+/PINNED_SRC_REV
+/SMOKE_tiny_*.json
+/SMOKE_prod_*.json
+/VERDICT.json
+/budget44k_launch.log
+/*.log
+__pycache__/
+*.pyc
