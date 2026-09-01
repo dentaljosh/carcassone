@@ -125,14 +125,58 @@ def test_the_deck_ranges_OVERLAP_by_design():
 # 4. THE GATES THAT WERE REWRITTEN, AND THE NEW ONE                           #
 # =========================================================================== #
 
+#: The resolved curve125 VALUES `leaf_gate` actually compares against (PG-A1
+#: defect 1, AMENDMENTS.md: base curve [-8,-4,-1,0,2,3,4,5] x1.25). Restated
+#: here rather than imported so this contract test pins the number
+#: independently of screen_lib's own copy — cross-checked below against
+#: champion_factory.CURVE125, the amendment's cited ground truth
+#: (PRODUCTION.yaml's C5 fold), so the two can never silently drift apart.
+CURVE125_VALUES = [-10.0, -5.0, -1.25, 0.0, 2.5, 3.75, 5.0, 6.25]
+
+
+def test_curve125_values_match_the_production_ground_truth():
+    """AMENDMENTS.md PG-A1 defect 1's cited ground truth: PRODUCTION.yaml's C5
+    fold. If champion_factory's constant ever moves, this — not a live G-LEAF
+    cell — is what should go red first."""
+    from carcassonne_ai import champion_factory as CF
+
+    assert list(CF.CURVE125) == CURVE125_VALUES
+
+
 def test_G_LEAF_requires_the_two_sides_to_be_EQUAL():
     """⛔ REWRITTEN from invasion r3, where the two sides differ BY DESIGN. The
-    arbiter is a post-search ROOT hook and moves no leaf hash."""
-    ok = L.leaf_gate(L.LEAF_HASH, L.LEAF_HASH, L.LEAF_CURVE)
-    assert ok["ok"]
-    bad = L.leaf_gate(L.LEAF_HASH, "deadbeefdeadbeef", L.LEAF_CURVE)
-    assert not bad["ok"] and "DIFFER" in bad["why"]
-    assert not L.leaf_gate(None, None, L.LEAF_CURVE)["ok"]   # ABSENT is FAIL
+    arbiter is a post-search ROOT hook and moves no leaf hash.
+
+    ⚠️⚠️ R8 (REVIEW_LOG.md): this test was PERMANENTLY RED post-PG-A1 — PG-A1
+    rewrote `leaf_gate`'s curve check to compare RESOLVED VALUES
+    (`list(cand_curve) == curve125_values`, screen_lib.py:672), but this test
+    kept passing `L.LEAF_CURVE`, the STRING LABEL `"curve125"`
+    (`list("curve125")` is a list of 8 characters, never equal to
+    `CURVE125_VALUES`) — the exact unsatisfiable-by-construction shape PG-A1
+    fixed in the GATE, just relocated into the TEST. `ok["ok"]` was therefore
+    always False regardless of the hash arguments, which also made the
+    NEGATIVE legs (`bad`, the None/None case) unreachable: they passed for the
+    wrong reason (curve mismatch masking whatever the hash check would have
+    said) rather than exercising the hash-mismatch / absent-hash paths they
+    name. Fixed: pass the resolved `CURVE125_VALUES`, and add a leg that
+    isolates a CURVE-only mismatch (right hashes, wrong curve) so PG-A1's
+    fix — the thing this test exists to contract-test — has a leg that can
+    actually fail on curve and nothing else."""
+    ok = L.leaf_gate(L.LEAF_HASH, L.LEAF_HASH, CURVE125_VALUES)
+    assert ok["ok"], ok
+    bad_hash = L.leaf_gate(L.LEAF_HASH, "deadbeefdeadbeef", CURVE125_VALUES)
+    assert not bad_hash["ok"] and "DIFFER" in bad_hash["why"]
+    assert not L.leaf_gate(None, None, CURVE125_VALUES)["ok"]   # ABSENT is FAIL
+    # ⭐ PG-A1's own fix, isolated: right hashes, WRONG curve (e.g. the
+    # unresolved label leaking through, or a stale non-C5 curve) must fail —
+    # and must fail ON THE CURVE, not be masked by a hash mismatch.
+    bad_curve = L.leaf_gate(L.LEAF_HASH, L.LEAF_HASH, L.LEAF_CURVE)
+    assert not bad_curve["ok"]
+    assert "v29_meeple_curve" in bad_curve["why"]
+    bad_curve_values = L.leaf_gate(L.LEAF_HASH, L.LEAF_HASH,
+                                   [-8.0, -4.0, -1.0, 0.0, 2.0, 3.0, 4.0, 5.0])
+    assert not bad_curve_values["ok"]
+    assert "v29_meeple_curve" in bad_curve_values["why"]
 
 
 def test_G_DECKS_accepts_the_overlap_and_still_catches_a_half_played_deck():
