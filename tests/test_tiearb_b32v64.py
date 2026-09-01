@@ -1690,11 +1690,30 @@ def test_halt_true_refuses_and_halt_false_falls_through_to_the_next_precondition
     assert not (CELL_DIR / "RUN_LIVE.json").exists()
 
 
-def test_an_unreadable_halt_record_fails_closed():
-    """A corrupt record is not a pass either."""
+def test_an_unreadable_halt_record_fails_closed(tmp_path):
+    """A corrupt record is not a pass either.
+
+    ⚠️ FIXED (chores queue): this test used to `rec.write_text(...)` straight
+    over the TRACKED `SMOKE_HALT.json` fixture with no backup, then
+    `rec.unlink()` it in `finally` — losing the real committed halt record
+    (CELL_B64's actual §9.3 grading evidence) instead of restoring it, which
+    leaves the tree dirty and breaks any `run_cells.sh` invocation between
+    test runs that expects the record to exist (`test_absent_halt_record_
+    REFUSES_a_real_cell_launch` next to it in this file exists for exactly
+    that failure mode). `run_cells.sh` resolves its own `$DIR` from
+    `WORKERS.conf`'s hard-coded `REPO_LOCAL`/`REPO_REMOTE` (not from `$0`), so
+    the corrupted record still has to land at the REAL path for the
+    subprocess to read it — it cannot be redirected to a tmpdir wholesale —
+    but the ORIGINAL bytes are now copied to `tmp_path` FIRST and restored
+    from there byte-for-byte, so the mutation the real path sees is transient
+    and the fixture is never actually lost."""
     conf = CELL_DIR / "WORKERS.conf"
     rec = CELL_DIR / A.SMOKE_HALT_RECORD
     conf_bak = conf.read_text()
+    rec_existed = rec.is_file()
+    rec_backup = tmp_path / "SMOKE_HALT.json.orig"
+    if rec_existed:
+        rec_backup.write_bytes(rec.read_bytes())
     import subprocess
     try:
         conf.write_text(conf_bak.replace("BLIND_COMMIT=PENDING",
@@ -1707,7 +1726,10 @@ def test_an_unreadable_halt_record_fails_closed():
         assert "HALT IS IN FORCE" in (p.stdout + p.stderr)
     finally:
         conf.write_text(conf_bak)
-        rec.unlink(missing_ok=True)
+        if rec_existed:
+            rec.write_bytes(rec_backup.read_bytes())
+        else:
+            rec.unlink(missing_ok=True)
 
 
 def test_dry_run_is_exempt_from_the_halt_preconditions():
