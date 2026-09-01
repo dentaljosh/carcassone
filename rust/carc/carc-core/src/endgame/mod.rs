@@ -281,7 +281,7 @@ impl<'a> Solver<'a> {
     /// `_Solver._value` — plain minimax / expectiminimax with an EXACT-value TT.
     fn value(&mut self, g: &Game) -> Result<f64, SolveError> {
         if g.state.is_terminated() {
-            return Ok(g.flat_base_score(0) as f64);
+            return Ok(crate::fair::solver::terminal_value(g));
         }
         let key = self.key(g);
         if let Some(&v) = self.tt.get(&key) {
@@ -293,8 +293,7 @@ impl<'a> Solver<'a> {
         let marg = self.mode == Mode::Marginalized;
         let mut vals: Vec<f64> = Vec::new();
         for a in g.legal_actions() {
-            let mut nb = g.clone();
-            nb.advance(a).map_err(SolveError::Engine)?;
+            let nb = crate::fair::solver::step(g, a).map_err(SolveError::Engine)?;
             if marg && !nb.state.is_terminated() && drew_a_tile(g, &nb, was_meeples) {
                 vals.push(self.chance(&nb)?);
             } else {
@@ -371,7 +370,7 @@ impl<'a> Solver<'a> {
     /// `_Solver._value_ab` — exact fail-soft alpha-beta for the clairvoyant mode.
     fn value_ab(&mut self, g: &Game, mut alpha: f64, mut beta: f64) -> Result<f64, SolveError> {
         if g.state.is_terminated() {
-            return Ok(g.flat_base_score(0) as f64);
+            return Ok(crate::fair::solver::terminal_value(g));
         }
         let key = self.key(g);
         if let Some(&(val, flag)) = self.tt_ab.get(&key) {
@@ -405,8 +404,7 @@ impl<'a> Solver<'a> {
             // maximizer
             let mut b = f64::NEG_INFINITY;
             for a in g.legal_actions() {
-                let mut nb = g.clone();
-                nb.advance(a).map_err(SolveError::Engine)?;
+                let nb = crate::fair::solver::step(g, a).map_err(SolveError::Engine)?;
                 let v = self.value_ab(&nb, alpha, beta)?;
                 if v > b {
                     b = v;
@@ -423,8 +421,7 @@ impl<'a> Solver<'a> {
             // minimizer
             let mut b = f64::INFINITY;
             for a in g.legal_actions() {
-                let mut nb = g.clone();
-                nb.advance(a).map_err(SolveError::Engine)?;
+                let nb = crate::fair::solver::step(g, a).map_err(SolveError::Engine)?;
                 let v = self.value_ab(&nb, alpha, beta)?;
                 if v < b {
                     b = v;
@@ -519,10 +516,9 @@ pub fn solve(g: &Game, mode: Mode, cfg: &Config) -> Result<SolveResult, SolveErr
     let legal = g.legal_actions();
     let mut child_values: Vec<(i32, f64)> = Vec::with_capacity(legal.len());
     for a in legal {
-        let mut nb = g.clone();
-        nb.advance(a).map_err(SolveError::Engine)?;
+        let nb = crate::fair::solver::step(g, a).map_err(SolveError::Engine)?;
         let v = if nb.state.is_terminated() {
-            nb.flat_base_score(0) as f64
+            crate::fair::solver::terminal_value(&nb)
         } else if mode == Mode::Marginalized && drew_a_tile(g, &nb, was_meeples) {
             s.chance(&nb)?
         } else if cfg.alphabeta {
@@ -582,7 +578,7 @@ pub fn brute_clairvoyant(g: &Game, budget: u64) -> Result<f64, SolveError> {
 
 fn brute_inner(g: &Game, budget: u64, n: &mut u64) -> Result<f64, SolveError> {
     if g.state.is_terminated() {
-        return Ok(g.flat_base_score(0) as f64);
+        return Ok(crate::fair::solver::terminal_value(g));
     }
     *n += 1;
     if *n > budget {
@@ -591,8 +587,7 @@ fn brute_inner(g: &Game, budget: u64, n: &mut u64) -> Result<f64, SolveError> {
     let mover = g.state.current_player;
     let mut best: Option<f64> = None;
     for a in g.legal_actions() {
-        let mut nb = g.clone();
-        nb.advance(a).map_err(SolveError::Engine)?;
+        let nb = crate::fair::solver::step(g, a).map_err(SolveError::Engine)?;
         let v = brute_inner(&nb, budget, n)?;
         best = Some(match best {
             None => v,
@@ -618,8 +613,7 @@ pub fn brute_clairvoyant_root(
     let to_move = g.state.current_player;
     let mut child_values: Vec<(i32, f64)> = Vec::new();
     for a in g.legal_actions() {
-        let mut nb = g.clone();
-        nb.advance(a).map_err(SolveError::Engine)?;
+        let nb = crate::fair::solver::step(g, a).map_err(SolveError::Engine)?;
         child_values.push((a, brute_clairvoyant(&nb, budget)?));
     }
     if child_values.is_empty() {
