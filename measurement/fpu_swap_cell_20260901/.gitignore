@@ -1,0 +1,8 @@
+# Runtime artifacts this pair emits INTO this directory — never the frozen
+# design/instrument files themselves.
+RUN_LIVE_*.json
+SMOKE_laptop.json
+IDENT_*.json
+VERDICT.json
+__pycache__/
+*.pyc
