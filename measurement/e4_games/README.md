@@ -5,7 +5,14 @@ schema `carcassonne-android-archive/v1`: lossless `(deck_seed, actions)` per the
 root_replay contract, plus result summary, per-move AI latencies, and provenance
 (champion id, leaf hash, effective budget).
 
-> ✅ **2026-08-17 (CURRENT): 9 NEW ARCHIVES PULLED (2026-08-16 14:27 → 08-17 22:10) + 7 BACKLOG
+> ✅ **2026-09-01 (CURRENT): 16 NEW ARCHIVES PULLED (08-26 → 09-01) — E-5 HAS BEGUN: 9
+> owner-vs-Carcasum games (owner 4W–5L, non-transitive-triangle direction) + 7 champion
+> games (owner 6W–1L, all 22016). E-3 does NOT fire (7 champion games ≪ the ≥30-ply
+> trigger).** Full readout: **[E4_UPDATE_20260901.md](E4_UPDATE_20260901.md)**. ⚠️ Interim
+> pulls 08-18 → 08-26 (11k epoch close 34W–20L/54; 22k opener) were recorded in memory/
+> DECISIONS but not in a dated ledger file — recount from archives for any pooled stat.
+
+> (superseded) **2026-08-17: 9 NEW ARCHIVES PULLED (2026-08-16 14:27 → 08-17 22:10) + 7 BACKLOG
 > ARCHIVES INGESTED.** Full readout, integrity checks and statistics:
 > **[E4_UPDATE_20260817.md](E4_UPDATE_20260817.md)**. ⚠️ That readout covers **16** games — the
 > seven archives from 2026-08-12 → 08-16 were pulled as raw data (`3d69c5b8`, `b5fd5427`) but
