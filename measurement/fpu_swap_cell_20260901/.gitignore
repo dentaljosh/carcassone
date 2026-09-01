@@ -6,3 +6,5 @@ IDENT_*.json
 VERDICT.json
 __pycache__/
 *.pyc
+PINNED_SRC_REV
+swap_cell_launch.log
