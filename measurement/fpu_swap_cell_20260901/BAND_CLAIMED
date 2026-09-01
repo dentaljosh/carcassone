@@ -1,0 +1,9 @@
+BAND CLAIMED: 170000000000
+Claim: seeds 170000000000..170000000399 (400 paired decks x 2 seatings = 800 games),
+CELL_SWAP (candidate fpu 0.2 arb-OFF vs deployed champion arb-ON B=64 both... opp side).
+THROWAWAY range 170000999000..170000999999 (the --smoke's 8 games) is inside the band
+numerically but EXCLUDED from the claim and never pooled.
+Batched sweep re-run at claim (2026-09-01): git grep + untracked pass — 3 hits, ALL
+float-decimal coincidences (digit substrings inside float reprs in omd2_chain_values /
+probe_b_fair_targets / value_resurrection_pilot), zero seed uses. Band clean.
+Claimed by the orchestrator 2026-09-01; registry row appended same commit.

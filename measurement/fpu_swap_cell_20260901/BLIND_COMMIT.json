@@ -1,17 +1,17 @@
 {
- "blind_commit": "PENDING",
+ "blind_commit": "e4495415a9e5ec0db0f06feeea75555acbc83529",
  "how": "A commit cannot name its own hash. The FREEZE commit lands PREREG.md, screen_lib.py, launch_swap_cell.sh, adjudicate_swap_cell.py, test_swap_cell.py and selftest_fixture/ with this field reading PENDING; a SECOND, stamping commit replaces it with the freeze commit's 40-hex sha. launch_swap_cell.sh REFUSES a real chunk while it still says PENDING. --dry-run and --smoke are EXEMPT (they play only the disjoint throwaway range and spend no blindness, no band).",
  "freeze_branch": "worktree-agent-a939b800681c0c28c (isolated worktree of tiearb2-stage2)",
  "what_is_frozen": [
-  "PREREG.md — design, bars, branch map, gates, non-inference limits, the honest power table",
-  "screen_lib.py — the shared stats/gate library, constants, branch ladder, sanity_check()",
-  "launch_swap_cell.sh — the launcher, its precondition ladder, the smoke + positive-control legs",
-  "adjudicate_swap_cell.py — the adjudicator and the READ_RULE it executes",
-  "test_swap_cell.py + selftest_fixture/ — the contract tests and the REAL-EMITTER fixtures"
+  "PREREG.md \u2014 design, bars, branch map, gates, non-inference limits, the honest power table",
+  "screen_lib.py \u2014 the shared stats/gate library, constants, branch ladder, sanity_check()",
+  "launch_swap_cell.sh \u2014 the launcher, its precondition ladder, the smoke + positive-control legs",
+  "adjudicate_swap_cell.py \u2014 the adjudicator and the READ_RULE it executes",
+  "test_swap_cell.py + selftest_fixture/ \u2014 the contract tests and the REAL-EMITTER fixtures"
  ],
  "state_at_freeze": {
   "real_cell_games_played": 0,
-  "smoke_games_played": "see DEVIATIONS/report — this build's own verification smoke, discarded seeds, not pooled",
+  "smoke_games_played": "see DEVIATIONS/report \u2014 this build's own verification smoke, discarded seeds, not pooled",
   "band_claimed": false,
   "results_csv_rows": 0,
   "PRODUCTION_yaml_touched": false,
