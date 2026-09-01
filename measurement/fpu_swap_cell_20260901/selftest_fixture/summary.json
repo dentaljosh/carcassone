@@ -1,0 +1,114 @@
+{
+  "info": "fair",
+  "exact_k": 2,
+  "k_dets": 2,
+  "sims": 32,
+  "total_sims": 64,
+  "rung_sims": 800,
+  "asymmetric_budgets": true,
+  "candidate_k_dets": 2,
+  "candidate_sims": 32,
+  "candidate_total_sims": 64,
+  "opp_k_dets": 2,
+  "opp_sims": 32,
+  "opp_total_sims": 64,
+  "n_failed": 0,
+  "failure_rate": 0.0,
+  "failure_rate_trigger": 0.005,
+  "validity_trigger_fired": false,
+  "failed_cells": [],
+  "failed_by_seat": {
+    "0": 0,
+    "1": 0
+  },
+  "failed_classes": {},
+  "n_resolved_failures": 0,
+  "resolved_failed_cells": [],
+  "opponent": "fair-champion",
+  "opponent_label": "FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k2x32)",
+  "n": 4,
+  "W": 0,
+  "D": 0,
+  "L": 4,
+  "winrate": 0.0,
+  "winrate_z": -2.0,
+  "elo": -800.0,
+  "elo_sig_1sigma": NaN,
+  "avg_diff": -29.5,
+  "paired_mean_margin": -29.5,
+  "paired_z": -5.363636363636363,
+  "n_paired": 2,
+  "champ_prefix_ms_per_move": 16.054347826086957,
+  "rung_ms_per_move": 1291.6376811594203,
+  "champ_latched_games": 4,
+  "solver_secs_per_game": 0.8547499999999999,
+  "champ_timeouts": 0,
+  "opp_tiearb_games": 4,
+  "opp_tiearb_fired_plies_total": 77,
+  "opp_tiearb_tile_plies_total": 138,
+  "opp_tiearb_phi": 19.25,
+  "opp_tiearb_fire_rate_on_tile_plies": 0.5579710144927537,
+  "opp_tiearb_pickchanges_total": 53,
+  "opp_tiearb_pickchange_rate": 0.6883116883116883,
+  "opp_tiearb_mean_arms": 3.3376623376623376,
+  "opp_tiearb_playouts_total": 16448,
+  "opp_tiearb_secs_total": 354.4596220429999,
+  "opp_tiearb_secs_per_game": 88.61490551074998,
+  "opp_tiearb_modes": [
+    "argmax"
+  ],
+  "opp_tiearb_B": [
+    64
+  ],
+  "opp_tiearb_J": [
+    4
+  ],
+  "opp_tiearb_phi_offline_prior": 22.96,
+  "opp_tiearb_G_FIRE_floor": 1.0,
+  "opp_tiearb_G_FIRE_fired": false,
+  "opp_tiearb_errors_total": 0,
+  "opp_tiearb_error_rate_on_fired": 0.0,
+  "opp_tiearb_first_error": null,
+  "opp_tiearb_partial_argmax_total": 0,
+  "opp_tiearb_phase_gates": [
+    "all"
+  ],
+  "opp_tiearb_fired_early_total": 28,
+  "opp_tiearb_fired_mid_total": 26,
+  "opp_tiearb_fired_late_total": 23,
+  "opp_tiearb_fired_by_phase_sum": 77,
+  "opp_tiearb_pickchanges_early_total": 15,
+  "opp_tiearb_pickchanges_mid_total": 19,
+  "opp_tiearb_pickchanges_late_total": 19,
+  "opp_tiearb_fired_share_early": 0.36363636363636365,
+  "opp_tiearb_fired_share_mid": 0.33766233766233766,
+  "opp_tiearb_fired_share_late": 0.2987012987012987,
+  "opp_tiearb_fired_share_proxy_note": "DESIGN \u00a76.2's proxy was 0.3380/0.3059/0.3561 (RAW exact-tie shares, corpus champ449, rules_profile=walled/R9-off, NO repr-dedup column). These shares are the DEDUPED runtime split under this cell's own rules epoch and SUPERSEDE it for sizing. Read only on a phase_gate=all cell.",
+  "opp_tiearb_max_plies": [
+    400
+  ],
+  "jr_expansions": {
+    "candidate": {
+      "total": 0,
+      "own_mover": 0,
+      "boosted": 0
+    },
+    "opponent": {
+      "total": 0,
+      "own_mover": 0,
+      "boosted": 0
+    }
+  },
+  "cand_jr_expansions": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+  },
+  "opp_jr_expansions": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+  },
+  "wc_tiebreak": false,
+  "wc_tie_resolved_games": 0
+}

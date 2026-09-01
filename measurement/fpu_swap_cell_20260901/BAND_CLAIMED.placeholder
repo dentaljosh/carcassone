@@ -1,0 +1,67 @@
+# BAND — PROPOSED, NOT CLAIMED. THIS AGENT CLAIMED NOTHING.
+
+`launch_swap_cell.sh` refuses to launch a real chunk (i.e. anything that is
+not `--smoke`) until a sibling file named **`BAND_CLAIMED`** (no extension)
+exists next to this one. That file is the orchestrator's to drop, and only
+after it has done the two things below — this is the OPPOSITE case from
+`measurement/e1b_armed_continuation_20260901/BAND_CLAIMED.placeholder`, whose
+round spent no band at all. **This round IS a fresh-deck cell** and DOES owe
+a `governance/BAND_REGISTRY.csv` row.
+
+## What the orchestrator should do
+
+1. **Re-run the tree sweep before trusting the proposal — but note it is
+   already well-corroborated.** `screen_lib.py` proposes
+   `PROPOSED_BAND = 170_000_000_000` — the next monotone-free id after
+   `fpu_h2h_r2_prep`'s `169_000_000_000` in `governance/BAND_REGISTRY.csv` as
+   of 2026-09-01. **`170e9` has ALREADY been swept and cleared TWICE**, by two
+   independent prior rounds' own `BAND_CLAIM.json`:
+   `measurement/fpu_h2h_prep/BAND_CLAIM.json` ("170000000000 appears as a
+   substring of the IEEE-754 hex `4017000000000000`... ⛔ NOT A BAND
+   REFERENCE... 170e9 is FREE") and
+   `measurement/fpu_h2h_r2_prep/BAND_CLAIM.json` (same verdict, plus one
+   additional untracked-file source of glued-digit false hits, also cleared).
+   **The registry is still necessary and NOT sufficient** on its own — the
+   standing trap in this tree (`WORKERS.conf`'s own `146e9` note) is a band
+   absent from the registry but genuinely referenced somewhere in the tree —
+   so a FRESH sweep is still owed (the tree has moved since those two rounds
+   swept it) rather than trusting inherited verdicts blindly:
+
+   ```bash
+   git grep -n "170000000000\|170e9" -- ':!measurement/fpu_swap_cell_20260901'
+   ```
+
+   Zero hits outside this directory, or only the ALREADY-CATALOGUED
+   incidental float-mantissa/glued-digit hits the two prior sweeps named
+   above, is the pass condition. If a NEW genuine reference has appeared
+   since 2026-09-01, do NOT default to `170_000_000_000` — pick the next id
+   that actually sweeps clean and edit `screen_lib.PROPOSED_BAND` (and this
+   file) to match before claiming.
+
+2. **Append ONE row to `governance/BAND_REGISTRY.csv`** for the confirmed
+   band, per the standing convention (claimed status, this round's name,
+   date, purpose). This is a fresh-deck cell: 400 seat-balanced decks × 2
+   seatings = 800 games, seeds `<band> .. <band>+399`.
+
+3. **Drop the acknowledgement file**, e.g.:
+
+   ```bash
+   D=measurement/fpu_swap_cell_20260901
+   cat > $D/BAND_CLAIMED <<'EOF'
+   BAND CLAIMED: 170000000000 (or the tree-sweep-confirmed replacement).
+   governance/BAND_REGISTRY.csv row appended <date>. Fresh-deck cell: 400
+   seat-balanced decks x 2 seatings = 800 games, seeds
+   <band>..<band>+399. Throwaway smoke/positive-control range
+   <band>+999000..<band>+999999 is NOT part of this claim and is never
+   pooled. Claimed by the orchestrator after a fresh tree-sweep confirming
+   no in-tree reference to the band outside this directory.
+   EOF
+   ```
+
+4. Then stamp `BLIND_COMMIT.json` (the freeze commit's 40-hex sha) — the
+   launcher checks that too — and only then launch a real chunk.
+
+⛔ This agent did not create `BAND_CLAIMED`, did not touch
+`governance/BAND_REGISTRY.csv`, and did not launch the cell. `--smoke` and
+`--dry-run` are exempt from both this file and `BLIND_COMMIT.json` (they play
+only the disjoint throwaway range and spend no band, no blindness).
