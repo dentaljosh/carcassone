@@ -1,0 +1,94 @@
+{
+ "status": "OK",
+ "schema": "defense-mech-synth/v1/select",
+ "deck_seed": 999900000001,
+ "ply": 124,
+ "profile": "fixed_v1",
+ "n_plies": 142,
+ "ply_frac": 0.8732394366197183,
+ "mover": 0,
+ "phase": "tiles",
+ "n_legal": 62,
+ "n_unseen_tiles": 8,
+ "n_tiles_total": 71,
+ "root_repr_sha": "85656df7ad7be5b0",
+ "pick_champ": 1645,
+ "pick_armed": 1645,
+ "diverges": false,
+ "top2_gap_champ": 0.049600290697674417,
+ "top2_gap_armed": 0.049600290697674417,
+ "top2_gap_detail": {
+  "champ": {
+   "gap": 0.049600290697674417,
+   "n_actions": 31,
+   "reason": null
+  },
+  "armed": {
+   "gap": 0.049600290697674417,
+   "n_actions": 31,
+   "reason": null
+  }
+ },
+ "shape": {
+  "n_plugs": 2,
+  "n_distinct_plug_cells": 1,
+  "n_tile_actions": 62,
+  "plug_share": 0.03225806451612903,
+  "n_threat_pairs": 1,
+  "n_merge_cells": 2,
+  "n_victims": 2,
+  "n_opp_parts": 4,
+  "max_threat_pts": 12.0,
+  "threat_classes": [
+   "farm"
+  ],
+  "cfg": {
+   "victim_min_tiles": 5,
+   "victim_min_pts": 4
+  }
+ },
+ "stratum_raw": "defense",
+ "arming_resolved": {
+  "champ": {
+   "dose": 0.0,
+   "mask": 31,
+   "scope": "all",
+   "k_dets": 8,
+   "sims_per_det": 1376,
+   "exact_max_k": 2,
+   "threads": 1,
+   "seed": 0
+  },
+  "armed": {
+   "dose": 0.25,
+   "mask": 31,
+   "scope": "opp",
+   "k_dets": 8,
+   "sims_per_det": 1376,
+   "exact_max_k": 2,
+   "threads": 1,
+   "seed": 0
+  }
+ },
+ "jr_expansions": {
+  "champ": {
+   "total": 0,
+   "own_mover": 0,
+   "boosted": 0
+  },
+  "armed": {
+   "total": 8271,
+   "own_mover": 6779,
+   "boosted": 1492
+  }
+ },
+ "select_s": 2.765,
+ "execution": {
+  "backend": "rust",
+  "rust_threads": 1,
+  "parallel_workers": null,
+  "profile": "desktop",
+  "source": "profile"
+ },
+ "elapsed_s": 2.8354597091674805
+}
