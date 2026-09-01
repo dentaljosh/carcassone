@@ -4,10 +4,10 @@
   "flag_expressible_on_this_module": true,
   "requested_but_unreachable": false,
   "backend": "rust",
-  "evalmod": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py",
+  "evalmod": "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py",
   "evalmod_sha256": "01d0e2a9f848687d9752455a9756b71034dc641c91fb754101815ff9e3c33dc1",
-  "src_tree": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63",
-  "carcassonne_ai_file": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/src/carcassonne_ai/__init__.py",
+  "src_tree": "/home/doctor/projects/carcassone",
+  "carcassonne_ai_file": "/home/doctor/projects/carcassone/src/carcassonne_ai/__init__.py",
   "carc_rs_binary_sha": "a61d0d303e7f1639",
   "production_knobs": {
     "c_puct": 1.5,
@@ -41,13 +41,21 @@
     171999999800,
     171999999801,
     171999999802,
-    171999999803
+    171999999803,
+    171999999804,
+    171999999805,
+    171999999806,
+    171999999807,
+    171999999808,
+    171999999809,
+    171999999810,
+    171999999811
   ],
   "frozen_seed_count": 12,
   "host": "Doctor",
   "python": "3.12.3",
   "env_flat_leaf": "1",
-  "wall_secs": 19.372076818021014,
+  "wall_secs": 27.68578337901272,
   "games": [
     {
       "seed": 171999999800,
@@ -132,7 +140,175 @@
       ],
       "resolved_tau_p": 5.0,
       "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999804,
+      "n_actions": 144,
+      "actions_sha256": "eee5568ea44519931beb75d175cf505939d018461046de70e059d35c624bdc38",
+      "first_8_actions": [
+        1248,
+        2510,
+        1244,
+        2502,
+        1149,
+        2501,
+        1246,
+        2507
+      ],
+      "final_scores": [
+        86,
+        82
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999805,
+      "n_actions": 144,
+      "actions_sha256": "72afe60e439ba652618a37518429fa75634ae62c7cc4af054b9c8a7021cdaa52",
+      "first_8_actions": [
+        1248,
+        2501,
+        1246,
+        2503,
+        1154,
+        2509,
+        1153,
+        2503
+      ],
+      "final_scores": [
+        80,
+        102
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999806,
+      "n_actions": 144,
+      "actions_sha256": "d9f5b981d22488bc63f93feff1df5fedbb116b14dc02ed1e1a22d5f1178fb8b0",
+      "first_8_actions": [
+        1248,
+        2503,
+        1247,
+        2501,
+        1354,
+        2509,
+        1448,
+        2501
+      ],
+      "final_scores": [
+        100,
+        86
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999807,
+      "n_actions": 144,
+      "actions_sha256": "53b6bfb28ce73bd2383bd4c1e48ddfcecb1b408fa6802c0cd88fc6262f5d5863",
+      "first_8_actions": [
+        1248,
+        2501,
+        1148,
+        2501,
+        1253,
+        2501,
+        1247,
+        2503
+      ],
+      "final_scores": [
+        88,
+        96
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999808,
+      "n_actions": 144,
+      "actions_sha256": "bc12cd489c8de67c6937fa9ffe7756945dbbd1efde15f23189f1085e87ef7058",
+      "first_8_actions": [
+        1248,
+        2501,
+        1252,
+        2506,
+        1146,
+        2509,
+        1350,
+        2501
+      ],
+      "final_scores": [
+        84,
+        80
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999809,
+      "n_actions": 144,
+      "actions_sha256": "e09efb31cd8d1850b76b612621ffec912b673a5fbc92b32d470b364c650e93af",
+      "first_8_actions": [
+        1248,
+        2501,
+        1244,
+        2510,
+        1152,
+        2510,
+        1252,
+        2506
+      ],
+      "final_scores": [
+        101,
+        96
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999810,
+      "n_actions": 144,
+      "actions_sha256": "653e823cda798ac7ce1fb08e155574d9f1de2d7605d514ca2b57c819dd964bfe",
+      "first_8_actions": [
+        1248,
+        2506,
+        1246,
+        2501,
+        1153,
+        2502,
+        1145,
+        2501
+      ],
+      "final_scores": [
+        104,
+        84
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999811,
+      "n_actions": 144,
+      "actions_sha256": "d89347b969246a612584131ac193170c2074a5950f784f4ca256c55c9067d267",
+      "first_8_actions": [
+        1248,
+        2502,
+        1348,
+        2503,
+        1352,
+        2505,
+        1048,
+        2506
+      ],
+      "final_scores": [
+        122,
+        116
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
     }
   ],
-  "leg_sha256": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca"
+  "leg_sha256": "03a91c2713bc022301920d4e1c2ba388d5020bd0932207e1a647da10bc4cb391"
 }

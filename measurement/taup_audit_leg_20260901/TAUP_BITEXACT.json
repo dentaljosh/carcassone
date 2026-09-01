@@ -1,9 +1,9 @@
 {
   "gate": "TAU_P GOLDEN GATE (bit-exact-when-unset + positive control + candidate-only)",
   "verdict": "PASS",
-  "seeds_played": 4,
+  "seeds_played": 12,
   "frozen_seed_count": 12,
-  "full_frozen_set": false,
+  "full_frozen_set": true,
   "checks": [
     {
       "check": "ONE-WHEEL",
@@ -19,9 +19,9 @@
       "check": "ONE-SRC",
       "ok": true,
       "detail": {
-        "OLD": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/src/carcassonne_ai/__init__.py",
-        "NEW": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/src/carcassonne_ai/__init__.py",
-        "CTRL": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/src/carcassonne_ai/__init__.py"
+        "OLD": "/home/doctor/projects/carcassone/src/carcassonne_ai/__init__.py",
+        "NEW": "/home/doctor/projects/carcassone/src/carcassonne_ai/__init__.py",
+        "CTRL": "/home/doctor/projects/carcassone/src/carcassonne_ai/__init__.py"
       },
       "why": "⭐ STRONGER THAN THE FPU PRECEDENT: src/carcassonne_ai is byte-identical across the legs, so it is held CONSTANT rather than swung. The variable is one file (see ONE-FILE)"
     },
@@ -33,9 +33,9 @@
         "NEW": "01d0e2a9f848687d9752455a9756b71034dc641c91fb754101815ff9e3c33dc1",
         "CTRL": "01d0e2a9f848687d9752455a9756b71034dc641c91fb754101815ff9e3c33dc1",
         "paths": {
-          "OLD": "/tmp/taup_gate_2611703/scripts/classical_search/eval_fair_puct.py",
-          "NEW": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py",
-          "CTRL": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py"
+          "OLD": "/tmp/taup_gate_2647375/scripts/classical_search/eval_fair_puct.py",
+          "NEW": "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py",
+          "CTRL": "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py"
         }
       },
       "why": "OLD loaded a DIFFERENT eval_fair_puct.py than NEW, and the positive control ran on the SAME file NEW did — so the only thing that moved between OLD and NEW is the patched harness"
@@ -44,7 +44,7 @@
       "check": "SAME-SEEDS",
       "ok": true,
       "detail": {
-        "n": 4,
+        "n": 12,
         "identical": true
       },
       "why": "all three legs played the same frozen deck set"
@@ -64,8 +64,8 @@
       "check": "IDENTITY",
       "ok": true,
       "detail": {
-        "old": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
-        "new": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
+        "old": "03a91c2713bc022301920d4e1c2ba388d5020bd0932207e1a647da10bc4cb391",
+        "new": "03a91c2713bc022301920d4e1c2ba388d5020bd0932207e1a647da10bc4cb391",
         "per_game_mismatches": []
       },
       "why": "⭐ BIT-IDENTICAL with --cand-tau-p UNSET: the plumbing did not move the champion's play by one action"
@@ -74,12 +74,12 @@
       "check": "POSITIVE",
       "ok": true,
       "detail": {
-        "new": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
-        "ctrl": "763cc58940c9be5bb1c3c5a6f9a04ac2b7a8effcfd8f1621343f0515d4481174",
+        "new": "03a91c2713bc022301920d4e1c2ba388d5020bd0932207e1a647da10bc4cb391",
+        "ctrl": "80df7d8544ff0db4782348e6fb7d004c15a13a6026ca1503a6fec03e16e329da",
         "requested_cand_tau_p": 2.5,
         "resolved_cand_tau_p": 2.5,
-        "games_that_differ": 4,
-        "games_total": 4
+        "games_that_differ": 12,
+        "games_total": 12
       },
       "why": "⭐ the knob BINDS: every game diverges at the control dose. A flag parsed and dropped on the floor would be indistinguishable from the shared-flag defect this leg closes"
     },
@@ -110,28 +110,28 @@
   "failed": [],
   "legs": {
     "OLD": {
-      "evalmod": "/tmp/taup_gate_2611703/scripts/classical_search/eval_fair_puct.py",
-      "leg_sha256": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
+      "evalmod": "/tmp/taup_gate_2647375/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "03a91c2713bc022301920d4e1c2ba388d5020bd0932207e1a647da10bc4cb391",
       "requested_cand_tau_p": null,
       "flag_expressible_on_this_module": false,
       "host": "Doctor",
-      "wall_secs": 20.585482173017226
+      "wall_secs": 27.598962017917074
     },
     "NEW": {
-      "evalmod": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py",
-      "leg_sha256": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
+      "evalmod": "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "03a91c2713bc022301920d4e1c2ba388d5020bd0932207e1a647da10bc4cb391",
       "requested_cand_tau_p": null,
       "flag_expressible_on_this_module": true,
       "host": "Doctor",
-      "wall_secs": 19.372076818021014
+      "wall_secs": 27.68578337901272
     },
     "CTRL": {
-      "evalmod": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py",
-      "leg_sha256": "763cc58940c9be5bb1c3c5a6f9a04ac2b7a8effcfd8f1621343f0515d4481174",
+      "evalmod": "/home/doctor/projects/carcassone/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "80df7d8544ff0db4782348e6fb7d004c15a13a6026ca1503a6fec03e16e329da",
       "requested_cand_tau_p": 2.5,
       "flag_expressible_on_this_module": true,
       "host": "Doctor",
-      "wall_secs": 19.597050016047433
+      "wall_secs": 26.35314014100004
     }
   },
   "riders": [

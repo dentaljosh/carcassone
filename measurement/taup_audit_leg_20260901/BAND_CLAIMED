@@ -1,0 +1,12 @@
+BANDS CLAIMED: 171000000000 (CELL_TAU3) and 172000000000 (CELL_TAU8)
+Reassigned from the placeholder's proposed 170/171 at claim time: 170e9 was claimed
+the same day by measurement/fpu_swap_cell_20260901 (openings-menu item funded in the
+same owner ruling). Claim: 400 paired decks x 2 seatings = 800 games per band, seeds
+<band>..<band>+399; throwaway smoke ranges per WORKERS.conf are excluded.
+Batched sweep re-run at claim (2026-09-01): git grep + untracked pass for both ids —
+hits are (a) fpu_h2h_r2_prep/BAND_CLAIM.json quoting 171e9 inside its OWN documented
+sweep command (not a use) and (b) float-decimal coincidences in
+value_resurrection_pilot leaf_audit rows. Zero seed uses. Both bands clean.
+Full golden gate re-run at the quiet window BEFORE this claim: 9/9 PASS on the full
+seed set (TAUP_BITEXACT.json, OLD leg = a1c0a389).
+Claimed by the orchestrator 2026-09-01; registry rows appended the same commit.
