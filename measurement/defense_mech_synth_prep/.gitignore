@@ -1,0 +1,19 @@
+# Launch-time artefacts. The FROZEN documents (PREREG.md, synth_mech.py,
+# adjudicate_synth.py, test_synth.py, selftest_fixture/, launch_local.sh,
+# BLIND_COMMIT.json, BAND_CLAIMED.placeholder, SMOKE_READOUT.json,
+# FIXTURE_PROVENANCE.json) are tracked; everything a run PRODUCES is not, and is
+# force-added at close-out the way E-1b force-added its verdict of record.
+out_DRY/
+out_local/
+out_SMOKE*/
+logs/
+__pycache__/
+*.tmp
+RUN_LIVE_*.json
+DONE_*.json
+BAND_CLAIMED
+# produced BY the harvest from the frozen selector (BLIND_COMMIT.json explains
+# why the target set is not, and cannot be, frozen at the freeze commit)
+targets_synth.jsonl
+SELECTION.json
+SYNTH.json

@@ -1,0 +1,354 @@
+{
+ "schema": "defense-mech-synth/v1/unit",
+ "deck_seed": 999900000004,
+ "ply": 110,
+ "world": 1,
+ "stratum": "control",
+ "profile": "fixed_v1",
+ "mover": 1,
+ "phase": "tiles",
+ "n_plies": 142,
+ "ply_frac": 0.7746478873239436,
+ "n_legal": 38,
+ "n_unseen_tiles": 15,
+ "cell": [
+  1,
+  1,
+  0
+ ],
+ "top2_gap_champ": 0.003997093023255814,
+ "top2_gap_armed": 0.015625,
+ "shape": {
+  "cfg": {
+   "victim_min_pts": 4,
+   "victim_min_tiles": 5
+  },
+  "max_threat_pts": 0.0,
+  "n_distinct_plug_cells": 0,
+  "n_merge_cells": 0,
+  "n_opp_parts": 3,
+  "n_plugs": 0,
+  "n_threat_pairs": 0,
+  "n_tile_actions": 38,
+  "n_victims": 2,
+  "plug_share": 0.0,
+  "threat_classes": []
+ },
+ "pick_champ": 1428,
+ "pick_armed": 1470,
+ "continuation_families": {
+  "champ": {
+   "dose": 0.0,
+   "mask": 31,
+   "scope": "opp",
+   "k_dets": 8,
+   "sims_per_det": 1376,
+   "exact_max_k": 2,
+   "seats": "both"
+  },
+  "armed": {
+   "dose": 0.25,
+   "mask": 31,
+   "scope": "opp",
+   "k_dets": 8,
+   "sims_per_det": 1376,
+   "exact_max_k": 2,
+   "seats": "both"
+  }
+ },
+ "arms": {
+  "pick_champ__champ": {
+   "status": "OK",
+   "arm": "pick_champ__champ",
+   "pick": "pick_champ",
+   "family": "champ",
+   "arm_action": 1428,
+   "final_scores": [
+    83,
+    77
+   ],
+   "margin_p0_minus_p1": 6,
+   "n_continuation_decisions": 31,
+   "n_plies_total": 142,
+   "first_followup_action": 2506,
+   "prefix_replay_s": 0.009,
+   "continuation_s": 49.73,
+   "arm_s": 49.816,
+   "s_per_decision": 1.6042,
+   "witness": {
+    "root_repr_sha": "ba272b9e6c8c6261",
+    "world_deck_sha": "4a68e16f204ac978",
+    "world_deck_len": 15,
+    "n_drawn_prefix": 56,
+    "n_legal_root": 38,
+    "det_seed_base_at_root": 901010,
+    "move_idx_at_root": 110
+   },
+   "jr_expansions": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+   },
+   "arming_resolved": {
+    "dose": 0.0,
+    "mask": 31,
+    "scope": "all",
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "exact_max_k": 2,
+    "threads": 1,
+    "seed": 0
+   },
+   "family_witness": {
+    "ok": true,
+    "failures": [],
+    "census": {
+     "total": 0,
+     "own_mover": 0,
+     "boosted": 0
+    }
+   },
+   "execution": {
+    "backend": "rust",
+    "rust_threads": 1,
+    "parallel_workers": null,
+    "profile": "desktop",
+    "source": "profile"
+   },
+   "elapsed_s": 49.88858985900879
+  },
+  "pick_armed__champ": {
+   "status": "OK",
+   "arm": "pick_armed__champ",
+   "pick": "pick_armed",
+   "family": "champ",
+   "arm_action": 1470,
+   "final_scores": [
+    78,
+    106
+   ],
+   "margin_p0_minus_p1": -28,
+   "n_continuation_decisions": 31,
+   "n_plies_total": 142,
+   "first_followup_action": 2509,
+   "prefix_replay_s": 0.007,
+   "continuation_s": 42.947,
+   "arm_s": 43.031,
+   "s_per_decision": 1.3854,
+   "witness": {
+    "root_repr_sha": "ba272b9e6c8c6261",
+    "world_deck_sha": "4a68e16f204ac978",
+    "world_deck_len": 15,
+    "n_drawn_prefix": 56,
+    "n_legal_root": 38,
+    "det_seed_base_at_root": 901010,
+    "move_idx_at_root": 110
+   },
+   "jr_expansions": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+   },
+   "arming_resolved": {
+    "dose": 0.0,
+    "mask": 31,
+    "scope": "all",
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "exact_max_k": 2,
+    "threads": 1,
+    "seed": 0
+   },
+   "family_witness": {
+    "ok": true,
+    "failures": [],
+    "census": {
+     "total": 0,
+     "own_mover": 0,
+     "boosted": 0
+    }
+   },
+   "execution": {
+    "backend": "rust",
+    "rust_threads": 1,
+    "parallel_workers": null,
+    "profile": "desktop",
+    "source": "profile"
+   },
+   "elapsed_s": 43.13194513320923
+  },
+  "pick_champ__armed": {
+   "status": "OK",
+   "arm": "pick_champ__armed",
+   "pick": "pick_champ",
+   "family": "armed",
+   "arm_action": 1428,
+   "final_scores": [
+    83,
+    81
+   ],
+   "margin_p0_minus_p1": 2,
+   "n_continuation_decisions": 31,
+   "n_plies_total": 142,
+   "first_followup_action": 2506,
+   "prefix_replay_s": 0.006,
+   "continuation_s": 47.131,
+   "arm_s": 47.205,
+   "s_per_decision": 1.5204,
+   "witness": {
+    "root_repr_sha": "ba272b9e6c8c6261",
+    "world_deck_sha": "4a68e16f204ac978",
+    "world_deck_len": 15,
+    "n_drawn_prefix": 56,
+    "n_legal_root": 38,
+    "det_seed_base_at_root": 901010,
+    "move_idx_at_root": 110
+   },
+   "jr_expansions": {
+    "total": 199055,
+    "own_mover": 99567,
+    "boosted": 99488
+   },
+   "arming_resolved": {
+    "dose": 0.25,
+    "mask": 31,
+    "scope": "opp",
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "exact_max_k": 2,
+    "threads": 1,
+    "seed": 0
+   },
+   "family_witness": {
+    "ok": true,
+    "failures": [],
+    "denominator": 99488,
+    "coverage": 1.0,
+    "exact_partition": true
+   },
+   "execution": {
+    "backend": "rust",
+    "rust_threads": 1,
+    "parallel_workers": null,
+    "profile": "desktop",
+    "source": "profile"
+   },
+   "elapsed_s": 47.262227296829224
+  },
+  "pick_armed__armed": {
+   "status": "OK",
+   "arm": "pick_armed__armed",
+   "pick": "pick_armed",
+   "family": "armed",
+   "arm_action": 1470,
+   "final_scores": [
+    85,
+    109
+   ],
+   "margin_p0_minus_p1": -24,
+   "n_continuation_decisions": 31,
+   "n_plies_total": 142,
+   "first_followup_action": 2509,
+   "prefix_replay_s": 0.01,
+   "continuation_s": 46.418,
+   "arm_s": 46.52,
+   "s_per_decision": 1.4974,
+   "witness": {
+    "root_repr_sha": "ba272b9e6c8c6261",
+    "world_deck_sha": "4a68e16f204ac978",
+    "world_deck_len": 15,
+    "n_drawn_prefix": 56,
+    "n_legal_root": 38,
+    "det_seed_base_at_root": 901010,
+    "move_idx_at_root": 110
+   },
+   "jr_expansions": {
+    "total": 225204,
+    "own_mover": 108594,
+    "boosted": 116610
+   },
+   "arming_resolved": {
+    "dose": 0.25,
+    "mask": 31,
+    "scope": "opp",
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "exact_max_k": 2,
+    "threads": 1,
+    "seed": 0
+   },
+   "family_witness": {
+    "ok": true,
+    "failures": [],
+    "denominator": 116610,
+    "coverage": 1.0,
+    "exact_partition": true
+   },
+   "execution": {
+    "backend": "rust",
+    "rust_threads": 1,
+    "parallel_workers": null,
+    "profile": "desktop",
+    "source": "profile"
+   },
+   "elapsed_s": 46.57757639884949
+  }
+ },
+ "pair": {
+  "status": "OK",
+  "margins": {
+   "pick_champ__champ": 6,
+   "pick_armed__champ": -28,
+   "pick_champ__armed": 2,
+   "pick_armed__armed": -24
+  },
+  "delta_pts_mover": {
+   "champ": 34,
+   "armed": 26
+  },
+  "family_delta": -8,
+  "crn_witness": {
+   "root_repr_sha": "ba272b9e6c8c6261",
+   "world_deck_sha": "4a68e16f204ac978",
+   "world_deck_len": 15,
+   "n_drawn_prefix": 56,
+   "n_legal_root": 38,
+   "move_idx_at_root": 110
+  },
+  "root_identity_ok": true,
+  "family_witness": {
+   "pick_champ__champ": {
+    "ok": true,
+    "failures": [],
+    "census": {
+     "total": 0,
+     "own_mover": 0,
+     "boosted": 0
+    }
+   },
+   "pick_armed__champ": {
+    "ok": true,
+    "failures": [],
+    "census": {
+     "total": 0,
+     "own_mover": 0,
+     "boosted": 0
+    }
+   },
+   "pick_champ__armed": {
+    "ok": true,
+    "failures": [],
+    "denominator": 99488,
+    "coverage": 1.0,
+    "exact_partition": true
+   },
+   "pick_armed__armed": {
+    "ok": true,
+    "failures": [],
+    "denominator": 116610,
+    "coverage": 1.0,
+    "exact_partition": true
+   }
+  }
+ }
+}

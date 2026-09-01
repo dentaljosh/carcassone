@@ -1,0 +1,107 @@
+{
+ "schema": "defense-mech-synth/v1/selection",
+ "targets": "targets_synth.jsonl",
+ "targets_sha256": "95a5a1b862e8fc63adc24b01041c1e705dee4d8565f248d95138ce21b7f5fecb",
+ "n_eligible": 576,
+ "n_divergent": 28,
+ "n_agreement": 548,
+ "divergence_rate": 0.04861111111111111,
+ "pool_defense": 5,
+ "pool_control": 20,
+ "n_defense": 3,
+ "n_control": 3,
+ "n_identity": 1,
+ "n_games": 6,
+ "cell_edges": {
+  "ply_frac": [
+   0.6901408450704225,
+   0.8028169014084507
+  ],
+  "n_legal": [
+   34,
+   40
+  ],
+  "top2_gap_champ": [
+   0.003997093023255814,
+   0.0456031976744186
+  ]
+ },
+ "match_fills": [
+  {
+   "want_cell": [
+    0,
+    2,
+    1
+   ],
+   "filled_from": [
+    0,
+    1,
+    1
+   ],
+   "n": 1
+  },
+  {
+   "want_cell": [
+    2,
+    2,
+    2
+   ],
+   "filled_from": [
+    0,
+    2,
+    2
+   ],
+   "n": 1
+  }
+ ],
+ "balance": {
+  "ply_frac": {
+   "matched": true,
+   "defense_mean": 0.7699530516431925,
+   "control_mean": 0.7034595278526954,
+   "smd": 1.116191788480631
+  },
+  "n_legal": {
+   "matched": true,
+   "defense_mean": 46.666666666666664,
+   "control_mean": 38.0,
+   "smd": 2.205291217167924
+  },
+  "top2_gap_champ": {
+   "matched": true,
+   "defense_mean": 0.03309714147286822,
+   "control_mean": 0.027283187984496124,
+   "smd": 0.18987624399637587
+  },
+  "n_merge_cells": {
+   "matched": false,
+   "defense_mean": 5.333333333333333,
+   "control_mean": 0.0,
+   "smd": 16.0
+  },
+  "max_threat_pts": {
+   "matched": false,
+   "defense_mean": 13.0,
+   "control_mean": 0.0,
+   "smd": 4.913538149119954
+  },
+  "n_threat_pairs": {
+   "matched": false,
+   "defense_mean": 1.3333333333333333,
+   "control_mean": 0.0,
+   "smd": 4.0
+  }
+ },
+ "frozen": {
+  "n_per_stratum": 3,
+  "n_identity": 1,
+  "match_seed": 20260902,
+  "max_per_game": 2,
+  "ply_frac_window": [
+   0.62,
+   0.88
+  ],
+  "min_unseen_tiles": 8,
+  "phase": "tiles"
+ }
+}

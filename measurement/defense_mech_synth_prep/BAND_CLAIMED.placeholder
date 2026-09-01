@@ -1,0 +1,85 @@
+# BAND — TBD AT LAUNCH. THIS AGENT CLAIMED NOTHING.
+
+`launch_local.sh` refuses to launch until a sibling file named **`BAND_CLAIMED`**
+(no extension) exists next to this one. That file is the orchestrator's to drop,
+and only after it has decided the questions below.
+
+## ⛔ This round is NOT like E-1a / E-1b: it DOES spend a band
+
+E-1a and E-1b consumed no band — every world was a permutation of an already
+archived E4 game's unseen tail, under the archive's own `deck_seed`. **This round
+generates fresh synthetic games**, one deck per seed, so it consumes real deck
+seeds and a `governance/BAND_REGISTRY.csv` append **is** owed.
+
+What it still does NOT do: it writes **no `results.csv` elo row** (the readout is
+a per-ply price in realized points, not a head-to-head), and it makes **no
+strength claim** of any kind. The band is spent on a *position source*, and the
+registry row should say so in those words, because a future reader looking for
+"what was this band spent on" must not find an implied elo comparison.
+
+## Proposed range (a PROPOSAL — verify it before claiming)
+
+```
+CLAIM range      173000000000 .. 173000001999      (2,000 seeds = 2,000 games,
+                                                    the frozen §5.2 harvest CAP)
+THROWAWAY range  173000999000 .. 173000999999      (smoke / IDENT legs;
+                                                    NEVER part of the claim)
+```
+
+* `172000000000` is the last band claimed at the time of this freeze
+  (`taup_audit_leg_20260901` CELL_TAU8), so `173e9` is the next free start.
+  ⚠️ **Re-derive that; do not take this file's word for it** — other rounds may
+  have claimed in between.
+* Seat balance is by construction: the champion sits at seat `seed % 2`, so a
+  contiguous range is exactly seat-balanced.
+* ⭐ **Expected consumption is well under the cap.** §5.2 sizes the harvest at
+  ~1,670 games on the conservative independence product and ~1,070 on the
+  observed joint yield; the harvest stops the moment `n_defense >= 200` (§5.4).
+  The cap is claimed, the remainder is simply not played, and the registry note
+  should record the realized consumption at close-out.
+
+## What the orchestrator should do
+
+1. **Re-derive the next free band start** from `governance/BAND_REGISTRY.csv`,
+   and run the standing pre-claim tree sweep for the chosen prefix — the
+   **batched** form (one `git grep` over tracked files plus one filesystem pass
+   over the main tree's untracked files), never a per-band grep loop.
+2. Confirm from `synth_mech.py` — do not take this file's word for it — that:
+   * `_gen_game` seeds `random.seed(deck_seed)` and draws a fresh deck per seed;
+   * `world_rng(deck_seed, ply, world)` carries **no arm, pick or family term**,
+     so the worlds are shared across all four arms of a unit;
+   * `WORLD_SEED = 20260902` is **not** E-1a/E-1b's `20260828` (deliberate: no
+     CRN relationship with those rounds exists or is claimed).
+3. Append the `governance/BAND_REGISTRY.csv` row (`tier = claim`,
+   `status = claimed`, `decision_influenced = pending`), naming the throwaway
+   sub-range as excluded, and pointing at `PREREG.md`.
+4. Drop the acknowledgement file, e.g.
+
+   ⚠️ `launch_local.sh` PARSES this file — it needs the two machine-readable
+   lines below verbatim (`BAND_START=` / `BAND_N=`, no spaces), and it refuses
+   if `BAND_N` is smaller than the frozen harvest cap. Everything else in the
+   file is prose for humans.
+
+   ```bash
+   D=measurement/defense_mech_synth_prep
+   cat > $D/BAND_CLAIMED <<'EOF'
+   BAND_START=173000000000
+   BAND_N=2000
+   BAND CLAIMED: 173000000000..173000001999 (2,000 seeds, the frozen harvest cap).
+   THROWAWAY (never in the claim): 173000999000..173000999999 — the launcher's
+   smoke uses BAND_START+999000 and this sub-range must lie inside the claim's
+   registry note as EXCLUDED.
+   Registry row appended <date>. No results.csv elo row will be written; this
+   band is spent on a POSITION SOURCE for a per-ply pricing instrument.
+   Acknowledged by the orchestrator <date>, after reading synth_mech.py
+   (_gen_game, world_rng) and PREREG §11.
+   EOF
+   ```
+
+5. Then stamp `BLIND_COMMIT.json` (the freeze commit's 40-hex sha) — the launcher
+   checks that too — and launch.
+
+⛔ This agent did not create `BAND_CLAIMED`, did not touch
+`governance/BAND_REGISTRY.csv`, and did not launch anything. The only seeds it
+ever used are the throwaway `999900000000+` DRY-smoke range, which lies outside
+every registered band.

@@ -1,0 +1,207 @@
+{
+ "schema": "defense-mech-synth/v1",
+ "what": "SYNTHETIC mechanism-corroboration of CL-083's policy-conditional pricing clause. Prices the CLAUSE, never the owner's edge.",
+ "written_at": "2026-09-01T14:10:32",
+ "host": "Doctor",
+ "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+ "world_seed": 20260902,
+ "continuation_seed": 0,
+ "select_seed": 0,
+ "match_seed": 20260902,
+ "m_worlds": 8,
+ "arming": {
+  "dose": 0.25,
+  "mask": 31,
+  "scope": "opp",
+  "surface": "B (search knob; moves NO leaf hash)",
+  "provenance": "S1 G1 adjudicated d*=0.25; G3 mask 31; scope=opp"
+ },
+ "families": {
+  "champ": {
+   "dose": 0.0,
+   "seats": "both"
+  },
+  "armed": {
+   "dose": 0.25,
+   "seats": "both"
+  }
+ },
+ "budget_pin": {
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "total_sims": 11008,
+  "exact_max_k": 2,
+  "why": "E-1a/E-1b's 11008. PINNED, not read from PRODUCTION.yaml, so this round corroborates the SAME pricing instrument."
+ },
+ "gen_budget": {
+  "k_dets": 4,
+  "sims_per_det": 1376,
+  "total_sims": 5504,
+  "exact_max_k": 2,
+  "why": "position source only; never a statistic"
+ },
+ "selector": {
+  "ply_frac_window": [
+   0.62,
+   0.88
+  ],
+  "min_unseen_tiles": 8,
+  "phase": "tiles",
+  "max_per_game_per_stratum": 2,
+  "n_target_per_stratum": 200,
+  "n_identity": 8,
+  "shape": "victims_of(mover) x opponent-exclusive part with merge_plausible \u2014 s0v2_agent.py symbols"
+ },
+ "bar_clause": 1.75,
+ "production_yaml_observed": {
+  "champion_id": "puct_priors_v29_bmild_cap8",
+  "k_dets": 16,
+  "sims_per_det": 1376,
+  "note": "recorded, never used: the budget above is PINNED. A YAML drift is a disclosure, not a config source."
+ },
+ "leaf_hash_of_record": "a36d2e15a3b3d71d",
+ "leaf_manifest": {
+  "schema": "carcassonne-champion-factory/v1",
+  "mode": "fair",
+  "source": "governance/PRODUCTION.yaml",
+  "champion_id": "puct_priors_v29_bmild_cap8",
+  "agent_class": "FairHeuristicPriorAgent",
+  "reshuffle_semantics": "root-determinization PIMC: reshuffle the UNSEEN deck (canonical sort + rng), next_tile untouched; fresh tree per determinization; pooled-Q pick",
+  "search": {
+   "c_puct": 1.5,
+   "tau_p": 5.0,
+   "leaf_quantize": "float",
+   "final_select": "visits",
+   "value_norm": 15.0,
+   "reuse_tree": true,
+   "reuse_tree_effective": false,
+   "fpu_reduction": null,
+   "config_hash": "9f8aa04932bda996"
+  },
+  "fair_deploy": {
+   "k_dets": 16,
+   "sims_per_det": 1376,
+   "total_sims": 22016,
+   "exact_max_k": 2,
+   "endgame": "marginalized expectiminimax (honest hidden-bag), no alpha-beta"
+  },
+  "leaf": {
+   "curve125": [
+    -10.0,
+    -5.0,
+    -1.25,
+    0.0,
+    2.5,
+    3.75,
+    5.0,
+    6.25
+   ],
+   "bonus_cap": 8.0,
+   "opp_bonus_cap": 8.0,
+   "value_blend": 0.0,
+   "residual_scale": 0.0
+  },
+  "leaf_hashes": {
+   "harness_leaf_hash": "a36d2e15a3b3d71d",
+   "frozen_config_hash_meeple_k0": "6dfffd57051690f2",
+   "frozen_config_hash_meeple_k2": "158f17ff76adaa02"
+  },
+  "leaf_value_panel": {
+   "empty_meeples_3v7_float": -6.25,
+   "empty_meeples_7v3_float": 6.25,
+   "empty_meeples_0v7_int": -16,
+   "empty_meeples_5v5_float": 0.0
+  },
+  "code_commit": "51164b2daaa857ca75f5dcae4b4724e92d296438",
+  "dirty": true,
+  "env_knobs": {
+   "CARCASSONNE_USE_FLAT_LEAF": "1",
+   "CARCASSONNE_USE_CY_LEAF": "1",
+   "CARCASSONNE_USE_CY_REPR": "1"
+  },
+  "provenance_note": "runtime-verified leaf (curve values + panel + 3 hash dialects); R1/R7-class guard for the classical champion (champion_factory).",
+  "backend": {
+   "name": "rust",
+   "default": "python",
+   "scope": "engine only \u2014 the same PRODUCTION.yaml knobs, the same leaf (panel re-verified through carc_rs), the same k_dets worlds merged in the same order",
+   "note": "BEHAVIOR-IDENTICAL BY GATE (rustport G4/G6), not by construction: G4 reproduced the deployed champion bit-exactly (0/305,515 checks) and G6 read 14,384/14,384 identical actions over 100 full games. governance/PRODUCTION.yaml names this as the champion's execution backend of record (2026-08-01); it is an ENGINE, not a player \u2014 no strength claim moves with it.",
+   "carc_rs_version": "0.1.0",
+   "carc_rs_path": "/home/doctor/projects/carcassone/.venv/lib/python3.12/site-packages/carc_rs/__init__.py",
+   "carc_rs_build": "carc_rs-0.1.0+51164b2daaa8+rustcunpinned",
+   "carc_rs_binary_sha": "a61d0d303e7f1639",
+   "code_rev": "51164b2d",
+   "code_rev_dirty": false,
+   "rust_toolchain": null,
+   "tile_data_source_sha256": "3f1f8f376e5c2dfd1a444543faff41e31242b861476ca3ff4498b6c900a64f3c",
+   "tile_data_semantic_digest": "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800"
+  },
+  "leaf_value_panel_rust": {
+   "empty_meeples_3v7_float": -6.25,
+   "empty_meeples_7v3_float": 6.25,
+   "empty_meeples_0v7_int": -16,
+   "empty_meeples_5v5_float": 0.0
+  }
+ },
+ "tiearb": null,
+ "tiearb_note": "OFF on every seat and every family: E-1a/E-1b were arbiter-free and `make_production_champion` does not read fair_deploy.tiearb \u2014 recorded, not engineered.",
+ "targets": "/home/doctor/projects/carcassone/.claude/worktrees/agent-a983a0df04e9b03fc/measurement/defense_mech_synth_prep/out_DRY/targets_synth.jsonl",
+ "targets_sha256": "95a5a1b862e8fc63adc24b01041c1e705dee4d8565f248d95138ce21b7f5fecb",
+ "rules_profile": "fixed_v1",
+ "r9_env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "negative_control": {
+  "unarmed_dose0": {
+   "dose": 0.0,
+   "census": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+   },
+   "arming_resolved": {
+    "dose": 0.0,
+    "mask": 31,
+    "scope": "all",
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "exact_max_k": 2,
+    "threads": 1,
+    "seed": 0
+   }
+  },
+  "armed_dose_dstar": {
+   "dose": 0.25,
+   "census": {
+    "total": 40653,
+    "own_mover": 19798,
+    "boosted": 20855
+   },
+   "arming_resolved": {
+    "dose": 0.25,
+    "mask": 31,
+    "scope": "opp",
+    "k_dets": 8,
+    "sims_per_det": 1376,
+    "exact_max_k": 2,
+    "threads": 1,
+    "seed": 0
+   }
+  },
+  "ok": true
+ },
+ "execution": {
+  "backend": "rust",
+  "rust_threads": 1,
+  "job_mem_cap_gb": 6.0,
+  "arm_cap_secs": 1800
+ },
+ "code": {
+  "rev": "51164b2daaa857ca75f5dcae4b4724e92d296438",
+  "branch": "worktree-agent-a983a0df04e9b03fc",
+  "dirty": true
+ },
+ "python": "3.12.3",
+ "band": "TBD-AT-LAUNCH \u2014 see BAND_CLAIMED.placeholder"
+}

@@ -1,0 +1,77 @@
+{
+ "schema": "defense-mech-synth/smoke-readout/v1",
+ "what": "Realized figures from the PRE-FREEZE probe and the DRY smoke. Every number in PREREG.md \u00a72.2 and \u00a75 is reproduced from here. Throwaway seeds 999900000000+, OUTSIDE every registered band.",
+ "PRE_FREEZE_PROBE": {
+  "priced_anything": false,
+  "note": "No continuation was played at this stage, so no delta_pts_mover existed for any ply in either family. Covariates only.",
+  "n_games": 32,
+  "n_select_rows": 1185,
+  "n_ok": 1185,
+  "n_eligible": 576,
+  "eligible_per_game": 18.0,
+  "DIVERGENCE": {
+   "n": 28,
+   "of": 576,
+   "rate": 0.0486,
+   "corroborates": "S1 G1 banked flip rate at d*=0.25: 5.01% [4.32%,5.81%] on n=3311 (../s1_asymmetry_prep/G1_VERDICT.md)"
+  },
+  "DEFENSE_SHAPE_plug_available": {
+   "n": 79,
+   "of": 576,
+   "rate": 0.1372,
+   "rate_given_divergent": 0.2143,
+   "n_given_divergent": "6/28",
+   "note": "steps 1-2 alone (threat pair present, no legality step) measured 100% true on 46 late plies \u2014 a predicate with no control stratum. The legality step is what makes it a contrast."
+  },
+  "identity_pool_agreement_and_defense_shaped": 73,
+  "remaining_plies_at_eligible_root": {
+   "mean": 35,
+   "min": 18,
+   "max": 52
+  },
+  "WITNESS": {
+   "champ_family_census_allzero_rows": "1185/1185",
+   "exact_partition_rows": "1185/1185",
+   "armed_witness_fail_on_ELIGIBLE_rows": 0,
+   "armed_witness_fail_total": 197,
+   "fail_phase_histogram": {
+    "meeples": 197
+   },
+   "reads": "every failure is a MEEPLES-phase forced root (median n_legal 1) where the search expands nothing at all \u2014 a phase this round never selects. Zero eligible rows fail."
+  },
+  "COST": {
+   "select_s_per_ply_W16": 3.46,
+   "s_per_11008_decision_W16": 1.732,
+   "gen_s_per_game_W1": 20.2,
+   "n_plies_per_game": [
+    141,
+    142
+   ]
+  }
+ },
+ "DRY_SMOKE": {
+  "priced": true,
+  "disclosure": "PREREG.md \u00a70.2 item 3 \u2014 throwaway seeds, kept on disk, tabulated here.",
+  "n_units": 14,
+  "n_arms": 56,
+  "arm_status": {
+   "OK": 56
+  },
+  "pair_status": {
+   "OK": 14
+  },
+  "strata": {
+   "identity": 2,
+   "defense": 6,
+   "control": 6
+  },
+  "IDENTITY_units_all_exactly_zero": true,
+  "continuation_decisions": 1880,
+  "s_per_decision_realized_W14": 1.4302,
+  "s_per_decision_model_of_record": 2.219,
+  "model_note": "The DRY smoke's realized 4-arm mean is 1.430 s/continuation-decision at W=14 (nice -19, rust_threads 1) against an uncontended 1.345 s at W=1 \u2014 a contention factor of only ~1.06 at W=14. E-1b's realized LOCAL W=30 figure is 2.219 s, i.e. ~1.65x uncontended. PREREG \u00a75 adopts E-1b's 2.219 as the model of record because this round runs at W=32 and no measurement of THIS round at W=32 exists yet; the figure is therefore CONSERVATIVE, and the uncontended 1.345 s floor is quoted beside every ETA so the range is visible. The launcher re-measures and refuses above ETA_CAP_H.",
+  "armed_arm_coverage_mean": 1.0,
+  "champ_arms_all_zero_census": true,
+  "adjudicated": "out_DRY/SMOKE_VALIDATION.json \u2014 15/15 gates PASS under --smoke"
+ }
+}

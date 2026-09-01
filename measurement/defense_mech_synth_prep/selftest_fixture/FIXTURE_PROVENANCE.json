@@ -1,0 +1,61 @@
+{
+ "schema": "defense-mech-synth/fixture-provenance/v1",
+ "what": "REAL emitter output, not hand-written JSON. Every file here was produced by synth_mech.py at PRODUCTION knobs (k8 x 1376, exact-K 2, rules fixed_v1 + R9) on THROWAWAY seeds 999900000000+, which lie outside every registered deck band and can never enter a frozen target set.",
+ "why_real": "This program has three realized incidents of tests written against an IMAGINED emitter schema. test_synth.py therefore asserts field names against these files, and adjudicate_synth.py --selftest builds its defect matrix by MUTATING copies of them.",
+ "generated": "2026-09-01T14:38:28-04:00",
+ "budget": {
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "total_sims": 11008,
+  "exact_max_k": 2
+ },
+ "generation_budget": {
+  "k_dets": 1,
+  "sims_per_det": 1376,
+  "note": "the DRY games used k1 x 1376, NOT the round's k4 x 1376 \u2014 a throughput choice for the smoke only. The arming still expressed: the armed seat's generation census is nonzero with an exact partition."
+ },
+ "m_worlds_in_fixture": 2,
+ "m_worlds_in_the_round": 8,
+ "contents": {
+  "games": [
+   "g_999900000001.json",
+   "g_999900000002.json",
+   "g_999900000003.json",
+   "g_999900000004.json",
+   "g_999900000007.json",
+   "g_999900000017.json",
+   "g_999900000031.json"
+  ],
+  "select": [
+   "s_999900000001_p124.json",
+   "s_999900000002_p114.json",
+   "s_999900000003_p096.json",
+   "s_999900000004_p110.json",
+   "s_999900000007_p095.json",
+   "s_999900000017_p094.json",
+   "s_999900000031_p118.json"
+  ],
+  "units": [
+   "unit_999900000001_p124_w0.json",
+   "unit_999900000001_p124_w1.json",
+   "unit_999900000002_p114_w0.json",
+   "unit_999900000002_p114_w1.json",
+   "unit_999900000003_p096_w0.json",
+   "unit_999900000003_p096_w1.json",
+   "unit_999900000004_p110_w0.json",
+   "unit_999900000004_p110_w1.json",
+   "unit_999900000007_p095_w0.json",
+   "unit_999900000007_p095_w1.json",
+   "unit_999900000017_p094_w0.json",
+   "unit_999900000017_p094_w1.json",
+   "unit_999900000031_p118_w0.json",
+   "unit_999900000031_p118_w1.json"
+  ]
+ },
+ "sha256": {
+  "SELECTION_fixture.json": "79ca70ab18da8696c1ed54a63d98d3f44e2adb65707edbf37fdefe26d1f36171",
+  "manifest_fixture.json": "2d4024de7bae06d8f1b9ca556696c15e4e52384155e7eec990ab8851385681d3",
+  "targets_fixture.jsonl": "95a5a1b862e8fc63adc24b01041c1e705dee4d8565f248d95138ce21b7f5fecb"
+ },
+ "known_gap": "the 7 select rows here cannot reproduce build_targets' `cell` field, because the real freeze computed tercile edges over the full ~576-row candidate pool. test_synth.py \u00a74 asserts what IS reproducible and names the gap rather than fabricating rows. In the real round the launcher KEEPS out_local/select/, so G-SELECT's --select-rows re-run subcheck is live."
+}
