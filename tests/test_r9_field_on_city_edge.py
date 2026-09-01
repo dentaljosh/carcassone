@@ -34,7 +34,11 @@ The heavy leg is a script, not a test:
 R9 is a **data** flag: Python latches it when `base_deck` is imported and Rust
 when its `OnceLock` registry is first built, so a single process cannot hold
 both.  Every flags-on assertion therefore runs in a subprocess via
-`run_in_state()`, and the flags-off half runs in-process.
+`run_in_state()` — and so does the flags-off half (`TestDefaultIsOff`, via the
+`off` fixture): `tests/android/` sorts before this module in a whole-tree
+`pytest tests/` run and latches R9 ON for the rest of the process before this
+module ever runs, so an in-process flags-off assertion is an import-order race,
+not a real invariant. See `TestDefaultIsOff`'s docstring for the reproduction.
 """
 
 from __future__ import annotations
@@ -199,7 +203,35 @@ def measure() -> dict:
         "rcr_north_connections": sorted(
             str(fs) for fc in base_deck.base_tiles[RCR].farms
             if fc.city_sides for fs in fc.tile_connections),
+        "rcr_north_group_count": len(
+            [fc for fc in base_deck.base_tiles[RCR].farms if fc.city_sides]),
+        # TestDefaultIsOff's fields (see its docstring: run through `off`/`on`
+        # for import-order isolation, not asserted in-process).
+        "semantic_digest_python": _export_tile_data().semantic_digest(),
+        "semantic_digest_python_r9": _export_tile_data().semantic_digest_r9(),
+        "changed_farm_descriptions": _changed_farm_descriptions(),
     }
+
+
+def _export_tile_data():
+    import export_tile_data as ex
+
+    return ex
+
+
+def _changed_farm_descriptions() -> list[str]:
+    """Tile descriptions whose `farms` differ between the base and R9
+    payloads, asserting every OTHER field is untouched along the way (decks,
+    action spaces, board reprs and legal masks must be identical either way)."""
+    ex = _export_tile_data()
+    base, r9 = ex.semantic_payload(), ex.r9_semantic_payload()
+    assert base["tile_order"] == r9["tile_order"]
+    assert base["counts_in_insertion_order"] == r9["counts_in_insertion_order"]
+    for a, b in zip(base["tiles"], r9["tiles"]):
+        assert {k: v for k, v in a.items() if k != "farms"} == \
+               {k: v for k, v in b.items() if k != "farms"}
+    return [a["description"] for a, b in zip(base["tiles"], r9["tiles"])
+            if a["farms"] != b["farms"]]
 
 
 def _load_oracle_module():
@@ -239,50 +271,83 @@ def on():
 # =========================================================================
 class TestDefaultIsOff:
     """THE regression bar for a flag that moves scoring: unless asked, both
-    engines play exactly the game they have always played."""
+    engines play exactly the game they have always played.
 
-    def test_flag_is_off_in_this_process(self):
-        from wingedsheep.carcassonne.tile_sets import base_deck
+    ⚠️⚠️ R9 IMPORT-LATCH RACE (chores queue, root-caused here). These four
+    checks used to import `base_deck`/`carc_rs` and assert straight off their
+    IN-PROCESS state. That is exactly the state a whole-tree pytest run cannot
+    guarantee: `base_deck.base_tiles` is a module-global mutated ONCE, at
+    `base_deck`'s first import, from `CARCASSONNE_FIX_R9` (Rust mirrors this
+    with its own `OnceLock` registry) — neither can be re-latched by a later
+    `os.environ` write in the same process. `tests/android/android_bridge.py`
+    sorts before this module in a `pytest tests/` collection and, at its own
+    import, calls `os.environ.setdefault("CARCASSONNE_FIX_R9", "1")` *before*
+    importing `carcassonne_ai` (the app wants R9 ON by default) — so by the
+    time this module's tests run, R9 is ALREADY latched ON for the rest of the
+    process, env var included (`setdefault` actually writes it). Reproduced:
+    `pytest tests/android/test_bridge.py::test_bridge_imports_and_sets_prod_env
+    tests/test_r9_field_on_city_edge.py::TestDefaultIsOff` fails all four here
+    with digests/connections read back in the R9-ON shape; the same file run
+    alone is green. Un-latching `base_tiles` in-process isn't available (the
+    R9 tile replacement is a fresh `Tile` object, and the pre-mutation farms
+    are not retained anywhere to restore from) — so, exactly like every OTHER
+    state-sensitive check in this module (`TestFarmDataParity`,
+    `TestTheReproducer`, ...), these run through the `off` fixture: a FRESH
+    subprocess with `CARCASSONNE_FIX_R9` forced to `"0"`, immune to whatever
+    the pytest parent process already latched."""
 
-        assert os.environ.get("CARCASSONNE_FIX_R9") in (None, "", "0")
-        assert base_deck.R9_FIELD_ON_CITY_EDGE_FIX is False
-        assert carc_rs.r9_enabled() is False
+    def test_flag_is_off_in_this_process(self, off):
+        assert off["r9_python"] is False
+        assert off["r9_rust"] is False
 
-    def test_the_surplus_half_edges_are_still_there_by_default(self):
-        from wingedsheep.carcassonne.tile_sets import base_deck
-
-        north = [fc for fc in base_deck.base_tiles[RCR].farms if fc.city_sides]
-        assert len(north) == 1
-        assert sorted(str(s) for s in north[0].tile_connections) == \
+    def test_the_surplus_half_edges_are_still_there_by_default(self, off):
+        assert off["rcr_north_group_count"] == 1
+        assert sorted(off["rcr_north_connections"]) == \
             ["tll", "tlt", "trr", "trt"]
 
-    def test_flags_off_tile_data_is_bit_identical(self):
+    def test_flags_off_tile_data_is_bit_identical(self, off):
         """The strongest available flags-off statement: the SEMANTIC digest of
         everything the engine reads off a tile is the pre-R9 value.  Only
         SOURCE_SHA256 moved (the file gained the flag and its docs)."""
-        import export_tile_data as ex
-
-        assert ex.semantic_digest() == \
+        assert off["semantic_digest_python"] == \
             "525f7041ab8402f3008f9cd230f089ec4e9fb0541a5eb982531c48a8c97c3800"
-        assert carc_rs.tile_data_digests()[1] == ex.semantic_digest()
-        assert carc_rs.tile_data_digest_r9() == ex.semantic_digest_r9()
-        assert ex.semantic_digest_r9() != ex.semantic_digest()
+        assert off["semantic_digest_rust"] == off["semantic_digest_python"]
+        assert off["semantic_digest_rust_r9"] == off["semantic_digest_python_r9"]
+        assert off["semantic_digest_python_r9"] != off["semantic_digest_python"]
 
-    def test_the_flag_touches_only_farms(self):
+    def test_the_flag_touches_only_farms(self, off):
         """Descriptions, counts and insertion order are untouched, so decks,
         action spaces, board reprs and legal masks are the same either way.
-        This is why a pre-R9 checkpoint can play an R9 game unchanged."""
-        import export_tile_data as ex
+        This is why a pre-R9 checkpoint can play an R9 game unchanged.
+        (`_changed_farm_descriptions()`, run inside the `off` subprocess, also
+        asserts every non-farms tile field matches between the two payloads.)"""
+        assert off["changed_farm_descriptions"] == [RCR]
 
-        base, r9 = ex.semantic_payload(), ex.r9_semantic_payload()
-        assert base["tile_order"] == r9["tile_order"]
-        assert base["counts_in_insertion_order"] == r9["counts_in_insertion_order"]
-        for a, b in zip(base["tiles"], r9["tiles"]):
-            assert {k: v for k, v in a.items() if k != "farms"} == \
-                   {k: v for k, v in b.items() if k != "farms"}
-        changed = [a["description"] for a, b in zip(base["tiles"], r9["tiles"])
-                   if a["farms"] != b["farms"]]
-        assert changed == [RCR]
+
+# =========================================================================
+class TestImportOrderRegression:
+    """Reproduces the R9 import-latch race END TO END, in a real pytest
+    subprocess, so a future change that re-introduces in-process assertions
+    to `TestDefaultIsOff` (or otherwise re-couples this module to ambient
+    process state) is caught by CI rather than rediscovered in a full-suite
+    run. See `TestDefaultIsOff`'s docstring for the mechanism."""
+
+    def test_android_then_r9_default_off_is_green(self):
+        rc = subprocess.run(
+            [sys.executable, "-m", "pytest",
+             "tests/android/test_bridge.py::test_bridge_imports_and_sets_prod_env",
+             "tests/test_r9_field_on_city_edge.py::TestDefaultIsOff",
+             "-q"],
+            cwd=REPO, capture_output=True, text=True,
+            env=dict(os.environ, PYTHONPATH=os.pathsep.join(
+                p for p in [str(REPO / "engine"), str(REPO / "src"),
+                            os.environ.get("PYTHONPATH", "")] if p)))
+        assert rc.returncode == 0, (
+            "android-then-r9 collection order should be green (the `off` "
+            "subprocess isolation must hold) — got:\n"
+            + rc.stdout[-4000:] + rc.stderr[-4000:])
+        # 5 tests selected: the one android import test + TestDefaultIsOff's four.
+        assert rc.stdout.count(".") == 5, rc.stdout[-2000:]
 
 
 # =========================================================================

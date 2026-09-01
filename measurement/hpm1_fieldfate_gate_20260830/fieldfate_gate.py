@@ -139,10 +139,22 @@ def pf_scores(rows):
 # clustered resampling                                                          #
 # --------------------------------------------------------------------------- #
 def game_clusters(rows):
+    """Row-index clusters, one per game, in a CANONICAL order.
+
+    ⭐ Canonicalization key: `r["game"]`, string-sorted. `boot_auc_ci` resamples
+    clusters BY POSITION (`clusters[rng.choice(keys)]` over `keys =
+    range(len(clusters))`), so "the game at index 0" has to mean the same game
+    every time a given `--seed` is replayed — otherwise the SAME seed draws a
+    DIFFERENT set of games whenever the input row order changes, and nothing
+    about a re-extraction (glob order is already sorted in `main()`, but
+    within-file row order is not guaranteed stable across re-extractions —
+    e.g. a parallel-worker census writing rows in completion order) promises
+    that order is stable. `folds_for` already canonicalizes this way
+    (`sorted({r["game"] for r in rows})`); this was the one place that didn't."""
     idx = {}
     for i, r in enumerate(rows):
         idx.setdefault(r["game"], []).append(i)
-    return list(idx.values())
+    return [idx[g] for g in sorted(idx)]
 
 
 def boot_auc_ci(score, y, clusters, rng, extra=None):

@@ -96,18 +96,43 @@ STAMP "verified: $OLD_REV has NO fpu_reduction field (the pre-plumbing tree)"
 # --------------------------------------------------------------------------- #
 # 1. MATERIALISE THE OLD TREE                                                  #
 # --------------------------------------------------------------------------- #
-# ⚠️ `git archive` of `src` + `engine` ONLY. The two legs must differ in the
-# PYTHON SOURCE and in NOTHING ELSE — same wheel, same venv, same env.
+# ⚠️ `git archive` of `src` + `engine` + `governance` ONLY. The two legs must
+# differ in the PYTHON SOURCE and in NOTHING ELSE — same wheel, same venv, same
+# env — BUT EACH LEG MUST RESOLVE ITS OWN TREE'S `governance/PRODUCTION.yaml`.
+# ⛔⛔ GOVERNANCE-TREE CONSTRAINT (the defect this comment documents): both legs
+# import `carcassonne_ai.champion_factory`, whose module-level
+# `REPO = Path(__file__).resolve().parents[2]` resolves relative to WHICHEVER
+# tree the module was imported from (i.e. PYTHONPATH). If `governance/` is not
+# materialised under `$OLD_TREE`, the OLD leg's `champion_factory.REPO` still
+# points at `$OLD_TREE` (a real, distinct path) — so `load_production_spec()`
+# either raises FileNotFoundError, or, if the check below were skipped, could
+# be "fixed" by pointing it at `$REPO/governance/PRODUCTION.yaml` instead,
+# which would silently grade the OLD leg against TODAY's champion config
+# instead of the config that existed at `$OLD_REV` — the OLD leg would then not
+# faithfully reproduce the old rev's config even though the source code is
+# genuinely old. The fix is for `$OLD_TREE` to carry its OWN `governance/` (at
+# `$OLD_REV`), so `$OLD_TREE`'s `champion_factory` resolves `$OLD_TREE`'s own
+# `governance/PRODUCTION.yaml` and `$REPO`'s (the NEW leg's) resolves `$REPO`'s
+# own — each leg is self-contained and neither can cross-read the other's
+# governance state.
 OLD_TREE="${TMPDIR:-/tmp}/fpu_ladder_oldtree_${OLD_REV:0:12}"
 WORK="${TMPDIR:-/tmp}/fpu_ladder_gg_$$"
 mkdir -p "$OLD_TREE" "$WORK" || DIE "could not create the scratch dirs"
 if [ ! -d "$OLD_TREE/src" ]; then
-  git -C "$REPO" archive "$OLD_REV" src engine | tar -x -C "$OLD_TREE" \
+  git -C "$REPO" cat-file -e "${OLD_REV}:governance/PRODUCTION.yaml" 2>/dev/null \
+    || DIE "⛔ $OLD_REV has no governance/PRODUCTION.yaml — the OLD leg cannot " \
+           "faithfully reproduce a champion config that did not exist yet at " \
+           "that rev. Pick an --old-rev at or after governance/PRODUCTION.yaml " \
+           "was introduced."
+  git -C "$REPO" archive "$OLD_REV" src engine governance | tar -x -C "$OLD_TREE" \
     || DIE "git archive of $OLD_REV failed"
 fi
 [ -d "$OLD_TREE/src/carcassonne_ai" ] || DIE "the OLD tree has no src/carcassonne_ai"
-STAMP "OLD tree at $OLD_TREE"
-STAMP "NEW tree at $REPO"
+[ -f "$OLD_TREE/governance/PRODUCTION.yaml" ] \
+  || DIE "the OLD tree has no governance/PRODUCTION.yaml — champion_factory would " \
+         "resolve the wrong tree's config (or crash). See the comment above."
+STAMP "OLD tree at $OLD_TREE (own governance/PRODUCTION.yaml materialised at $OLD_REV)"
+STAMP "NEW tree at $REPO (resolves its own, current governance/PRODUCTION.yaml)"
 
 # ⛔ THE TWO TREES MUST NOT BE THE SAME PATH. `ladder_diff.py`'s TWO-TREES check
 # catches it too, but not before six legs of compute.
