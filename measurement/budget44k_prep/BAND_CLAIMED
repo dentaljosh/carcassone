@@ -1,0 +1,12 @@
+BAND CLAIMED: 173000000000
+Claim: seeds 173000000000..173000000799 (800 paired decks × 2 seatings = 1600 games)
+for CELL_K32 (k32×1376=44032 vs deployed k16×1376=22016, arb-on both seats), in 4
+chunks of 200 decks; CELL_SIMS (k16×2752=44032) plays the strict PREFIX subset
+173000000000..399 (400 decks, 2 chunks) — within-band deck-matched width contrast.
+THROWAWAY 173000999000..173000999999 = smoke/fixtures only, EXCLUDED from the claim.
+Batched sweep at claim (2026-09-01, git grep + untracked pass): 1 hit = a float-
+decimal coincidence (value_resurrection_pilot leaf_audit_rows `regret` field),
+0 seed uses. Band clean. Owner: "fund 44k at w30." Registry row appended same commit;
+freeze/blind commit 56d5e3c5 stamped in BLIND_COMMIT.json.
+RUN LOCATION: a DEDICATED pinned worktree (not the main tree) so main-tree commits
+cannot move the chunk pin during the ~21.5 h round.
