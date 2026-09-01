@@ -1,0 +1,63 @@
+{
+  "info": "fair",
+  "exact_k": 2,
+  "k_dets": 16,
+  "sims": 1376,
+  "total_sims": 22016,
+  "rung_sims": 800,
+  "n_failed": 0,
+  "failure_rate": 0.0,
+  "failure_rate_trigger": 0.005,
+  "validity_trigger_fired": false,
+  "failed_cells": [],
+  "failed_by_seat": {
+    "0": 0,
+    "1": 0
+  },
+  "failed_classes": {},
+  "n_resolved_failures": 0,
+  "resolved_failed_cells": [],
+  "opponent": "fair-champion",
+  "opponent_label": "FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k16x1376)",
+  "n": 1,
+  "W": 0,
+  "D": 0,
+  "L": 1,
+  "winrate": 0.0,
+  "winrate_z": -1.0,
+  "elo": -800.0,
+  "elo_sig_1sigma": NaN,
+  "avg_diff": -5.0,
+  "paired_mean_margin": null,
+  "paired_z": null,
+  "n_paired": 0,
+  "champ_prefix_ms_per_move": 2179.457142857143,
+  "rung_ms_per_move": 2180.4411764705883,
+  "champ_latched_games": 1,
+  "solver_secs_per_game": 0.003,
+  "champ_timeouts": 0,
+  "jr_expansions": {
+    "candidate": {
+      "total": 0,
+      "own_mover": 0,
+      "boosted": 0
+    },
+    "opponent": {
+      "total": 0,
+      "own_mover": 0,
+      "boosted": 0
+    }
+  },
+  "cand_jr_expansions": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+  },
+  "opp_jr_expansions": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+  },
+  "wc_tiebreak": false,
+  "wc_tie_resolved_games": 0
+}
