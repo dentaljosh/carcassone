@@ -1,5 +1,13 @@
 # PREREG — E-1b: THE 91 BANKED PLIES, RE-PRICED UNDER AN S1-ARMED CONTINUATION
 
+> **STATUS 2026-09-01: ADJUDICATED `E1B-UNRESOLVED`** — primary invasion−control
+> −0.63 ± 2.32 (z −0.27) vs BAR_REOPEN +3.5, the §4.3-pre-registered ~50%-modal
+> null read; 728/728 worlds, 0 voids, 12/12 gates PASS. Named-secondary by-catch:
+> DEFENSE +3.47 ± 1.31 (z +2.65) under the armed continuation vs +0.29 under
+> E-1a's (family delta +3.18, z ≈1.95) — the policy-conditional clause's predicted
+> direction; promotion needs a pre-registered defense-primary on NEW plies.
+> See `E1B.json` + results.csv `e1b_armed_continuation_*` + DECISIONS 2026-09-01.
+
 > ⛔ **COMMITTED BEFORE ANY E-1b OUTCOME EXISTS.**
 > At the moment this file was committed: **0 armed continuations had been
 > played**, no `unit_*.json` existed under any E-1b out-dir, no `E1B.json`
