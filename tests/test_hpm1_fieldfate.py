@@ -241,6 +241,43 @@ def test_fold_rule_groups_by_game(gate):
     assert set(int(x) for x in f) <= set(range(gate.N_FOLDS))
 
 
+def test_game_clusters_is_row_order_invariant(gate):
+    """`boot_auc_ci` resamples clusters BY INDEX (`clusters[rng.choice(keys)]`),
+    so the mapping from index -> game must be a function of the DATA, not of
+    the order rows arrived in the `rows` list — otherwise the same `--seed`
+    silently draws a different bootstrap sample whenever a re-extraction
+    reorders the underlying jsonl rows (e.g. a parallel-worker census)."""
+    import random
+
+    rows = [{"game": g, "x": {"a": i}, "y": i % 2}
+            for g in ["g3", "g1", "g5", "g2", "g4"] for i in range(4)]
+    shuffled = list(rows)
+    random.Random(7).shuffle(shuffled)
+    assert [r["game"] for r in rows] != [r["game"] for r in shuffled], \
+        "the shuffle must actually change the row order for this test to mean anything"
+
+    c1 = gate.game_clusters(rows)
+    c2 = gate.game_clusters(shuffled)
+    # canonical order: sorted by game id, independent of input row order
+    assert sorted({r["game"] for r in rows}) == ["g1", "g2", "g3", "g4", "g5"]
+    games_by_cluster_index_1 = [rows[grp[0]]["game"] for grp in c1]
+    games_by_cluster_index_2 = [shuffled[grp[0]]["game"] for grp in c2]
+    assert games_by_cluster_index_1 == games_by_cluster_index_2 == \
+        ["g1", "g2", "g3", "g4", "g5"]
+
+    # end-to-end: the SAME seed must draw the SAME bootstrap resamples
+    # (as a sequence of GAMES) regardless of input row order (the actual
+    # failure mode this guards).
+    def draw(rs):
+        clusters = gate.game_clusters(rs)
+        rng = gate._RNG(1234)
+        keys = list(range(len(clusters)))
+        pick = [clusters[rng.choice(keys)] for _ in keys]
+        return [rs[grp[0]]["game"] for grp in pick]
+
+    assert draw(rows) == draw(shuffled)
+
+
 def test_logistic_recovers_a_separable_signal(gate):
     import numpy as np
     rng = np.random.default_rng(0)
