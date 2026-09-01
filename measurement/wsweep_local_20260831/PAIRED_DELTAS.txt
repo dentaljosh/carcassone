@@ -1,0 +1,4 @@
+W points: [24, 30, 36]
+W24 vs W30: n_paired= 48  throughput W24/W30 =  -9.48%  [95% CI -9.84%, -9.13%]  z=-49.90
+W24 vs W36: n_paired= 42  throughput W24/W36 =  -9.87%  [95% CI -10.40%, -9.34%]  z=-34.47
+W30 vs W36: n_paired= 42  throughput W30/W36 =  -0.31%  [95% CI -0.74%, +0.12%]  z=-1.41
