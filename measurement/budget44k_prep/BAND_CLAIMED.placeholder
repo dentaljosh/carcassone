@@ -1,0 +1,88 @@
+# BAND — PROPOSED, NOT CLAIMED. THIS AGENT CLAIMED NOTHING.
+
+`launch_budget44k.sh` refuses to launch a real chunk (anything that is not
+`--dry-run` / `--smoke` / `--smoke-prod`) until a sibling file named
+**`BAND_CLAIMED`** (no extension) exists next to this one. That file is the
+orchestrator's to drop, and only after doing the three things below.
+
+⭐ **THIS ROUND CLAIMS EXACTLY ONE BAND FOR *BOTH* CELLS.** That is deliberate,
+not an oversight — see `PREREG.md` §3.3. The screen's decks are a **strict
+prefix subset** of the primary's, which makes the §4.5 width contrast a
+**within-band, deck-matched** difference (the robust class under the standing
+cross-band ~2× humility rule). Two bands would have made that contrast a
+cross-band one and retired two bands instead of one.
+
+## The deck layout the claim covers
+
+```
+band + 0   .. band + 799     CELL_K32  (PRIMARY)  800 decks x 2 seatings = 1600 games
+                             chunks: c1 [+0..199] c2 [+200..399] c3 [+400..599] c4 [+600..799]
+band + 0   .. band + 399     CELL_SIMS (SCREEN)   400 decks x 2 seatings =  800 games
+                             chunks: c1 [+0..199] c2 [+200..399]
+band + 999000 .. +999999     THROWAWAY range — smoke + fixtures ONLY.
+                             NOT part of this claim, never pooled, no registry row.
+```
+
+## What the orchestrator should do
+
+1. **Re-run the tree sweep before trusting the proposal.**
+   `screen_lib.py` proposes `PROPOSED_BAND = 173_000_000_000` — the next
+   monotone-free id in `governance/BAND_REGISTRY.csv` as read 2026-09-01, where
+   the tail runs `…, 170e9 (fpu_swap_cell / swap cell), 171e9 + 172e9 (the τ_p
+   audit legs)`. `173e9` and `174e9` were free at that reading.
+
+   ⛔ **The registry is NECESSARY BUT NOT SUFFICIENT.** The standing trap
+   (`measurement/fpu_h2h_r2_prep/WORKERS.conf`'s own `146e9` note) is a band
+   **absent from the registry but genuinely referenced somewhere in the tree**.
+   A fresh sweep is owed:
+
+   ```bash
+   git grep -n "173000000000\|173e9" -- ':!measurement/budget44k_prep'
+   ```
+
+   Zero hits outside this directory — or only incidental IEEE-754
+   float-mantissa / glued-digit hits of the kind the `fpu_h2h`/`fpu_h2h_r2`
+   `BAND_CLAIM.json` files already catalogue — is the pass condition. If a
+   genuine reference has appeared, do **not** default to `173e9`: pick the next
+   id that sweeps clean and edit `screen_lib.PROPOSED_BAND` **and this file**
+   to match before claiming.
+
+   ⚠️ Sweep with a **single combined pattern**, not a per-band grep loop
+   (`feedback_batched_tree_sweeps`: a per-candidate loop once read 278 GB and
+   thrashed RAM+SSD beside a live round).
+
+2. **Append ONE row to `governance/BAND_REGISTRY.csv`** for the confirmed band,
+   per the standing convention (claimed status, this round's name, date,
+   purpose). This is a fresh-deck round covering **800 decks** (the union; the
+   screen's 400 are a subset), seeds `<band> .. <band>+799`.
+
+3. **Drop the acknowledgement file**, e.g.:
+
+   ```bash
+   D=measurement/budget44k_prep
+   cat > $D/BAND_CLAIMED <<'EOF'
+   BAND CLAIMED: 173000000000 (or the tree-sweep-confirmed replacement).
+   governance/BAND_REGISTRY.csv row appended <date>. ONE band, BOTH cells:
+   CELL_K32 (primary) plays decks <band>..<band>+799 in 4 chunks of 200;
+   CELL_SIMS (screen) plays decks <band>..<band>+399 in 2 chunks of 200, a
+   strict prefix SUBSET of the primary's (PREREG §3.3 — this is what makes
+   the §4.5 width contrast within-band and deck-matched). Throwaway
+   smoke/fixture range <band>+999000..<band>+999999 is NOT part of this
+   claim and is never pooled. Claimed by the orchestrator after a fresh
+   tree sweep confirming no in-tree reference to the band outside this
+   directory.
+   EOF
+   ```
+
+4. Then stamp `BLIND_COMMIT.json` (the freeze commit's 40-hex sha) — the
+   launcher checks that too — and only then launch a real chunk.
+
+5. **At close-out, retire the band from confirmatory use** (CLAUDE.md: "a band
+   that influenced a decision retires from confirmatory use"). Because both
+   cells share it, retiring it retires the evidence for both.
+
+⛔ This agent did **not** create `BAND_CLAIMED`, did **not** touch
+`governance/BAND_REGISTRY.csv`, and did **not** launch anything. `--dry-run`,
+`--smoke` and `--smoke-prod` are exempt from both this file and
+`BLIND_COMMIT.json`: they play only the disjoint throwaway range and spend no
+band, no blindness.
