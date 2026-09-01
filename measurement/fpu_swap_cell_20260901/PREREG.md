@@ -1,5 +1,7 @@
 # PREREG — the FPU-INSTEAD-OF-THE-ARBITER swap cell
 
+> **STATUS 2026-09-01: ADJUDICATED `SWAP-KILLED`** — both Holm legs cleared: arb advantage +3.224±0.719 pts/deck (z 4.49) and +43.7±8.75 elo (fpu wr 0.4375); Holm LBs +1.59 / +23.7 vs bars +1.0 / +15. se realized/modelled 1.04 / 1.01. See VERDICT.json, results.csv `fpu_swap_cell_*`, DECISIONS 2026-09-01 (evening).
+
 Status: **FROZEN AT BUILD, UNLAUNCHED.** 0 games exist. `BAND_CLAIMED` and
 `BLIND_COMMIT` are both unspent placeholders — see the sibling files. This
 agent did not claim a band, did not touch `governance/`, and did not launch.
