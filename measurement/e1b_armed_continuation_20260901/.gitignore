@@ -1,0 +1,8 @@
+chunks_*/
+logs/
+out_local*/
+out_SMOKE_*/chunk_*
+__pycache__/
+RUN_LIVE_*.json
+SMOKE_PASSED
+E1B.json
