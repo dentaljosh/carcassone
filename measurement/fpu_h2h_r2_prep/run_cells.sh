@@ -298,7 +298,7 @@ for row in L.chunk_plan(c):
                  'summary': summ.is_file(), 'manifest': man.is_file(),
                  'claimed_by': host, 'state': state})
 free = [r for r in rows if r['state'] != 'DONE']
-gl, gc = $G_PER_H_LAPTOP, $G_PER_H_LOCAL_ESTIMATE
+gl, gc = $G_PER_H_LAPTOP, $G_PER_H_LOCAL
 share_laptop = gl / float(gl + gc)
 n_lap = max(0, min(len(free), round(len(free) * share_laptop)))
 plan = {
@@ -306,9 +306,9 @@ plan = {
  'chunks': rows,
  'remaining_games': remaining_games,
  'eta_h_laptop_only': round(remaining_games / float(gl), 2),
- 'eta_h_both_boxes_ESTIMATE': round(remaining_games / float(gl + gc), 2),
- 'rates_g_per_h': {'laptop_REALIZED_round1': gl,
-                   'local_ESTIMATE_unswept': gc},
+ 'eta_h_both_boxes': round(remaining_games / float(gl + gc), 2),
+ 'rates_g_per_h': {'laptop_MEASURED_W26_arb_on': gl,
+                   'local_MEASURED_W30_arb_on': gc},
  'suggested_split': {
    'laptop': [r['name'] for r in free[:n_lap]],
    'local':  [r['name'] for r in free[n_lap:]]},
@@ -319,11 +319,13 @@ plan = {
   'frees a chunk ONLY if it has ZERO records; a partially-played chunk that '
   'changed hands would put two hosts inside one out-dir, which emits ONE '
   'manifest with ONE host, and G-HOST would publish a false map.',
-  '⛔ LOCAL CANNOT PLAY UNTIL W_LOCAL IS STAMPED in WORKERS.conf. The split '
+  '⛔ A BOX WHOSE W READS TBD_FROM_SWEEP CANNOT PLAY, in any mode. The split '
   'above is arithmetic, not a licence.',
-  '⚠️ The local rate is an ESTIMATE scaled from the dose ladder cross-box '
-  'ratio; re-derive from the box own first hour (feedback_eta_before_launch: '
-  'use the MEAN over completed records, never the first completions).',
+  '⭐ BOTH RATES ARE MEASURED, arb-on, at this round exact cell shape (laptop '
+  'W26 = 135 g/h from round 1; local W30 = 162.0 g/h from '
+  'measurement/wsweep_local_20260831). Still re-derive from each box own first '
+  'hour (feedback_eta_before_launch: use the MEAN over completed records, '
+  'never the first completions of a parallel run).',
  ]}
 print(json.dumps(plan, indent=2, ensure_ascii=False))
 " | tee "$HERE/PLAN_${ROLE}.json"

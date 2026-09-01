@@ -12,9 +12,10 @@
 > a named, minimal, single-clause correction.
 >
 > ⛔ **0 games have been played at this commit. No band is claimed at this commit.**
-> `analyze_h2h.py --selftest` is `PASS`. ⛔⛔ **`W_LOCAL` IS UNSET** and `run_cells.sh` refuses
-> `--role local` for every mode until it is stamped; ⭐ the **laptop** is stamped at `W=26` and
-> launches now.
+> `analyze_h2h.py --selftest` is `PASS`. ⭐ **Both boxes' `W` are stamped** (`W_LAPTOP = 26`,
+> `W_LOCAL = 30`, both measured arb-on at this round's exact cell shape); ⛔ `run_cells.sh` still
+> refuses any box whose `W` reads `TBD_FROM_SWEEP`, in every mode. ⚠️ `W` is throughput-only and
+> resolves no bar.
 
 **ONE cell:** `CELL_H2H2_FPU02` — `fpu_reduction = 0.2` on the **candidate only**, band
 `169000000000`, **`n=1600` deck-paired (800 seat-balanced decks × 2 seatings)** against the

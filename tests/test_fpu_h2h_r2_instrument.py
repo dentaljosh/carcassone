@@ -612,8 +612,12 @@ def test_the_plan_mode_spends_nothing_and_is_gitignored(L):
     plan = json.loads(r.stdout[r.stdout.index("{"):r.stdout.rindex("}") + 1])
     assert len(plan["chunks"]) == L.N_CHUNKS
     assert plan["remaining_games"] == L.CELLS[0].n_games
-    assert plan["eta_h_laptop_only"] > plan["eta_h_both_boxes_ESTIMATE"]
+    assert plan["eta_h_laptop_only"] > plan["eta_h_both_boxes"]
     assert set(plan["suggested_split"]) == {"laptop", "local"}
+    # ⭐ both rates are MEASURED arb-on at this round's cell shape — no
+    # cross-box extrapolation survives in the ETA
+    assert set(plan["rates_g_per_h"]) == {"laptop_MEASURED_W26_arb_on",
+                                          "local_MEASURED_W30_arb_on"}
 
 
 def test_the_claim_interlock_only_frees_an_EMPTY_chunk():

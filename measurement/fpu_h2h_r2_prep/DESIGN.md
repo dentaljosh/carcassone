@@ -17,10 +17,12 @@
 > range. The owner may add **local** later. ⛔ The clause is not free, and §6.4 + `READ_RULE` §4 state
 > the three gates that are its price.
 >
-> ⛔⛔ **`W_LOCAL` IS DELIBERATELY UNSET (`TBD_FROM_SWEEP`).** No arb-on local `W` sweep existed at the
-> freeze commit. `run_cells.sh` REFUSES `--role local` for every mode — including `--dry-run` and
-> `--smoke` — until it is stamped. ⭐ **The laptop is unaffected and launches now** (`W_LAPTOP=26`,
-> banked from the 2026-08-31 arb-on sweep).
+> ⭐ **BOTH BOXES' `W` ARE NOW STAMPED AND BOTH ARE MEASURED ARB-ON AT THIS ROUND'S EXACT CELL SHAPE:**
+> `W_LAPTOP = 26` (banked from the 2026-08-31 laptop sweep; round 1 realized 135 g/h at it) and
+> `W_LOCAL = 30` (`measurement/wsweep_local_20260831/`, **which landed while this instrument was being
+> built** — 162.0 g/h, §6.1). ⛔ `run_cells.sh` still REFUSES any box whose `W` reads `TBD_FROM_SWEEP`,
+> in **every** mode including `--dry-run` and `--smoke`: a smoke at a `W` the box will not run is a
+> smoke of a different tenancy.
 >
 > ⚠️ **THE GOLDEN GATE IS INHERITED, NOT REBUILT** — now from three sources, the third being **round
 > 1's own banked gate-passing cell** (§9.1). Its two gaps are still NAMED and still paid by the
@@ -346,20 +348,28 @@ games/h   = 3600 * W / T_game
 wall_h    = 1600 * T_game / (3600 * W)
 ```
 
-⭐ **The laptop's rate is ROUND 1's OWN REALIZED ONE at `W=26` with the arbiter armed on both seats:
-`135 games/h`** (⇒ `T_game ≈ 693 s`). That is the only arb-on throughput measurement this program
-owns, and it is an exact match to this round's configuration — not an extrapolation.
+⭐⭐ **BOTH RATES ARE MEASURED, ARB-ON, AT THIS ROUND'S EXACT CELL SHAPE.** No extrapolation and no
+cross-box scaling survives in the ETA:
 
-⚠️ **The local rate is an ESTIMATE and is NOT a licence to launch:** `≈165 g/h`, scaled from the dose
-ladder's arb-off cross-box ratio (local `T_game` 487.9 s vs laptop 502.4 s) at the same 1.345× arb-on
-multiplier. ⛔ Local cannot play until `W_LOCAL` is stamped.
+- **laptop, `W=26`: `135 g/h`** — round 1's own realized rate (the laptop `W` sweep's paired estimator
+  agrees at `135.4 g/h`), ⇒ `T_game ≈ 693 s`.
+- **local, `W=30`: `162.0 g/h`** — `measurement/wsweep_local_20260831/READOUT.md`, an
+  arb-on-both-sides sweep at `k16×1376` both sides with the deployed arbiter dict and
+  `--cand-fpu-reduction 0.2` (paired estimator over 42 common games, SEM 2.13 %).
+
+⭐ **`W_LOCAL = 30` IS STAMPED.** That sweep landed *while this instrument was being built*: the curve
+rises steeply to 30 and is then flat (`W30 = 99.7 %` of the `W36` peak, `z 1.41`, CI straddles zero),
+so 30 is the **smallest `W` on the measured plateau**. ⚠️ Its own disclosed limitation, carried here:
+the grid below the plateau is coarse — nothing was measured in `(24, 30)`, and `W27` could conceivably
+be a smaller legal settle. It was deliberately not bought. ⛔ `W` is throughput-only, so this resolves
+no bar either way.
 
 ### 6.2 ETA
 
 | configuration | rate | wall-clock for 1600 games |
 |---|---:|---:|
 | **laptop only (frozen at launch)** | 135 g/h | **11.9 h** |
-| laptop + local (⚠️ estimate; needs `W_LOCAL`) | ≈300 g/h | **≈5.3 h** |
+| **laptop + local (both `W` stamped)** | 297 g/h | **5.4 h** |
 
 ⭐ **THE ORCHESTRATOR SHOULD RE-DERIVE FROM EACH BOX'S OWN FIRST HOUR** rather than trusting the row —
 and, per `feedback_eta_before_launch`'s order-statistic trap, from the **mean over completed records**,
@@ -592,8 +602,8 @@ planned — **onto `local`, and let its archive into the pool with a clean prove
 
 **IF AND WHEN LOCAL IS ADDED (§6.4), additionally:**
 
-9. **Stamp `W_LOCAL`** in `WORKERS.conf` from a local arb-on `W` sweep. ⛔ Everything for `--role
-   local` refuses until this is a positive integer.
+9. ⭐ **`W_LOCAL` IS ALREADY STAMPED (30).** ⛔ The refusal remains armed for any box whose `W` reads
+   `TBD_FROM_SWEEP`; nothing further is owed here.
 10. **Bundle-sync local**, and `git -C <repo> rev-parse HEAD > .../PINNED_SRC_REV` **on local** — the
     same 40-hex sha as the laptop's, or `G-REV` voids the round.
 11. **Confirm the inherited golden gate on local** (its own box-local artefact) and **smoke local**
