@@ -350,32 +350,61 @@ def adjudicate_cell(cell: dict, claimed_band: int | None,
     gates_ok = all(g["ok"] for g in gates)
     m, z, n, se, per_deck = L.paired_margin(cell.get("records") or [])
     we = L.winrate_elo(cell.get("records") or [])
-    branch = L.branch_for_cell(m, se, gates_ok=gates_ok)
+    se_elo = we["elo_sig_1sigma_paired"]     # REALIZED — from the observed wr
+    branch = L.branch_for_cell(m, se, we["elo"], se_elo, gates_ok=gates_ok)
     riders = list(L.RIDERS_ALWAYS) + list(
         L.RIDERS_SWAP_KILLED if branch == "SWAP-KILLED" else
         L.RIDERS_SWAP_SURPRISE if branch == "SWAP-SURPRISE" else
         L.RIDERS_SWAP_UNRESOLVED if branch == "SWAP-UNRESOLVED" else ())
 
+    # which leg(s) actually fired — riders ask this be stated, not merged
+    fired_legs = []
+    if m is not None and se is not None:
+        if (m + L.HOLM_Z * se) <= -L.BAR_SWAP or (m - L.HOLM_Z * se) > 0.0:
+            fired_legs.append("margin")
+    if we["elo"] is not None and se_elo is not None:
+        if ((we["elo"] + L.HOLM_Z * se_elo) <= -L.BAR_ELO_LEG
+                or (we["elo"] - L.HOLM_Z * se_elo) > 0.0):
+            fired_legs.append("elo")
+
     out = {
         "cell": "SWAP", "gates": gates, "gates_ok": gates_ok,
         "failed_gates": [g["gate"] for g in gates if not g["ok"]],
-        "stats": {"M": m, "z": z, "n_paired": n, "se": se,
-                  "UB95_M": None if (m is None or se is None) else m + 2 * se,
-                  "LB95_M": None if (m is None or se is None) else m - 2 * se,
-                  "arb_advantage": None if m is None else -m,
-                  "LB95_arb_advantage": None if (m is None or se is None)
-                                        else -(m + 2 * se),
-                  "UB95_arb_advantage": None if (m is None or se is None)
-                                        else -(m - 2 * se),
-                  "bar_swap": L.BAR_SWAP},
-        "secondary_elo": {
-            "elo": we["elo"], "footing": we["elo_footing"],
-            "sigma_1_paired": we["elo_sig_1sigma_paired"],
-            "winrate": we["winrate"], "W": we["W"], "D": we["D"], "L": we["L"],
-            "warning": "⛔ NEVER quoted bare; the deck-paired MARGIN carries "
-                       "the branch, this is the SECONDARY only.",
+        "stats": {
+            "holm_z": L.HOLM_Z, "branch_z_uncorrected": L.BRANCH_Z,
+            "margin": {
+                "M": m, "se_realized": se, "z": z, "n_paired": n,
+                "bar_swap": L.BAR_SWAP,
+                "arb_advantage": None if m is None else -m,
+                "LB95_arb_advantage_2sigma": None if (m is None or se is None)
+                    else -(m + 2 * se),
+                "LB_arb_advantage_holm": None if (m is None or se is None)
+                    else -(m + L.HOLM_Z * se),
+                "killed_condition": None if (m is None or se is None) else
+                    (m + L.HOLM_Z * se) <= -L.BAR_SWAP,
+                "surprise_condition": None if (m is None or se is None) else
+                    (m - L.HOLM_Z * se) > 0.0,
+            },
+            "elo": {
+                "elo": we["elo"], "footing": we["elo_footing"],
+                "se_realized": se_elo,
+                "se_planning_wr05": L.SE_ELO_PLANNING,
+                "winrate": we["winrate"], "W": we["W"], "D": we["D"], "L": we["L"],
+                "bar_elo_leg": L.BAR_ELO_LEG,
+                "arb_advantage": None if we["elo"] is None else -we["elo"],
+                "LB95_arb_advantage_2sigma": None if (we["elo"] is None
+                    or se_elo is None) else -(we["elo"] + 2 * se_elo),
+                "LB_arb_advantage_holm": None if (we["elo"] is None
+                    or se_elo is None) else -(we["elo"] + L.HOLM_Z * se_elo),
+                "killed_condition": None if (we["elo"] is None or se_elo is None)
+                    else (we["elo"] + L.HOLM_Z * se_elo) <= -L.BAR_ELO_LEG,
+                "surprise_condition": None if (we["elo"] is None or se_elo is None)
+                    else (we["elo"] - L.HOLM_Z * se_elo) > 0.0,
+            },
         },
-        "se_anomaly": L.se_anomaly(se, max(1, n)),
+        "fired_legs": fired_legs,
+        "se_anomaly_margin": L.se_anomaly(se, max(1, n)),
+        "se_anomaly_elo": L.elo_se_anomaly(se_elo),
         "branch": branch, "riders": riders,
         "_per_deck": per_deck,
     }
@@ -390,15 +419,17 @@ def adjudicate(cell: dict, claimed_band: int | None = None,
                pinned_src_rev: str | None = None) -> dict:
     result = adjudicate_cell(cell, claimed_band, pinned_src_rev)
     return {
-        "round": "fpu_swap_cell (1 cell, 1 band)",
+        "round": "fpu_swap_cell (1 cell, 1 band) — AMENDED PRE-LAUNCH, two "
+                 "co-primary legs (margin + elo), Holm-corrected",
         "pair": ["measurement/fpu_swap_cell_20260901/PREREG.md"],
         "budget": {"k_dets": L.K_DETS, "sims_per_det": L.SIMS_PER_DET,
                    "total_sims": L.TOTAL_SIMS},
-        "bar_swap": L.BAR_SWAP,
+        "bar_swap": L.BAR_SWAP, "bar_elo_leg": L.BAR_ELO_LEG,
+        "holm_z": L.HOLM_Z, "branch_z_uncorrected": L.BRANCH_Z,
         "power_table": {
-            str(d): L.power_at(d, L.SE_400) for d in
-            (L.BAR_SWAP, L.FUNDING_BRIEF_ARB_ADVANTAGE_PRIOR, 2.0,
-             L.ARITHMETIC_RECONSTRUCTION_ARB_ADVANTAGE, 3.0)
+            f"margin{dm:g}_elo{de:g}": L.power_two_leg(dm, de) for dm, de in
+            ((L.FUNDING_BRIEF_ARB_ADVANTAGE_PRIOR, 40.0),
+             (L.ARITHMETIC_RECONSTRUCTION_ARB_ADVANTAGE, 40.0))
         },
         "result": result,
         "prior_art": L.PRIOR_ART,
@@ -500,18 +531,34 @@ def _deep_copy_cell(cell: dict) -> dict:
 def selftest() -> int:
     problems = list(L.sanity_check())
     grid_ok = True
-    for m10 in range(-500, 501, 5):
+    # ⭐⭐ AMENDED PRE-LAUNCH: an INDEPENDENT re-derivation of the two-leg
+    # ladder (closed-form here, not calling screen_lib's own internals),
+    # exercised on a margin-axis sweep (elo held neutral) and an elo-axis
+    # sweep (margin held neutral) — a witness of `branch_for_cell`, not a copy.
+    for m10 in range(-500, 501, 25):
         M = m10 / 100.0
         for se10 in (10, 30, 50, 69, 90, 140):
             se = se10 / 100.0
-            b = L.branch_for_cell(M, se, gates_ok=True)
-            ub95 = M + 2 * se
-            lb95 = M - 2 * se
-            expect = ("SWAP-KILLED" if ub95 <= -L.BAR_SWAP else
-                      "SWAP-SURPRISE" if lb95 > 0 else "SWAP-UNRESOLVED")
+            b = L.branch_for_cell(M, se, 0.0, L.SE_ELO_PLANNING, gates_ok=True)
+            killed = (M + L.HOLM_Z * se) <= -L.BAR_SWAP
+            surprise = (M - L.HOLM_Z * se) > 0.0
+            expect = ("SWAP-KILLED" if killed else
+                      "SWAP-SURPRISE" if surprise else "SWAP-UNRESOLVED")
             if b != expect:
                 grid_ok = False
-                problems.append(f"branch({M},{se}) = {b}, expected {expect}")
+                problems.append(f"margin-axis branch({M},{se}) = {b}, expected {expect}")
+    for e10 in range(-6000, 6001, 300):
+        elo = e10 / 10.0
+        for se10 in (30, 87, 150, 250):
+            se = se10 / 10.0
+            b = L.branch_for_cell(0.0, L.SE_400, elo, se, gates_ok=True)
+            killed = (elo + L.HOLM_Z * se) <= -L.BAR_ELO_LEG
+            surprise = (elo - L.HOLM_Z * se) > 0.0
+            expect = ("SWAP-KILLED" if killed else
+                      "SWAP-SURPRISE" if surprise else "SWAP-UNRESOLVED")
+            if b != expect:
+                grid_ok = False
+                problems.append(f"elo-axis branch({elo},{se}) = {b}, expected {expect}")
     if not grid_ok:
         problems.append("branch grid disagreed with its own closed-form re-derivation")
 

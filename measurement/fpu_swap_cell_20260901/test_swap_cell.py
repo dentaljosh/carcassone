@@ -42,68 +42,158 @@ def test_deployed_tiearb_matches_module():
     assert L.DEPLOYED_TIEARB == TA.DEPLOYED_TIEARB_B64
 
 
+#: neutral single-leg readings — matches screen_lib._NEUTRAL_*
+_NM, _NSM = 0.0, L.SE_400
+_NE, _NSE = 0.0, L.SE_ELO_PLANNING
+
+
 @pytest.mark.parametrize("m,se,expect", [
     (-10.0, 0.3, "SWAP-KILLED"),
     (10.0, 0.3, "SWAP-SURPRISE"),
     (0.0, 0.69, "SWAP-UNRESOLVED"),
-    (-1.0 - 2 * L.SE_400 - 1e-6, L.SE_400, "SWAP-KILLED"),   # just past the bar
-    (-1.0 - 2 * L.SE_400 + 1e-6, L.SE_400, "SWAP-UNRESOLVED"),  # just short
+    (-1.0 - L.HOLM_Z * L.SE_400 - 1e-6, L.SE_400, "SWAP-KILLED"),      # just past
+    (-1.0 - L.HOLM_Z * L.SE_400 + 1e-6, L.SE_400, "SWAP-UNRESOLVED"),  # just short
 ])
-def test_branch_sign_convention_pinned(m, se, expect):
-    """⛔ THE SIGN CONVENTION IS PINNED HERE. `M` is candidate(fpu,arb-off)
-    minus opponent(arb-on) — a NEGATIVE `M` means the arb-on opponent won,
-    which is the branch this whole round expects to fire (SWAP-KILLED)."""
-    assert L.branch_for_cell(m, se, gates_ok=True) == expect
+def test_branch_sign_convention_pinned_margin_leg(m, se, expect):
+    """⛔ THE SIGN CONVENTION IS PINNED HERE (margin leg, elo leg held
+    neutral). `M` is candidate(fpu,arb-off) minus opponent(arb-on) — a
+    NEGATIVE `M` means the arb-on opponent won, which is the branch this
+    whole round expects to fire (SWAP-KILLED)."""
+    assert L.branch_for_cell(m, se, _NE, _NSE, gates_ok=True) == expect
+
+
+@pytest.mark.parametrize("elo,se,expect", [
+    (-100.0, 3.0, "SWAP-KILLED"),
+    (100.0, 3.0, "SWAP-SURPRISE"),
+    (0.0, 8.69, "SWAP-UNRESOLVED"),
+    (-15.0 - L.HOLM_Z * L.SE_ELO_PLANNING - 1e-3, L.SE_ELO_PLANNING, "SWAP-KILLED"),
+    (-15.0 - L.HOLM_Z * L.SE_ELO_PLANNING + 1e-3, L.SE_ELO_PLANNING, "SWAP-UNRESOLVED"),
+])
+def test_branch_sign_convention_pinned_elo_leg(elo, se, expect):
+    """⭐⭐ AMENDED PRE-LAUNCH — THE ELO LEG'S SIGN CONVENTION IS PINNED HERE
+    (margin leg held neutral). `elo` is `winrate_elo`'s CANDIDATE-referenced
+    figure — a NEGATIVE elo means the arb-on opponent is ahead, which fires
+    SWAP-KILLED past `BAR_ELO_LEG=15` at the Holm-adjusted threshold."""
+    assert L.branch_for_cell(_NM, _NSM, elo, se, gates_ok=True) == expect
+
+
+def test_branch_holm_z_stricter_than_uncorrected():
+    """A margin reading that would have fired SWAP-KILLED under the
+    PRE-AMENDMENT `BRANCH_Z=2.0` single-leg test but does NOT clear the
+    stricter `HOLM_Z` must read SWAP-UNRESOLVED, not SWAP-KILLED — this is
+    the entire point of the multiple-comparison correction."""
+    # M chosen so UB95 (BRANCH_Z=2.0) clears -1.0 but the HOLM_Z bound does not
+    se = L.SE_400
+    m = -1.0 - 2.0 * se - 1e-4                     # clears the OLD bar
+    assert (m + 2.0 * se) <= -L.BAR_SWAP           # sanity: old test WOULD fire
+    assert (m + L.HOLM_Z * se) > -L.BAR_SWAP       # Holm bound does NOT clear
+    assert L.branch_for_cell(m, se, _NE, _NSE, gates_ok=True) == "SWAP-UNRESOLVED"
+
+
+def test_branch_either_leg_fires_killed():
+    """Margin leg alone clearing its bound, with elo neutral, must fire
+    SWAP-KILLED (and vice versa) — the "fires if EITHER leg clears" contract."""
+    assert L.branch_for_cell(-10.0, 0.3, _NE, _NSE, gates_ok=True) == "SWAP-KILLED"
+    assert L.branch_for_cell(_NM, _NSM, -100.0, 3.0, gates_ok=True) == "SWAP-KILLED"
+
+
+def test_branch_cross_leg_disagreement_resolves_to_killed():
+    """A contrived case where the margin leg is KILLED-eligible and the elo
+    leg is SURPRISE-eligible: KILLED is checked first and wins."""
+    assert L.branch_for_cell(-10.0, 0.3, 100.0, 3.0, gates_ok=True) == "SWAP-KILLED"
 
 
 def test_branch_mutually_exclusive_on_a_grid():
-    for m10 in range(-800, 801, 4):
+    for m10 in range(-800, 801, 20):
         m = m10 / 100.0
         for se10 in (10, 30, 50, 69, 90, 140, 200):
             se = se10 / 100.0
-            b = L.branch_for_cell(m, se, gates_ok=True)
+            b = L.branch_for_cell(m, se, _NE, _NSE, gates_ok=True)
             assert b in L.BRANCHES
-            ub95, lb95 = m + 2 * se, m - 2 * se
+            ubh, lbh = m + L.HOLM_Z * se, m - L.HOLM_Z * se
             if b == "SWAP-KILLED":
-                assert ub95 <= -L.BAR_SWAP
-                assert not (lb95 > 0)
+                assert ubh <= -L.BAR_SWAP
+                assert not (lbh > 0)
             elif b == "SWAP-SURPRISE":
-                assert lb95 > 0
-                assert not (ub95 <= -L.BAR_SWAP)
+                assert lbh > 0
+                assert not (ubh <= -L.BAR_SWAP)
 
 
-def test_gates_not_ok_forces_void_regardless_of_m():
-    assert L.branch_for_cell(-100.0, 0.1, gates_ok=False) == "U-VOID-INSTRUMENT"
-    assert L.branch_for_cell(100.0, 0.1, gates_ok=False) == "U-VOID-INSTRUMENT"
+def test_gates_not_ok_forces_void_regardless_of_stats():
+    assert L.branch_for_cell(-100.0, 0.1, -100.0, 0.1,
+                             gates_ok=False) == "U-VOID-INSTRUMENT"
+    assert L.branch_for_cell(100.0, 0.1, 100.0, 0.1,
+                             gates_ok=False) == "U-VOID-INSTRUMENT"
 
 
-def test_missing_stats_force_void():
-    assert L.branch_for_cell(None, 0.5, gates_ok=True) == "U-VOID-INSTRUMENT"
-    assert L.branch_for_cell(1.0, None, gates_ok=True) == "U-VOID-INSTRUMENT"
+def test_both_legs_missing_forces_void():
+    assert L.branch_for_cell(None, 0.5, None, 0.5,
+                             gates_ok=True) == "U-VOID-INSTRUMENT"
+    assert L.branch_for_cell(1.0, None, 1.0, None,
+                             gates_ok=True) == "U-VOID-INSTRUMENT"
 
 
-def test_power_table_sums_to_one_and_is_monotone():
-    prev_killed = -1.0
-    for delta in (0.0, L.BAR_SWAP, L.FUNDING_BRIEF_ARB_ADVANTAGE_PRIOR, 2.0,
-                 L.ARITHMETIC_RECONSTRUCTION_ARB_ADVANTAGE, 3.0, 5.0):
-        pw = L.power_at(delta, L.SE_400)
-        total = pw["p_killed"] + pw["p_surprise"] + pw["p_unresolved"]
-        assert abs(total - 1.0) < 1e-6
-        assert pw["p_killed"] >= prev_killed - 1e-9
-        prev_killed = pw["p_killed"]
-        assert 0.0 <= pw["p_killed"] <= 1.0
-        assert 0.0 <= pw["p_surprise"] <= 1.0
+def test_one_leg_missing_the_other_still_decides():
+    """⚠️ AMENDED: a single missing/unusable leg must NOT void the whole cell
+    if the other leg is healthy — a NaN elo SE (a real boundary case found
+    against the tiny real fixture, wr=0.0 exactly) must not silence a clean
+    margin reading, and vice versa."""
+    assert L.branch_for_cell(None, None, -100.0, 3.0,
+                             gates_ok=True) == "SWAP-KILLED"
+    assert L.branch_for_cell(-10.0, 0.3, None, float("nan"),
+                             gates_ok=True) == "SWAP-KILLED"
+    assert L.branch_for_cell(0.0, L.SE_400, None, float("nan"),
+                             gates_ok=True) == "SWAP-UNRESOLVED"
 
 
-def test_power_table_surprise_negligible_under_positive_prior():
-    """The prior in every PRIOR_ART row points the same (arb-favoring)
-    direction — SWAP-SURPRISE should be many orders of magnitude below
-    SWAP-KILLED under any of the priors this doc actually carries."""
-    for delta in (L.FUNDING_BRIEF_ARB_ADVANTAGE_PRIOR,
-                 L.ARITHMETIC_RECONSTRUCTION_ARB_ADVANTAGE):
-        pw = L.power_at(delta, L.SE_400)
-        assert pw["p_surprise"] < 1e-3
-        assert pw["p_killed"] > pw["p_surprise"] * 10
+def test_power_two_leg_bounds_sane():
+    for dm, de in ((0.0, 0.0), (L.BAR_SWAP, L.BAR_ELO_LEG),
+                  (L.FUNDING_BRIEF_ARB_ADVANTAGE_PRIOR, 40.0),
+                  (L.ARITHMETIC_RECONSTRUCTION_ARB_ADVANTAGE, 40.0),
+                  (5.0, 100.0)):
+        pw = L.power_two_leg(dm, de)
+        assert 0.0 <= pw["p_killed_lower"] <= pw["p_killed_upper"] <= 1.0
+        assert pw["p_killed_lower"] == pytest.approx(
+            max(pw["leg_margin"]["p_killed"], pw["leg_elo"]["p_killed"]))
+        assert pw["p_killed_upper"] == pytest.approx(
+            min(1.0, pw["leg_margin"]["p_killed"] + pw["leg_elo"]["p_killed"]))
+
+
+def test_power_two_leg_killed_is_modal_under_funding_brief_prior():
+    """⭐⭐ THE AMENDMENT'S HEADLINE CLAIM, tested directly: under the funding
+    brief's own priors (margin ~+1.5 or ~+2.26, elo ~+40), SWAP-KILLED's
+    combined lower bound must exceed 50% — the modal single branch, reversing
+    the pre-amendment margin-only table's 57-90% SWAP-UNRESOLVED reading."""
+    for dm in (L.FUNDING_BRIEF_ARB_ADVANTAGE_PRIOR,
+              L.ARITHMETIC_RECONSTRUCTION_ARB_ADVANTAGE):
+        pw = L.power_two_leg(dm, 40.0)
+        assert pw["p_killed_lower"] > 0.5, pw
+        # and it is driven by the elo leg specifically
+        assert pw["leg_elo"]["p_killed"] > pw["leg_margin"]["p_killed"]
+
+
+def test_power_two_leg_surprise_negligible_under_positive_prior():
+    for dm, de in ((L.FUNDING_BRIEF_ARB_ADVANTAGE_PRIOR, 40.0),
+                  (L.ARITHMETIC_RECONSTRUCTION_ARB_ADVANTAGE, 40.0)):
+        pw = L.power_two_leg(dm, de)
+        assert pw["p_surprise_upper"] < 1e-3
+        assert pw["p_killed_lower"] > pw["p_surprise_upper"] * 10
+
+
+def test_holm_z_stricter_than_branch_z():
+    assert L.HOLM_Z > L.BRANCH_Z
+    assert 2.0 < L.HOLM_Z < 2.6
+
+
+def test_se_elo_planning_matches_correct_n_not_coordinators_quoted_figure():
+    """The coordinator's amendment message cited '~±12 elo' (CLAUDE.md's
+    n=400-GAMES paired figure); this cell plays 800 GAMES (400 decks paired),
+    whose own SE is tighter — verify the constant reflects the CORRECT n, not
+    the quoted approximation, and that it matches this exact shape's own
+    banked PRIOR_ART elo_sigma values (8.69-8.71) to within rounding."""
+    assert L.SE_ELO_PLANNING == pytest.approx(L.elo_sigma_paired(0.5, 800))
+    assert 8.5 < L.SE_ELO_PLANNING < 8.9
+    assert L.N_GAMES_REAL_CELL == 800
 
 
 # =========================================================================== #
