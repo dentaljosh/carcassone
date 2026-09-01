@@ -1,0 +1,1306 @@
+{
+  "round": "fpu_h2h (ONE cell, ONE band \u2014 step 2 of the adoption chain)",
+  "pair": [
+    "measurement/fpu_h2h_prep/DESIGN.md",
+    "measurement/fpu_h2h_prep/READ_RULE.md"
+  ],
+  "smoke_mode": false,
+  "budget": {
+    "k_dets": 16,
+    "sims_per_det": 1376,
+    "total_sims": 22016,
+    "note": "the 2026-08-30 promoted desktop champion, BOTH sides"
+  },
+  "deployed_tiearb_both_seats": {
+    "enabled": true,
+    "B": 64,
+    "J": 4,
+    "mode": "argmax",
+    "salt": "tiearb2-deploy-v1",
+    "eps": 0.0,
+    "phase_gate": "all"
+  },
+  "bars": {
+    "BAR_EFFECT": 1.0,
+    "adopt": "LB95(M) >= +1.000 pts/deck",
+    "bounded": "UB95(M) < +1.000 pts/deck",
+    "provenance": "\u2b50 AN EFFECT SIZE, NOT 2 sigma-hat (owner ruling 2026-08-30) \u2014 and the CONFIRMATION bar, deliberately below the ladder's +1.5 SCREEN bar. DESIGN \u00a73 derives it from the two production folds this program has accepted (+1.229 and +1.7167 pts). READ_RULE \u00a78 states what it costs."
+  },
+  "round_gates": [
+    {
+      "gate": "G-WHEEL-SAME",
+      "ok": true,
+      "detail": {
+        "binary_sha_by_cell": {
+          "CELL_H2H_FPU02": "a9bb2311ab9a635d"
+        },
+        "by_role": {
+          "laptop": [
+            "a9bb2311ab9a635d"
+          ]
+        }
+      },
+      "address": "manifest:carc_rs_binary_sha",
+      "why": "every cell on a box shares that box's binary sha \u26a0\ufe0f the sha is BOX-LOCAL and is never compared ACROSS boxes."
+    },
+    {
+      "gate": "G-REV",
+      "ok": true,
+      "detail": {
+        "pins": {
+          "laptop": "0d0cb9b645f5bdba7f9ee33a4b353589f7b6ab64"
+        },
+        "revs": {
+          "CELL_H2H_FPU02": "0d0cb9b645-dirty"
+        },
+        "canonicalized": {
+          "CELL_H2H_FPU02": {
+            "code_rev": "0d0cb9b645-dirty",
+            "ok": true,
+            "why": "code_rev '0d0cb9b645-dirty' names PINNED_SRC_REV '0d0cb9b645f5bdba7f9ee33a4b353589f7b6ab64'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          }
+        },
+        "ok": true,
+        "distinct_pins": [
+          "0d0cb9b645f5bdba7f9ee33a4b353589f7b6ab64"
+        ],
+        "pin": "0d0cb9b645f5bdba7f9ee33a4b353589f7b6ab64",
+        "why": "every cell's emitted code_rev canonicalizes to the ONE pin 0d0cb9b645f5bdba7f9ee33a4b353589f7b6ab64 that every box published"
+      },
+      "address": "manifests + the box's PINNED_SRC_REV",
+      "why": "every cell's emitted code_rev canonicalizes to the ONE pin 0d0cb9b645f5bdba7f9ee33a4b353589f7b6ab64 that every box published"
+    },
+    {
+      "gate": "G-BLIND",
+      "ok": true,
+      "detail": {
+        "BLIND_COMMIT_by_cell": {
+          "CELL_H2H_FPU02": "e641480ef2034144191e212ca6f1842d7e0fab55"
+        }
+      },
+      "address": "manifest:BLIND_COMMIT",
+      "why": "one 40-hex BLIND_COMMIT stamped into every adjudicated manifest"
+    }
+  ],
+  "round_gates_ok": true,
+  "cells": {
+    "CELL_H2H_FPU02": {
+      "cell": "CELL_H2H_FPU02",
+      "role": "laptop",
+      "knob": "fpu_reduction",
+      "dose": 0.2,
+      "band": 168000000000,
+      "purpose": "\u2b50\u2b50 STEP 2 OF `ADOPTION_CHAIN` \u2014 the PRODUCTION H2H. Candidate = the production champion (k16x1376 = 22016) + the DEPLOYED tie arbiter (B=64, J=4, argmax, salt tiearb2-deploy-v1, eps 0.0, phase_gate all) + `fpu_reduction = 0.2`. Opponent = THE SAME AGENT WITHOUT THE DOSE. \u2b50 The single variable is the knob, measured in the configuration that actually ships \u2014 which is the one thing every prior fpu cell could not do, because the harness could not arm the opponent's arbiter until 2026-08-31.",
+      "gates": [
+        {
+          "gate": "G-FPU",
+          "ok": true,
+          "detail": {
+            "requested_fpu_reduction": 0.2,
+            "fpu_absent": false,
+            "requested_c_puct_override": null,
+            "c_puct_absent": false,
+            "shared_c_puct": 1.5,
+            "frozen": {
+              "fpu_reduction": 0.2,
+              "c_puct": null
+            },
+            "addresses": {
+              "fpu": "manifest:config.cand_search.fpu_reduction",
+              "c_puct": "manifest:config.cand_search.c_puct"
+            }
+          },
+          "address": "manifest:config.cand_search.fpu_reduction",
+          "why": "the REQUEST matches this cell's frozen dose (fpu=0.2) and carries NO c_puct override"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "resolved": {
+              "fpu_reduction": {
+                "candidate": 0.2,
+                "opponent": null
+              },
+              "c_puct": {
+                "candidate": 1.5,
+                "opponent": 1.5
+              }
+            },
+            "cell_knob": "fpu_reduction",
+            "frozen_value": 0.2
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 the dose BOUND on the candidate's resolved config, the opponent carries the champion's values, and c_puct is equal across the two sides"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "owned_alias": "fpu_reduction",
+            "frozen_value": 0.2,
+            "rows": {
+              "k_dets": {
+                "champion": 16,
+                "opponent": 16,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.k_dets",
+                  "manifest:config.opponent.k_dets"
+                ]
+              },
+              "sims_per_det": {
+                "champion": 1376,
+                "opponent": 1376,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.sims_per_det",
+                  "manifest:config.opponent.sims_per_det"
+                ]
+              },
+              "total_sims": {
+                "champion": 22016,
+                "opponent": 22016,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.total_sims",
+                  "manifest:config.opponent.total_sims"
+                ]
+              },
+              "c_puct": {
+                "champion": 1.5,
+                "opponent": 1.5,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.c_puct",
+                  "manifest:config.opponent.champ_cfg.c_puct"
+                ]
+              },
+              "tau_p": {
+                "champion": 5.0,
+                "opponent": 5.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.tau_p",
+                  "manifest:config.opponent.champ_cfg.tau_p"
+                ]
+              },
+              "value_norm": {
+                "champion": 15.0,
+                "opponent": 15.0,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.value_norm",
+                  "manifest:config.opponent.champ_cfg.value_norm"
+                ]
+              },
+              "leaf_quantize": {
+                "champion": "float",
+                "opponent": "float",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.leaf_quantize",
+                  "manifest:config.opponent.champ_cfg.leaf_quantize"
+                ]
+              },
+              "final_select": {
+                "champion": "visits",
+                "opponent": "visits",
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.final_select",
+                  "manifest:config.opponent.champ_cfg.final_select"
+                ]
+              },
+              "fpu_reduction": {
+                "champion": 0.2,
+                "opponent": null,
+                "champion_absent": false,
+                "opponent_absent": false,
+                "addresses": [
+                  "manifest:config.champion.fpu_reduction",
+                  "manifest:config.opponent.champ_cfg.fpu_reduction"
+                ]
+              }
+            },
+            "notes": [
+              "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+            ]
+          },
+          "address": "manifest:config.champion.* vs config.opponent.champ_cfg.*",
+          "why": "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen \u2014 every OTHER alias is identical across the two sides"
+        },
+        {
+          "gate": "G-TIEARB-SIDES",
+          "ok": true,
+          "detail": {
+            "expected_both_seats": {
+              "enabled": true,
+              "B": 64,
+              "J": 4,
+              "mode": "argmax",
+              "salt": "tiearb2-deploy-v1",
+              "eps": 0.0,
+              "phase_gate": "all"
+            },
+            "resolved": {
+              "candidate": {
+                "address": "cand_tiearb",
+                "spec": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                }
+              },
+              "opponent": {
+                "address": "opp_tiearb",
+                "spec": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                }
+              }
+            },
+            "findings": [
+              "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+              "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+            ],
+            "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+            "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+          },
+          "address": "manifest:{cand,opp}_tiearb / config.{cand,opp}_tiearb / config.opponent.tiearb",
+          "why": "\u2b50\u2b50 BOTH SEATS carry the DEPLOYED arbiter {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0, 'phase_gate': 'all'} \u2014 the cell's single variable is the dose. ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb | ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+        },
+        {
+          "gate": "G-TIEARB-FIRE",
+          "ok": true,
+          "detail": {
+            "sides": {
+              "candidate": {
+                "games": 800,
+                "phi": 17.51875,
+                "fired_plies": 14015,
+                "pickchanges": 7861,
+                "G_FIRE_fired": false
+              },
+              "opponent": {
+                "games": 800,
+                "phi": 17.55875,
+                "fired_plies": 14047,
+                "pickchanges": 8137,
+                "G_FIRE_fired": false
+              }
+            },
+            "raw": {
+              "candidate": {
+                "tiearb_games": 800,
+                "tiearb_phi": 17.51875,
+                "tiearb_fired_plies_total": 14015,
+                "tiearb_pickchanges_total": 7861,
+                "tiearb_G_FIRE_fired": false,
+                "tiearb_partial_argmax_total": 0,
+                "tiearb_errors_total": 0,
+                "tiearb_B": [
+                  64
+                ],
+                "tiearb_J": [
+                  4
+                ],
+                "tiearb_phase_gates": [
+                  "all"
+                ]
+              },
+              "opponent": {
+                "opp_tiearb_games": 800,
+                "opp_tiearb_phi": 17.55875,
+                "opp_tiearb_fired_plies_total": 14047,
+                "opp_tiearb_pickchanges_total": 8137,
+                "opp_tiearb_G_FIRE_fired": false,
+                "opp_tiearb_partial_argmax_total": 0,
+                "opp_tiearb_errors_total": 0,
+                "opp_tiearb_B": [
+                  64
+                ],
+                "opp_tiearb_J": [
+                  4
+                ],
+                "opp_tiearb_phase_gates": [
+                  "all"
+                ]
+              }
+            }
+          },
+          "address": "summary.json",
+          "why": "\u2b50 candidate: phi = 17.51875 fires/game over 800 game(s), 14015 fired plies, 7861 pick changes. \u2b50 opponent: phi = 17.55875 fires/game over 800 game(s), 14047 fired plies, 8137 pick changes. \u2b50\u2b50 BOTH SEATS arbitrated \u2014 a PLAY-DERIVED witness, not a config echo"
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "cand_leaf_hash": "a36d2e15a3b3d71d",
+            "opp_leaf_hash": "a36d2e15a3b3d71d",
+            "expected": "a36d2e15a3b3d71d",
+            "cand_curve": [
+              -10.0,
+              -5.0,
+              -1.25,
+              0.0,
+              2.5,
+              3.75,
+              5.0,
+              6.25
+            ]
+          },
+          "address": "manifest:config.{cand,opp}_leaf_hash",
+          "why": "both sides carry the SAME leaf a36d2e15a3b3d71d (curve125) \u2014 neither the dose nor the arbiter is a leaf term"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "band_seed_start": 168000000000,
+            "n_decks": 400,
+            "seatings_per_deck": 2,
+            "frozen_band": 168000000000,
+            "addresses": [
+              "manifest:config.band_seed_start",
+              "manifest:config.n_decks",
+              "manifest:config.seatings_per_deck"
+            ]
+          },
+          "address": "manifest:config.band_seed_start",
+          "why": "the cell is on its OWN frozen band with the frozen deck count, 2 seatings per deck"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "champion": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            },
+            "opponent": {
+              "k_dets": 16,
+              "sims_per_det": 1376,
+              "total_sims": 22016
+            }
+          },
+          "address": "manifest:config.{champion,opponent}.*",
+          "why": "both sides run k16 x 1376 = 22016 (the 2026-08-30 promoted desktop champion) and the product multiplies out"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "exact_k": {
+              "value": 2,
+              "address": "manifest:config.endgame.exact_k"
+            },
+            "mode": {
+              "value": "marginalized",
+              "address": "manifest:config.endgame.mode"
+            }
+          },
+          "address": "manifest:config.endgame.*",
+          "why": "ok"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "rules_profile.name": {
+              "value": "fixed_v1",
+              "address": "manifest:rules_profile.name"
+            },
+            "r9_env_ok": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_ok"
+            },
+            "r9_env_observed": {
+              "value": true,
+              "address": "manifest:rules_profile.r9_env_observed"
+            }
+          },
+          "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+          "why": "ok"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "name": {
+              "value": "rust",
+              "address": "manifest:config.backend.name"
+            },
+            "requested": {
+              "value": "rust",
+              "address": "manifest:config.backend.requested"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            },
+            "converted_sides": {
+              "value": [
+                "candidate",
+                "opponent"
+              ],
+              "address": "manifest:config.backend.converted_sides"
+            }
+          },
+          "address": "manifest:config.backend.* \u2014 \u26d4\u26d4 RUST IS NOT OPTIONAL IN THIS ROUND. `fpu_reduction` is threaded on both backends, but THE TIE ARBITER IS RUST-ONLY and the harness refuses `--{cand,opp}-tiearb-enabled` on python. A python leg could not arm either seat, so it would silently be the ARBITER-OFF cell this round exists to stop being.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "carc_rs_build": {
+              "value": "carc_rs-0.1.0+0d0cb9b645f5+rustcunpinned",
+              "address": "manifest:carc_rs_build"
+            },
+            "carc_rs_binary_sha": {
+              "value": "a9bb2311ab9a635d",
+              "address": "manifest:carc_rs_binary_sha"
+            },
+            "mixed_builds": {
+              "value": false,
+              "address": "manifest:mixed_builds"
+            }
+          },
+          "address": "manifest \u2014 \u26a0\ufe0f carc_rs_version is permanently '0.1.0' and is NOT a discriminator. \u2b50 The wheel's IDENTITY to the inherited golden gate is asserted LAUNCHER-SIDE (run_cells.sh compares the gate artefact's wheel.binary_sha to this box's installed binary); DESIGN \u00a79 states the inheritance argument in full.",
+          "why": "ok"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "n": 800,
+            "frozen_n_games": 800,
+            "n_failed": 0,
+            "failure_rate": 0.0,
+            "failure_rate_void_bar": 0.02,
+            "n_common": 400,
+            "n_common_floor": 320.0,
+            "n_common_floor_fraction": 0.8,
+            "notes": [],
+            "addresses": [
+              "summary:n",
+              "summary:n_failed"
+            ]
+          },
+          "address": "summary.json",
+          "why": "\u2b50 n accounts for every frozen game, the failure rate is below the 2% void bar, and n_common clears the 80% floor"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.5025,
+            "band": [
+              0.35,
+              0.65
+            ]
+          },
+          "address": "summary:winrate",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "host": "laptop-wsl",
+            "frozen_role": "laptop"
+          },
+          "address": "manifest:host",
+          "why": "host 'laptop-wsl' matches box role 'laptop' (via 'laptop')"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "paired_mean_margin": {
+              "witness": 1.01875,
+              "summary": 1.01875,
+              "agree": true,
+              "address": "summary:paired_mean_margin"
+            },
+            "paired_z": {
+              "witness": 1.4927298950342849,
+              "summary": 1.4927298950342849,
+              "agree": true,
+              "address": "summary:paired_z"
+            },
+            "n_paired": {
+              "witness": 400,
+              "summary": 400,
+              "agree": true,
+              "address": "summary:n_paired"
+            },
+            "winrate": {
+              "witness": 0.5025,
+              "summary": 0.5025,
+              "agree": true,
+              "address": "summary:winrate"
+            },
+            "elo": {
+              "witness": 1.7371924043128577,
+              "summary": 1.7371924043128577,
+              "agree": true,
+              "address": "summary:elo"
+            }
+          },
+          "address": "summary.json vs the raw records",
+          "why": "the fsum witness agrees on all five statistics"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "range": [
+              168000000000,
+              168000000399
+            ],
+            "n_seeds": 400,
+            "n_common": 400,
+            "frozen_n_decks": 400,
+            "n_common_floor": 320.0,
+            "out_of_range": [],
+            "half_played_decks": [],
+            "n_half_played": 0,
+            "half_played_rate_of_games": 0.0,
+            "half_played_rate_denominator": 800,
+            "failure_rate_void_bar": 0.02,
+            "range_clashes": [],
+            "notes": [],
+            "all_cell_ranges": [
+              [
+                168000000000,
+                168000000399,
+                "CELL_H2H_FPU02"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "\u2b50 every realized seed is inside this cell's own range, the one-seat-only rate is BELOW the 2%-of-games void bar, and n_common clears the 80% floor"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "M": 1.01875,
+        "z": 1.4927298950342849,
+        "n_paired": 400,
+        "se": 0.6824744405461254,
+        "UB95": 2.3836988810922506,
+        "LB95": -0.3461988810922507,
+        "bar_effect": 1.0,
+        "bar_note": "\u2b50 ADOPT requires LB95 >= bar; BOUNDED requires UB95 < bar. \u26d4 The POINT ESTIMATE clears nothing on its own \u2014 that is the whole difference from a 2-sigma-hat bar (owner ruling 2026-08-30)."
+      },
+      "secondary_elo": {
+        "elo": 1.7371924043128577,
+        "footing": "deck-paired",
+        "sigma_1_paired": 8.685998213721309,
+        "sigma_1_unpaired": 12.283856476593154,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.5025,
+        "W": 399,
+        "D": 6,
+        "L": 395,
+        "ci95_elo_paired": [
+          -15.63480402312976,
+          19.109188831755475
+        ],
+        "instrument_2sigma_elo_resolution": 17.4,
+        "resolution_footing": "deck-paired 2\u03c3 at 800 games / 400 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f\u26a0\ufe0f THIS IS A RESOLUTION, NOT A BAR. The bar is +1.0 pts/deck on the deck-paired MARGIN and no branch reads this block. elo may never be quoted bare; a disagreement between the margin and the elo is DISCLOSED, not arbitrated."
+      },
+      "opponent_production_deviations": {
+        "value": [],
+        "address": "manifest:config.opponent.production_config_deviations",
+        "note": "\u26a0\ufe0f REPORTED, NEVER A BRANCH INPUT. Empty means 'no deviation FOUND', which only means 'matches the champion' when the YAML loader actually loaded (eval_fair_puct._load_prod_knobs says so on stderr when it did not)."
+      },
+      "se_anomaly": {
+        "realized": 0.6824744405461254,
+        "modelled": 0.6905,
+        "ratio": 0.9883771767503626,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        -12.5,
+        7.5,
+        15.0,
+        5.5,
+        -22.0,
+        -3.5,
+        -4.5,
+        37.5,
+        4.5,
+        21.5,
+        -9.5,
+        -6.0,
+        -10.5,
+        0.0,
+        9.5,
+        10.5,
+        1.5,
+        13.5,
+        13.0,
+        30.0,
+        -7.5,
+        8.0,
+        -9.0,
+        -20.5,
+        -20.5,
+        -15.0,
+        -13.5,
+        2.0,
+        3.0,
+        25.0,
+        -10.5,
+        17.0,
+        10.5,
+        3.5,
+        -4.0,
+        -10.5,
+        -15.0,
+        17.5,
+        -9.0,
+        33.0,
+        4.0,
+        -17.5,
+        -7.0,
+        11.5,
+        6.0,
+        -0.5,
+        -2.0,
+        -6.0,
+        -7.0,
+        11.5,
+        1.0,
+        1.0,
+        12.0,
+        3.0,
+        -23.0,
+        -8.5,
+        27.5,
+        14.5,
+        -5.0,
+        -13.0,
+        -11.5,
+        -4.0,
+        7.0,
+        8.0,
+        0.5,
+        1.0,
+        -6.0,
+        -2.5,
+        -5.5,
+        9.0,
+        1.0,
+        6.5,
+        11.0,
+        20.0,
+        13.5,
+        35.0,
+        -11.5,
+        -17.5,
+        -8.0,
+        3.5,
+        2.5,
+        -6.0,
+        -4.5,
+        10.5,
+        -16.5,
+        -1.0,
+        18.5,
+        22.5,
+        0.0,
+        -7.5,
+        8.0,
+        -5.0,
+        -7.5,
+        -1.0,
+        -1.0,
+        30.5,
+        -20.5,
+        -10.0,
+        13.5,
+        -20.5,
+        -24.0,
+        9.5,
+        -13.0,
+        -2.5,
+        -5.0,
+        -13.5,
+        -25.5,
+        -15.0,
+        6.0,
+        5.5,
+        -16.0,
+        16.0,
+        -2.5,
+        -15.5,
+        -10.5,
+        -16.0,
+        9.0,
+        1.5,
+        -6.0,
+        19.0,
+        11.5,
+        -13.5,
+        -10.0,
+        -4.5,
+        -23.0,
+        22.0,
+        1.0,
+        6.5,
+        3.5,
+        -4.5,
+        2.5,
+        -3.5,
+        9.5,
+        -8.5,
+        5.0,
+        4.0,
+        6.0,
+        -17.5,
+        6.0,
+        11.0,
+        5.0,
+        13.5,
+        -14.5,
+        9.5,
+        -19.0,
+        23.0,
+        -6.0,
+        8.0,
+        5.5,
+        23.0,
+        -11.5,
+        -11.5,
+        11.5,
+        -8.5,
+        -13.0,
+        14.5,
+        1.0,
+        3.5,
+        -6.5,
+        9.5,
+        -0.5,
+        17.0,
+        -7.5,
+        -8.0,
+        -6.5,
+        -9.0,
+        24.5,
+        -29.5,
+        6.0,
+        -12.0,
+        -2.5,
+        17.5,
+        22.5,
+        -7.0,
+        -6.5,
+        -7.5,
+        14.0,
+        3.0,
+        -15.0,
+        6.5,
+        18.0,
+        -1.0,
+        7.0,
+        -8.0,
+        3.0,
+        -30.0,
+        3.0,
+        20.0,
+        26.5,
+        16.5,
+        10.0,
+        17.0,
+        7.5,
+        -16.5,
+        -14.0,
+        2.0,
+        3.0,
+        -6.5,
+        2.5,
+        -6.0,
+        -15.5,
+        7.5,
+        11.0,
+        4.0,
+        1.5,
+        -9.0,
+        5.5,
+        9.5,
+        15.5,
+        -7.5,
+        -7.5,
+        -1.5,
+        -6.5,
+        -16.5,
+        -9.5,
+        -10.0,
+        9.5,
+        -20.5,
+        -14.0,
+        27.5,
+        -4.0,
+        14.0,
+        19.5,
+        -8.0,
+        -3.0,
+        8.5,
+        7.0,
+        -17.0,
+        -4.0,
+        -21.0,
+        -12.0,
+        -12.5,
+        9.0,
+        -2.0,
+        -22.5,
+        6.5,
+        6.0,
+        15.0,
+        4.5,
+        15.0,
+        6.0,
+        3.0,
+        -5.5,
+        8.0,
+        -2.0,
+        19.0,
+        2.0,
+        -5.5,
+        -46.5,
+        8.0,
+        13.0,
+        30.5,
+        4.0,
+        14.5,
+        -4.0,
+        16.5,
+        -1.5,
+        10.5,
+        2.0,
+        36.0,
+        0.0,
+        2.0,
+        19.5,
+        19.0,
+        10.0,
+        28.0,
+        21.0,
+        18.0,
+        -1.0,
+        -7.0,
+        -11.0,
+        -2.5,
+        -1.0,
+        21.0,
+        1.5,
+        -12.0,
+        5.0,
+        9.0,
+        -18.0,
+        26.5,
+        -5.5,
+        70.5,
+        0.0,
+        -0.5,
+        3.5,
+        -1.5,
+        -15.5,
+        8.5,
+        6.5,
+        -8.0,
+        -8.0,
+        -11.0,
+        -5.5,
+        3.5,
+        -10.5,
+        3.0,
+        19.5,
+        -6.0,
+        -11.5,
+        9.5,
+        10.5,
+        -41.0,
+        -4.0,
+        0.0,
+        -31.0,
+        -15.0,
+        -4.0,
+        10.5,
+        6.5,
+        22.0,
+        -2.5,
+        9.0,
+        -2.5,
+        4.5,
+        -19.0,
+        11.0,
+        -9.5,
+        0.5,
+        17.5,
+        1.5,
+        6.0,
+        9.5,
+        13.5,
+        -22.5,
+        -0.5,
+        -9.5,
+        12.5,
+        -8.0,
+        -4.5,
+        8.0,
+        -8.5,
+        -22.5,
+        14.0,
+        13.5,
+        -9.0,
+        32.5,
+        15.5,
+        34.0,
+        21.5,
+        25.0,
+        -14.5,
+        -6.5,
+        -4.5,
+        3.0,
+        -4.5,
+        -8.5,
+        7.0,
+        -10.5,
+        0.5,
+        -7.5,
+        4.0,
+        -19.0,
+        13.0,
+        6.5,
+        1.5,
+        -4.5,
+        8.0,
+        1.0,
+        -6.5,
+        -26.0,
+        6.0,
+        28.5,
+        2.5,
+        10.0,
+        4.5,
+        -13.0,
+        -7.0,
+        13.5,
+        12.5,
+        18.0,
+        1.0,
+        13.5,
+        1.5,
+        -12.5,
+        12.0,
+        14.0,
+        8.0,
+        -1.0,
+        -9.5,
+        2.5,
+        -16.5,
+        15.0,
+        -11.0,
+        9.5,
+        -3.0,
+        8.0,
+        -1.0,
+        -22.5,
+        -9.5,
+        -10.0,
+        2.0,
+        -12.0,
+        0.0,
+        -13.5,
+        -6.5,
+        -14.0,
+        8.0,
+        8.5,
+        -22.5,
+        -11.5
+      ],
+      "branch": "H-UNRESOLVED",
+      "riders": [
+        "\u26d4\u26d4 EVERY CONTEXT ROW IS AN ARBITER-OFF CELL ON ANOTHER BAND. Nothing in screen_lib.CONTEXT_ROWS is ever pooled or z-combined with this cell. CL-068 measured 1.8-2.2x over-dispersion on merely cross-band contrasts, and an arb-off/arb-on contrast is a different AGENT PAIR on top of that.",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. H-ADOPT licenses PROPOSING the flip and funding step 3; the flip itself needs an OWNER RULING, exactly as the k16 and B=64 folds did.",
+        "\u2b50 THE ARBITER IS ARMED ON BOTH SEATS AT THE FULL DEPLOYED SPEC (B=64, J=4, argmax, salt tiearb2-deploy-v1, eps 0.0, phase_gate all). Its rollout variance therefore rides BOTH arms and CRN deck-pairing absorbs the deck draw as usual \u2014 but the arbiter is STOCHASTIC, so it is a variance source the seven arb-off sizing siblings did not carry (DESIGN \u00a73.1).",
+        "\u26d4 THIS IS ONE CELL ON ONE FRESH BAND, which retires decision_influenced=yes the moment the read-out lands. feedback_results_table_source_of_truth's confirm-before-promotion rule is satisfied for the AXIS (this cell IS the confirm of the 155e9 screen) and NOT for the deployed configuration beyond it \u2014 step 3 is the out-of-family check and it comes before any general claim.",
+        "\u26a0\ufe0f elo may never be quoted bare, and in this round it is not a bar at all: the bar is +1.0 pts/deck on the deck-paired margin. A disagreement between the margin and the elo is DISCLOSED, never arbitrated.",
+        "\u26a0\ufe0f B=0 -> B=64 TRANSFER RUNS THE OTHER WAY HERE. This cell is the leg that PRICES the ladder's arbiter-off deviation. It therefore says nothing about an arbiter-FREE champion, and no reading here may be quoted back onto the 155e9/164-167e9 cells.",
+        "\u26d4\u26d4 H-UNRESOLVED IS NOT A NULL AND NOT A BOUND (feedback_noisy_plateau_not_a_conclusion). The cell did not resolve its bar in either direction.",
+        "\u26d4 IT DOES NOT DISCHARGE STEP 2 OF THE ADOPTION CHAIN, and it does not license proposing the PRODUCTION.yaml flip. READ_RULE \u00a78 pre-registers it as the LIKELIEST outcome under a true null (~71% at n=400 with a +1.0 bar) and \u00a78.2 pre-registers its price.",
+        "\u26d4 THE CELL MAY NOT BE EXTENDED, TOPPED UP OR RE-READ AT LARGER n ON ITS OWN BAND. That is the rodv3 failure mode (n bought after seeing the sign), and CL-068 means the extension could not be pooled with the original anyway. A re-run is a NEW round: new pair, new band, new owner funding."
+      ]
+    }
+  },
+  "branches": {
+    "CELL_H2H_FPU02": "H-UNRESOLVED"
+  },
+  "verdict": {
+    "verdict": "H-UNRESOLVED",
+    "voided": [],
+    "missing": [],
+    "bar": 1.0,
+    "why": "\u26d4\u26d4 NOT A NULL AND NOT A BOUND (feedback_noisy_plateau_not_a_conclusion). The round bought no verdict on the deployed configuration. READ_RULE \u00a78 pre-registers this as the LIKELIEST single outcome under a true null (~71%) and \u00a78.2 pre-commits its price."
+  },
+  "golden_gate_inheritance": {
+    "inherited_from": "/home/doctor/projects/carcassone/measurement/fpu_ladder_prep/FPU_BITEXACT_LADDER.json",
+    "argument": "\u2b50\u2b50 THE GOLDEN-GATE INHERITANCE, SURFACED IN EVERY READ-OUT.\n\n    \u26d4 THIS ROUND DOES NOT BUILD A NEW GOLDEN GATE, AND `DESIGN.md` \u00a79 STATES THE\n    ARGUMENT RATHER THAN ASSUMING IT. In short:\n\n      * `../fpu_ladder_prep/FPU_BITEXACT_LADDER.json` is `PASS` on wheel\n        `a9bb2311ab9a635d`, ran ~14 h ago, and proves `fpu=None` is the champion\n        BIT-FOR-BIT on that wheel plus a POSITIVE control at each of\n        `0.05/0.1/0.15/0.3` plus `DOSE-DISTINCT`. `run_cells.sh` re-asserts the\n        artefact's `wheel.binary_sha` against THIS BOX's installed binary, so the\n        inheritance is MECHANICALLY CHECKED and not asserted.\n      * The ARBITER path rode the b64-era certificates \u2014 `tiearb_widening_\n        20260817/b64_cell/GATE_NEST.json` (`G-NEST`: the CRN cap draw, world\n        seeds, playout seeds and world bytes are identical at B16 \u2282 B64) \u2014 plus\n        this morning's wiring smoke, which drove the real argparse and read the\n        resolved arbiter dict back out of an EMITTED manifest.\n      * \u26d4\u26d4 **TWO GAPS REMAIN, AND THEY ARE NAMED:** (1) no certificate has ever\n        exercised `fpu` AND the arbiter TOGETHER, and (2) `0.2` is not one of the\n        ladder gate's four control doses (its own control lives in the parent\n        round's `FPU_BITEXACT.json`, on a wheel that no longer exists).\n      * \u2b50 THE GAPS ARE PAID BY `--smoke`'s IDENT LEGS (`--ident-mode`), which\n        are `POSITIVE-0.2-WITH-THE-ARBITER-LIVE` and a cross-process\n        reproducibility check, at the golden gate's own budget.\n    ",
+    "gaps_paid_by": "the launcher's --smoke IDENT legs, adjudicated by `analyze_h2h.py --ident-mode` into IDENT_<role>.json",
+    "arbiter_prior_certificates": [
+      "measurement/tiearb_widening_20260817/b64_cell/GATE_NEST.json (G-NEST, 2026-08-20) \u2014 CRN nesting B16 \u2282 B64, PRE-a9bb2311 wheel, CANDIDATE seat only",
+      "/mnt/c/carc-shared/fpu_ladder/SMOKE_ARBON_H2H (2026-08-31 wiring smoke, n=4 THROWAWAY) \u2014 the resolved arbiter dict incl. phase_gate read back off an EMITTED manifest, CANDIDATE seat only (the opponent seat could not be armed until that afternoon)"
+    ],
+    "verdict": "PASS",
+    "ok": true,
+    "failed": [],
+    "wheel": {
+      "binary_sha": "a9bb2311ab9a635d",
+      "build": "carc_rs-0.1.0+aa84a40ebafb+rustcunpinned",
+      "host": "Doctor",
+      "note": "\u26a0\ufe0f carc_rs_binary_sha is BOX-LOCAL: two boxes compiling identical source produce different bytes. EACH BOX therefore runs its OWN golden gate before its own rungs, and run_cells.sh compares this sha to that box's installed binary."
+    },
+    "checks": {
+      "ONE-WHEEL": true,
+      "TWO-TREES": true,
+      "SAME-SEEDS": true,
+      "SAME-BUDGET": true,
+      "IDENTITY": true,
+      "POSITIVE-0.05": true,
+      "POSITIVE-0.1": true,
+      "POSITIVE-0.15": true,
+      "POSITIVE-0.3": true,
+      "DOSE-DISTINCT": true,
+      "RUNG-SET": true,
+      "AUDIT-ADJUDICATED": true
+    },
+    "why": "\u2b50 INHERITED, WITH THE WHEEL RE-ASSERTED AT LAUNCH. \u26d4 The two named gaps (fpu x arbiter together; a 0.2 control on this wheel) are NOT covered by it and are paid by the IDENT legs."
+  },
+  "riders": [
+    "\u26d4\u26d4 EVERY CONTEXT ROW IS AN ARBITER-OFF CELL ON ANOTHER BAND. Nothing in screen_lib.CONTEXT_ROWS is ever pooled or z-combined with this cell. CL-068 measured 1.8-2.2x over-dispersion on merely cross-band contrasts, and an arb-off/arb-on contrast is a different AGENT PAIR on top of that.",
+    "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. H-ADOPT licenses PROPOSING the flip and funding step 3; the flip itself needs an OWNER RULING, exactly as the k16 and B=64 folds did.",
+    "\u2b50 THE ARBITER IS ARMED ON BOTH SEATS AT THE FULL DEPLOYED SPEC (B=64, J=4, argmax, salt tiearb2-deploy-v1, eps 0.0, phase_gate all). Its rollout variance therefore rides BOTH arms and CRN deck-pairing absorbs the deck draw as usual \u2014 but the arbiter is STOCHASTIC, so it is a variance source the seven arb-off sizing siblings did not carry (DESIGN \u00a73.1).",
+    "\u26d4 THIS IS ONE CELL ON ONE FRESH BAND, which retires decision_influenced=yes the moment the read-out lands. feedback_results_table_source_of_truth's confirm-before-promotion rule is satisfied for the AXIS (this cell IS the confirm of the 155e9 screen) and NOT for the deployed configuration beyond it \u2014 step 3 is the out-of-family check and it comes before any general claim.",
+    "\u26a0\ufe0f elo may never be quoted bare, and in this round it is not a bar at all: the bar is +1.0 pts/deck on the deck-paired margin. A disagreement between the margin and the elo is DISCLOSED, never arbitrated.",
+    "\u26a0\ufe0f B=0 -> B=64 TRANSFER RUNS THE OTHER WAY HERE. This cell is the leg that PRICES the ladder's arbiter-off deviation. It therefore says nothing about an arbiter-FREE champion, and no reading here may be quoted back onto the 155e9/164-167e9 cells."
+  ],
+  "adoption_chain": [
+    "1. THE DOSE LADDER / THE PARENT SCREEN \u2014 a dose reads positive on its own fresh band with the arbiter OFF both sides. \u2b50 DONE: fpu=0.2 read F-RESURRECT (+2.951, z +4.32, band 155e9); the ladder that bracketed it read LADDER-UNRESOLVED (band 164-167e9).",
+    "2. \u2b50\u2b50 THIS ROUND \u2014 PRODUCTION H2H: the dose vs the DEPLOYED champion with the TIE ARBITER ARMED ON BOTH SEATS (B=64, PRODUCTION.yaml since 2026-08-20), on a FRESH band. \u26d4 THIS IS THE LEG THAT PRICES THE ARBITER-OFF DEVIATION every earlier fpu reading carries.",
+    "3. CARCASUM EXTERNAL \u2014 the arm-on T-TRANSFER protocol, the only out-of-family check this program has (feedback_evloss_grader's F4 lesson: judged headroom is family-relative, so out-of-family corroboration comes first).",
+    "4. E4 EPOCH on the phone.",
+    "\u26d4 EACH LEG IS ITS OWN PREREG, ITS OWN BAND AND ITS OWN OWNER FUNDING. A cell firing here funds NOTHING automatically."
+  ],
+  "companions": {
+    "_warning": "\u26d4 COMPANIONS \u2014 NEVER A BRANCH INPUT.",
+    "context_rows": {
+      "fpu=0.2 \u2014 fpu_resurrection CELL_FPU02, band 155e9, ARB OFF": {
+        "M": 2.95125,
+        "se": 0.6825808836692004,
+        "z": 4.3236634230592745,
+        "LB95": 1.586088232661599,
+        "UB95": 4.316411767338401,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 26.1,
+        "ci95_elo_paired": [
+          8.69,
+          43.53
+        ],
+        "winrate": 0.5375,
+        "branch": "F-RESURRECT",
+        "note": "\u2b50\u2b50 THE DOSE THIS CELL CONFIRMS. The first measurement of `fpu_reduction` on the classical champion (the knob was structurally unreachable on its backend until 2026-08-29). \u26d4 It licensed PROPOSING follow-on work and nothing else, and it is an ARBITER-OFF result on band 155e9."
+      },
+      "fpu=0.4 \u2014 fpu_resurrection CELL_FPU04, band 156e9, ARB OFF": {
+        "M": 0.7543859649122807,
+        "se": 0.7153318548949373,
+        "z": 1.0545957931973815,
+        "LB95": -0.676277744877594,
+        "UB95": 2.1850496747021553,
+        "n_paired": 399,
+        "n_games": 799,
+        "elo": -1.74,
+        "ci95_elo_paired": [
+          -19.12,
+          15.64
+        ],
+        "winrate": 0.4975,
+        "branch": "F-UNRESOLVED (AMENDED \u2014 FPU-A1)",
+        "note": "\u26a0\ufe0f AMENDED from a frozen `U-VOID`: the adjudicator's G-N/G-DECKS condition columns were stricter than their own frozen prose. \u2b50 THIS ROUND'S G-N/G-DECKS ARE WRITTEN TO THAT PROSE, carried from the ladder."
+      },
+      "fpu=0.05 \u2014 fpu_ladder CELL_FPU005, band 164e9, ARB OFF": {
+        "M": 0.08125,
+        "se": 0.6952455594600834,
+        "z": 0.11686,
+        "LB95": -1.30924,
+        "UB95": 1.47174,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": -15.65,
+        "ci95_elo_paired": [
+          -33.03,
+          1.74
+        ],
+        "winrate": 0.4775,
+        "branch": "R-BOUNDED",
+        "note": "the ladder's low bracket point \u2014 bounded below +1.5."
+      },
+      "fpu=0.10 \u2014 fpu_ladder CELL_FPU010, band 165e9, ARB OFF": {
+        "M": 1.5025,
+        "se": 0.6981,
+        "z": 2.152,
+        "LB95": 0.1063,
+        "UB95": 2.8987,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 17.39,
+        "ci95_elo_paired": [
+          -0.01,
+          34.78
+        ],
+        "winrate": 0.525,
+        "branch": "R-UNRESOLVED",
+        "note": "the ladder's middle bracket point."
+      },
+      "fpu=0.15 \u2014 fpu_ladder CELL_FPU015, band 166e9, ARB OFF": {
+        "M": 1.835,
+        "se": 0.6861,
+        "z": 2.674,
+        "LB95": 0.4627,
+        "UB95": 3.2073,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 9.99,
+        "ci95_elo_paired": [
+          -7.39,
+          27.37
+        ],
+        "winrate": 0.5144,
+        "branch": "R-UNRESOLVED",
+        "note": "\u2b50 the ladder's LARGEST point estimate. \u26d4 It did NOT clear the ladder's +1.5 bar and it would NOT clear this round's +1.0 bar either (LB95 +0.463) \u2014 `sanity_check()` pins that, so nobody reads the lower bar as a bar the ladder already cleared."
+      },
+      "fpu=0.30 \u2014 fpu_ladder CELL_FPU030, band 167e9, ARB OFF": {
+        "M": 1.0588,
+        "se": 0.7152,
+        "z": 1.48,
+        "LB95": -0.3716,
+        "UB95": 2.4891,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": -3.04,
+        "ci95_elo_paired": [
+          -20.41,
+          14.33
+        ],
+        "winrate": 0.4956,
+        "branch": "R-UNRESOLVED",
+        "note": "the ladder's interior point above."
+      }
+    },
+    "context_warning": "\u26d4\u26d4 CONTEXT ROWS, NEVER A BRANCH INPUT AND NEVER POOLED. Every row above is on a different band AND is an ARBITER-OFF cell; this cell is on band 168e9 with the arbiter ARMED ON BOTH SEATS. CL-068 measured 1.8-2.2x OVER-DISPERSION on merely CROSS-BAND contrasts, in BOTH the elo and the deck-paired-margin statistics \u2014 and an arbiter-off/arbiter-on contrast is worse than cross-band, because it is a different AGENT PAIR and not a different deck draw. \u2b50 What these rows legitimately did is a DESIGN act, spent before any number of this round exists: they fixed WHICH DOSE to confirm (0.2, the only dose that has ever fired) and WHAT BAR is worth paying for. \u26d4 No branch below reaches back into them.",
+    "ladder_verdict": "LADDER-UNRESOLVED (2026-08-31): CELL_FPU005 R-BOUNDED; 0.10 / 0.15 / 0.30 all R-UNRESOLVED; none adopted. \u26d4\u26d4 THAT IS NOT A NULL AND NOT A BOUND. The ladder's own READ_RULE \u00a78.3 is explicit that LADDER-UNRESOLVED does NOT discharge the incumbent's confirmation leg the way LADDER-DEAD would \u2014 so THIS ROUND IS FUNDED BY THE OWNER, on the shape of the curve (three of four rungs positive, peaking at the incumbent), and NOT by an automatic trigger the ladder fired. \u26a0\ufe0f `feedback_execute_prereg_triggers` does not apply: no prereg branch authorised this. The owner did.",
+    "production_fold_precedents": {
+      "k16x1376 budget promotion (2026-08-30, h2h_22016_20260824, b148e9)": {
+        "D_pts_per_deck": 1.229,
+        "z": 2.52,
+        "n_decks": 700,
+        "note": "\u2b50 folded into PRODUCTION.yaml on this. Type-M rider stands (the realized effect was below the cell's own MDE, so the MAGNITUDE is biased up and the SIGN is the reliable part)."
+      },
+      "tie-arbiter B=64 fold (2026-08-20, tiearb_widening b64_cell, b139e9)": {
+        "D_pts_per_game": 1.7167,
+        "z": 2.6561,
+        "n_decks": 750,
+        "note": "\u2b50 folded into PRODUCTION.yaml on this, over a frozen B-COSTKILL verdict, by a fresh owner ruling."
+      }
+    },
+    "production_fold_note": "\u2b50 These are what the bar is DERIVED FROM (DESIGN \u00a73), and they are a DESIGN act spent before any number of this round exists. \u26d4 They are not comparanda: both are cross-band and neither measures this knob.",
+    "sizing_siblings": {
+      "fpu_resurrection/CELL_FPU02 (b155e9, n=400, ARB OFF)": 13.65,
+      "fpu_resurrection/CELL_FPU04 (b156e9, n=399, ARB OFF)": 14.29,
+      "fpu_resurrection/CELL_CPUCT10 (b157e9, n=400, ARB OFF)": 13.02,
+      "fpu_ladder/CELL_FPU005 (b164e9, n=400, ARB OFF)": 13.904,
+      "fpu_ladder/CELL_FPU010 (b165e9, n=400, ARB OFF)": 13.962,
+      "fpu_ladder/CELL_FPU015 (b166e9, n=400, ARB OFF)": 13.722,
+      "fpu_ladder/CELL_FPU030 (b167e9, n=400, ARB OFF)": 14.304
+    },
+    "sizing_siblings_warning": "\u26d4 ALL SEVEN ARE ARBITER-OFF CELLS. They corroborate sigma_D = 13.81 for the arb-off agent pair; this round's pair is arb-ON on both seats and its dispersion could be wider. That costs POWER, never VALIDITY \u2014 every branch is adjudicated at the cell's OWN realized SE (READ_RULE \u00a71). se_anomaly REPORTS the ratio.",
+    "read_distribution_at_launch_time_model": {
+      "delta=0 (true null)": {
+        "delta": 0.0,
+        "se": 0.6905,
+        "bar": 1.0,
+        "H-ADOPT": 0.0002821409150882692,
+        "H-BOUNDED": 0.2678014431658044,
+        "H-NEGATIVE": 0.02275013194817921,
+        "H-UNRESOLVED": 0.7091662839709281,
+        "P(bounded below the bar)": 0.2905515751139836
+      },
+      "delta=+1.0 (exactly at the bar)": {
+        "delta": 1.0,
+        "se": 0.6905,
+        "bar": 1.0,
+        "H-ADOPT": 0.02275013194817921,
+        "H-BOUNDED": 0.02246799103309094,
+        "H-NEGATIVE": 0.0002821409150882692,
+        "H-UNRESOLVED": 0.9544997361036416,
+        "P(bounded below the bar)": 0.02275013194817921
+      },
+      "delta=+1.835 (the ladder's largest point estimate)": {
+        "delta": 1.835,
+        "se": 0.6905,
+        "bar": 1.0,
+        "H-ADOPT": 0.21455038770569135,
+        "H-BOUNDED": 0.0006637650565590736,
+        "H-NEGATIVE": 1.6004043237871635e-06,
+        "H-UNRESOLVED": 0.7847842468334258,
+        "P(bounded below the bar)": 0.0006653654608828607
+      },
+      "delta=+2.951 (a repeat of the incumbent)": {
+        "delta": 2.95125,
+        "se": 0.6905,
+        "bar": 1.0,
+        "H-ADOPT": 0.7955556428311675,
+        "H-BOUNDED": 6.968582608735119e-07,
+        "H-NEGATIVE": 1.7585749523263416e-10,
+        "H-UNRESOLVED": 0.2044436601347141,
+        "P(bounded below the bar)": 6.970341183687445e-07
+      },
+      "n_decks_for_adopt_power(+2.951, 0.80)": 405,
+      "n_decks_for_adopt_power(+1.835, 0.80)": 2209,
+      "n_decks_for_bounded_power(0.80)": 1540,
+      "note": "\u26d4 MODELLED at se_model(400)=0.6905, PRE-REGISTERED in READ_RULE \u00a78 before game 1. Every BRANCH above is adjudicated at the cell's OWN REALIZED SE, never at this."
+    }
+  }
+}

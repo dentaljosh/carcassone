@@ -654,3 +654,17 @@ Post-review chore filed the same night (found by the launch, not the review): `e
 `PROD_KNOBS` hard-codes `k_dets: 8` — stale since the 22016 promotion; the 2026-07-30 F9
 banner-inversion class reborn (true-champion cells flagged deviant, stale-budget cells blessed).
 Advisory-only; the fix should READ `PRODUCTION.yaml` instead of restating it (point-don't-copy).
+
+### Disposition sweep — 2026-08-31 (all 12 findings closed or chored)
+
+| # | disposition |
+|---|---|
+| R1-R4 | **FIXED pre-launch 2026-08-30** (`d4c8b157`/`69b7ae08`) — the smoke then passed 16/16 on both boxes and the round adjudicated cleanly |
+| R5 | **FIXED 2026-08-31** (`ffb5cc7e`, merged): factory stamps `phase_gate`, both external drivers' resolvers carry it, old-archive G-ARB indifference verified both directions |
+| R6 | **GUARDED 2026-08-31**: `carried_scope_guard` refuses scoped jrules priors on carried sessions (eval_fair_puct proven fresh-tree, so G3 was never exposed) |
+| R7 | **FIXED 2026-08-31**: `jr_expansions` witness threaded rust→pyo3→harness; G-WITNESS passed on every G3 arm (candidate boosted 4.5M+, opponent 0) |
+| R8 | **OPEN CHORE**: phasegate's G-LEAF contract test permanently red post-PG-A1 (label-vs-values); fix rides the next phasegate touch |
+| R9 | **RESOLVED BY DESIGN 2026-08-31** (L0 §3a): the threading gate runs legacy@t=1 as a thread-free reference — the stronger contrast; TLS propagation deliberately not built |
+| R10 | **DISCLOSED**: the A2 pooling's cross-rev legs stand as a named amendment rider on the (companion-only) reading; no verdict rests on it |
+| R11 | **DISCLOSED**: C1's P1 precision miss noted in its NULL-BOUNDED record; the E-3 prereg (new-plies-only) is the successor instrument |
+| R12 | **FIXED 2026-08-31** (follow-ons branch): the tier1 comment no longer invites the unsafe hoist |

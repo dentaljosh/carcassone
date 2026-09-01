@@ -563,7 +563,7 @@ path. ⛔ **Nothing is exempt from the `W_LAPTOP` check.**
 
 ### 9.1 The inheritance question, and the answer
 
-[`../fpu_ladder_prep/FPU_BITEXACT_LADDER.json`](../fpu_ladder_prep/FPU_BITEXACT_LADDER.json) reads
+``../fpu_ladder_prep/FPU_BITEXACT_LADDER.json`` (box-local, untracked by design — it stamps the box binary sha) reads
 `PASS` on `carc_rs` binary **`a9bb2311ab9a635d`**, adjudicated 2026-08-31 — **hours** before this
 round, not epochs. Its twelve checks include `IDENTITY` (`fpu=None` is the champion **bit-for-bit** on
 that wheel, against a `git archive` of the pre-plumbing tree), `POSITIVE-0.05/0.1/0.15/0.3`,
