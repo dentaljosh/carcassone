@@ -306,6 +306,16 @@ def test_manifest_carries_cand_search_even_when_the_knobs_are_off(tmp_path):
                   "--out-root", str(tmp_path), "--out-subdir", "cell")
     assert r.returncode == 0, r.stdout[-4000:] + r.stderr[-4000:]
     man = json.loads((out / "manifest.json").read_text())
+    # ⭐ GREW 2026-09-01 (measurement/taup_audit_leg_20260901): `tau_p` and
+    # `shared_tau_p` joined the dict when `--cand-tau-p` was added as the exact
+    # mirror of `--cand-c-puct`. ADDITIVE and under the SAME convention —
+    # `tau_p: null` is the POSITIVE statement "the shared --tau-p", never a
+    # missing key. Every banked gate digs this dict BY KEY NAME
+    # (fpu_resurrection_prep/screen_lib.py, fpu_h2h_r2_prep/analyze_h2h.py), so
+    # nothing downstream reads the key SET — but THIS test does, deliberately, so
+    # that a future addition has to be noticed and justified here rather than
+    # slipping in.
     assert man["config"]["cand_search"] == {
-        "fpu_reduction": None, "c_puct": None, "shared_c_puct": 1.5}
+        "fpu_reduction": None, "c_puct": None, "tau_p": None,
+        "shared_c_puct": 1.5, "shared_tau_p": 5.0}
     assert man["config"]["champion"]["fpu_reduction"] is None

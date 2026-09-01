@@ -1,0 +1,138 @@
+{
+  "fixture": "taup_audit_leg golden gate",
+  "requested_cand_tau_p": null,
+  "flag_expressible_on_this_module": true,
+  "requested_but_unreachable": false,
+  "backend": "rust",
+  "evalmod": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py",
+  "evalmod_sha256": "01d0e2a9f848687d9752455a9756b71034dc641c91fb754101815ff9e3c33dc1",
+  "src_tree": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63",
+  "carcassonne_ai_file": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/src/carcassonne_ai/__init__.py",
+  "carc_rs_binary_sha": "a61d0d303e7f1639",
+  "production_knobs": {
+    "c_puct": 1.5,
+    "c_puct_source": "governance/PRODUCTION.yaml",
+    "tau_p": 5.0,
+    "tau_p_source": "governance/PRODUCTION.yaml"
+  },
+  "cand_search": {
+    "fpu_reduction": null,
+    "c_puct": null,
+    "shared_c_puct": 1.5,
+    "shared_tau_p": 5.0
+  },
+  "cand_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "fpu_reduction": null
+  },
+  "opp_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "fpu_reduction": null
+  },
+  "budget": {
+    "k_dets": 2,
+    "sims_per_det": 96,
+    "exact_k": 2,
+    "note": "\u26d4 NOT the champion's k16x1376 \u2014 this is a CODE-PATH identity fixture, never a strength measurement."
+  },
+  "seeds": [
+    171999999800,
+    171999999801,
+    171999999802,
+    171999999803
+  ],
+  "frozen_seed_count": 12,
+  "host": "Doctor",
+  "python": "3.12.3",
+  "env_flat_leaf": "1",
+  "wall_secs": 19.372076818021014,
+  "games": [
+    {
+      "seed": 171999999800,
+      "n_actions": 144,
+      "actions_sha256": "a28acdf9a145acb3d2da03a1b3080fc8c901b6ceec81fcb1e54cbdceaec594c8",
+      "first_8_actions": [
+        1248,
+        2506,
+        1244,
+        2505,
+        1258,
+        2503,
+        1151,
+        2504
+      ],
+      "final_scores": [
+        99,
+        108
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999801,
+      "n_actions": 144,
+      "actions_sha256": "f1a7aca4462aecc74be1e2f766b4f091ac51605bf08ba84e8d3d21ee95a60b17",
+      "first_8_actions": [
+        1248,
+        2506,
+        1246,
+        2503,
+        1353,
+        2502,
+        1255,
+        2510
+      ],
+      "final_scores": [
+        88,
+        99
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999802,
+      "n_actions": 143,
+      "actions_sha256": "5b2c12ea6cec135b5585b73fa446697853623271eb09c204ceb7060f8ae7fcdd",
+      "first_8_actions": [
+        1248,
+        2502,
+        1148,
+        2502,
+        1246,
+        2510,
+        1351,
+        2510
+      ],
+      "final_scores": [
+        81,
+        90
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    },
+    {
+      "seed": 171999999803,
+      "n_actions": 144,
+      "actions_sha256": "9a4b2318ce300f260558a24ac1e20d8259efef59d195f74e4bcc29c692a034f3",
+      "first_8_actions": [
+        1248,
+        2501,
+        1247,
+        2508,
+        1348,
+        2503,
+        1244,
+        2502
+      ],
+      "final_scores": [
+        82,
+        64
+      ],
+      "resolved_tau_p": 5.0,
+      "resolved_c_puct": 1.5
+    }
+  ],
+  "leg_sha256": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca"
+}

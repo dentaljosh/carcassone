@@ -1,0 +1,142 @@
+{
+  "gate": "TAU_P GOLDEN GATE (bit-exact-when-unset + positive control + candidate-only)",
+  "verdict": "PASS",
+  "seeds_played": 4,
+  "frozen_seed_count": 12,
+  "full_frozen_set": false,
+  "checks": [
+    {
+      "check": "ONE-WHEEL",
+      "ok": true,
+      "detail": {
+        "OLD": "a61d0d303e7f1639",
+        "NEW": "a61d0d303e7f1639",
+        "CTRL": "a61d0d303e7f1639"
+      },
+      "why": "all three legs ran against ONE installed carc_rs binary — this change is python-only and the binary is a CONSTANT of the comparison"
+    },
+    {
+      "check": "ONE-SRC",
+      "ok": true,
+      "detail": {
+        "OLD": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/src/carcassonne_ai/__init__.py",
+        "NEW": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/src/carcassonne_ai/__init__.py",
+        "CTRL": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/src/carcassonne_ai/__init__.py"
+      },
+      "why": "⭐ STRONGER THAN THE FPU PRECEDENT: src/carcassonne_ai is byte-identical across the legs, so it is held CONSTANT rather than swung. The variable is one file (see ONE-FILE)"
+    },
+    {
+      "check": "ONE-FILE",
+      "ok": true,
+      "detail": {
+        "OLD": "7dc4a605d99dfd3d0d169c1050b93b9c5d7f43c359bf3242004acaaaeb823007",
+        "NEW": "01d0e2a9f848687d9752455a9756b71034dc641c91fb754101815ff9e3c33dc1",
+        "CTRL": "01d0e2a9f848687d9752455a9756b71034dc641c91fb754101815ff9e3c33dc1",
+        "paths": {
+          "OLD": "/tmp/taup_gate_2611703/scripts/classical_search/eval_fair_puct.py",
+          "NEW": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py",
+          "CTRL": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py"
+        }
+      },
+      "why": "OLD loaded a DIFFERENT eval_fair_puct.py than NEW, and the positive control ran on the SAME file NEW did — so the only thing that moved between OLD and NEW is the patched harness"
+    },
+    {
+      "check": "SAME-SEEDS",
+      "ok": true,
+      "detail": {
+        "n": 4,
+        "identical": true
+      },
+      "why": "all three legs played the same frozen deck set"
+    },
+    {
+      "check": "SAME-BUDGET",
+      "ok": true,
+      "detail": {
+        "k_dets": 2,
+        "sims_per_det": 96,
+        "exact_k": 2,
+        "note": "⛔ NOT the champion's k16x1376 — this is a CODE-PATH identity fixture, never a strength measurement."
+      },
+      "why": "identical search shape on all three legs"
+    },
+    {
+      "check": "IDENTITY",
+      "ok": true,
+      "detail": {
+        "old": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
+        "new": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
+        "per_game_mismatches": []
+      },
+      "why": "⭐ BIT-IDENTICAL with --cand-tau-p UNSET: the plumbing did not move the champion's play by one action"
+    },
+    {
+      "check": "POSITIVE",
+      "ok": true,
+      "detail": {
+        "new": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
+        "ctrl": "763cc58940c9be5bb1c3c5a6f9a04ac2b7a8effcfd8f1621343f0515d4481174",
+        "requested_cand_tau_p": 2.5,
+        "resolved_cand_tau_p": 2.5,
+        "games_that_differ": 4,
+        "games_total": 4
+      },
+      "why": "⭐ the knob BINDS: every game diverges at the control dose. A flag parsed and dropped on the floor would be indistinguishable from the shared-flag defect this leg closes"
+    },
+    {
+      "check": "CANDIDATE-ONLY",
+      "ok": true,
+      "detail": {
+        "shared_tau_p": 5.0,
+        "opponent_tau_p_per_leg": {
+          "OLD": 5.0,
+          "NEW": 5.0,
+          "CTRL": 5.0
+        },
+        "ctrl_candidate_tau_p": 2.5
+      },
+      "why": "⭐⭐ the OPPONENT (built by _make_opponent's own _cfg_from_dict call) carries the SHARED tau_p in every leg while the control's CANDIDATE carries the dose — which is exactly what --tau-p cannot do, and the whole reason this flag had to be built"
+    },
+    {
+      "check": "AUDIT-ADJUDICATED",
+      "ok": true,
+      "detail": {
+        "old_module_expressible": false,
+        "new_module_expressible": true
+      },
+      "why": "⭐⭐ the audit's finding is ADJUDICATED: the pre-change eval_fair_puct's REAL argparse (driven via main(['--help'])) carries no --cand-tau-p, so no candidate-side tau_p cell was expressible on the classical champion; the patched one carries it and POSITIVE shows it reaching play"
+    }
+  ],
+  "failed": [],
+  "legs": {
+    "OLD": {
+      "evalmod": "/tmp/taup_gate_2611703/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
+      "requested_cand_tau_p": null,
+      "flag_expressible_on_this_module": false,
+      "host": "Doctor",
+      "wall_secs": 20.585482173017226
+    },
+    "NEW": {
+      "evalmod": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "1636d2f23463df5c57200b574f102670cc7f9a85b6ea29923ae5ab543d0afbca",
+      "requested_cand_tau_p": null,
+      "flag_expressible_on_this_module": true,
+      "host": "Doctor",
+      "wall_secs": 19.372076818021014
+    },
+    "CTRL": {
+      "evalmod": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aa0551f9fefaeba63/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "763cc58940c9be5bb1c3c5a6f9a04ac2b7a8effcfd8f1621343f0515d4481174",
+      "requested_cand_tau_p": 2.5,
+      "flag_expressible_on_this_module": true,
+      "host": "Doctor",
+      "wall_secs": 19.597050016047433
+    }
+  },
+  "riders": [
+    "⛔ This is a CODE-PATH gate at a tiny budget (k2 x 96), NEVER a strength measurement. No number in the legs may be quoted as one.",
+    "⛔ It proves the DEFAULT path is unmoved, the knob BINDS, and it binds on the CANDIDATE ONLY. It says NOTHING about whether the knob HELPS — that is what the two cells of measurement/taup_audit_leg_20260901 are for, and the prior on them is LOW by construction (PREREG §1).",
+    "⛔ The control dose here (the CTRL leg's requested_cand_tau_p) is a PLUMBING dose chosen to force divergence cheaply. It is not one of the round's two pre-registered doses and carries no claim."
+  ]
+}
