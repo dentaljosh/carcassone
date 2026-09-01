@@ -35,7 +35,7 @@ Four things follow, and they bind every readout:
    it says nothing about the size of the effect on E4 plies, and it may never be
    quoted as a re-measurement of E-1b's `+3.47`.
 3. ⛔ **This cannot substitute for the defense-primary standing read.**
-   `measurement/defense_primary_prep/` is that instrument — a pre-registered,
+   [`measurement/defense_primary_prep/`](../defense_primary_prep/PREREG.md) is that instrument — a pre-registered,
    accruing primary on real owner plies (trigger 36 plies; accrual 15/36 at the
    time this file was frozen). It is the only instrument in the program licensed
    to say anything about the owner's defense edge. A result here — in either
