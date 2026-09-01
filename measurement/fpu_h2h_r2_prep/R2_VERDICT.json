@@ -1,0 +1,5181 @@
+{
+  "round": "fpu_h2h_r2 (ONE cell, ONE band, 800 decks in 8 chunks \u2014 ROUND 2 of step 2 of the adoption chain)",
+  "pair": [
+    "measurement/fpu_h2h_r2_prep/DESIGN.md",
+    "measurement/fpu_h2h_r2_prep/READ_RULE.md"
+  ],
+  "round_1": "H-UNRESOLVED (2026-08-31, band 168e9, n=400 decks, ARB ON BOTH SEATS): M = +1.019 +/- 0.683, z +1.49, LB95 -0.346, UB95 +2.384, against the LB95 >= +1.0 ADOPT bar. \u26d4\u26d4 NOT A NULL AND NOT A BOUND: round 1 bought NO verdict on the deployed configuration, did NOT discharge step 2 of the adoption chain, did NOT license step 3, and did NOT retract the arbiter-off +2.951. \u2b50 Its \u00a78.2 pre-committed the price of exactly that read BEFORE its game 1: the band is spent either way, the cell may NOT be extended / topped up / re-read at larger n on its own band (the rodv3 failure mode), and a re-run is A NEW ROUND needing a NEW PAIR, a NEW BAND CLAIM and FRESH OWNER FUNDING. \u2b50\u2b50 THIS ROUND IS THAT, EXECUTED TO THE LETTER \u2014 new pair, new band (169e9), owner-funded 2026-08-31 night, and the bar UNMOVED.",
+  "smoke_mode": false,
+  "budget": {
+    "k_dets": 16,
+    "sims_per_det": 1376,
+    "total_sims": 22016,
+    "note": "the 2026-08-30 promoted desktop champion, BOTH sides"
+  },
+  "deployed_tiearb_both_seats": {
+    "enabled": true,
+    "B": 64,
+    "J": 4,
+    "mode": "argmax",
+    "salt": "tiearb2-deploy-v1",
+    "eps": 0.0,
+    "phase_gate": "all"
+  },
+  "bars": {
+    "BAR_EFFECT": 1.0,
+    "adopt": "LB95(M) >= +1.000 pts/deck",
+    "bounded": "UB95(M) < +1.000 pts/deck",
+    "provenance": "\u2b50 AN EFFECT SIZE, NOT 2 sigma-hat (owner ruling 2026-08-30) \u2014 and the CONFIRMATION bar, deliberately below the ladder's +1.5 SCREEN bar. DESIGN \u00a73 derives it from the two production folds this program has accepted (+1.229 and +1.7167 pts). \u26d4 CARRIED VERBATIM FROM ROUND 1 \u2014 a successor that softened its bar after seeing M = +1.019 would be choosing a bar from the data. READ_RULE \u00a78 states what it costs.",
+    "\u26d4\u26d4 2-sigma-hat coincidence at the funded n": {
+      "bar": 1.0,
+      "two_sigma_hat_at_funded_n": 0.9652,
+      "ratio_bar_over_2sigmahat": 1.036,
+      "ratio_at_round_1_n": 0.733,
+      "provenance": "\u2b50 DERIVED FROM THE DECISION, NOT THE INSTRUMENT: the two production folds this program has accepted (k16 budget +1.229 pts/deck; arbiter B=64 +1.7167 pts/game). Frozen in round 1 and carried VERBATIM.",
+      "consequence": "\u26d4 H-BOUNDED requires M < +0.034 at this n, i.e. the kill branch effectively needs a NON-POSITIVE point estimate. A true null reads H-BOUNDED ~50.6% / H-UNRESOLVED ~47.1%.",
+      "why_the_bar_does_not_move": "\u26d4 Moving a pre-registered bar after seeing round 1's M = +1.019 would be a bar chosen from the data. The disclosure is the remedy; the bar is not."
+    }
+  },
+  "round_gates": [
+    {
+      "gate": "G-WHEEL-SAME",
+      "ok": true,
+      "detail": {
+        "binary_sha_by_chunk": {
+          "CELL_H2H2_FPU02__c0": "a9bb2311ab9a635d",
+          "CELL_H2H2_FPU02__c1": "a9bb2311ab9a635d",
+          "CELL_H2H2_FPU02__c2": "a9bb2311ab9a635d",
+          "CELL_H2H2_FPU02__c3": "a9bb2311ab9a635d",
+          "CELL_H2H2_FPU02__c4": "a9bb2311ab9a635d",
+          "CELL_H2H2_FPU02__c5": "a9bb2311ab9a635d",
+          "CELL_H2H2_FPU02__c6": "a9bb2311ab9a635d",
+          "CELL_H2H2_FPU02__c7": "a9bb2311ab9a635d"
+        },
+        "by_role": {
+          "laptop": [
+            "a9bb2311ab9a635d"
+          ],
+          "local": [
+            "a9bb2311ab9a635d"
+          ]
+        },
+        "note": "\u26a0\ufe0f ONE wheel WITHIN each box. The sha is BOX-LOCAL and is REPORTED, never compared, ACROSS boxes \u2014 cross-box SOURCE identity is G-REV's (cross_box_rev_gate, the IS-A1 fold)."
+      },
+      "address": "manifest:carc_rs_binary_sha, per chunk",
+      "why": "every chunk played on a box shares that box's binary sha"
+    },
+    {
+      "gate": "G-REV",
+      "ok": true,
+      "detail": {
+        "pins": {
+          "laptop": "6f0151db42d685b9f0219efbba68aab5fcb09f36",
+          "local": "6f0151db42d685b9f0219efbba68aab5fcb09f36"
+        },
+        "revs": {
+          "CELL_H2H2_FPU02__c0": "6f0151db42-dirty",
+          "CELL_H2H2_FPU02__c1": "6f0151db42-dirty",
+          "CELL_H2H2_FPU02__c2": "6f0151db42-dirty",
+          "CELL_H2H2_FPU02__c3": "6f0151db42-dirty",
+          "CELL_H2H2_FPU02__c4": "6f0151db-dirty",
+          "CELL_H2H2_FPU02__c5": "6f0151db-dirty",
+          "CELL_H2H2_FPU02__c6": "6f0151db-dirty",
+          "CELL_H2H2_FPU02__c7": "6f0151db-dirty"
+        },
+        "canonicalized": {
+          "CELL_H2H2_FPU02__c0": {
+            "code_rev": "6f0151db42-dirty",
+            "ok": true,
+            "why": "code_rev '6f0151db42-dirty' names PINNED_SRC_REV '6f0151db42d685b9f0219efbba68aab5fcb09f36'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_H2H2_FPU02__c1": {
+            "code_rev": "6f0151db42-dirty",
+            "ok": true,
+            "why": "code_rev '6f0151db42-dirty' names PINNED_SRC_REV '6f0151db42d685b9f0219efbba68aab5fcb09f36'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_H2H2_FPU02__c2": {
+            "code_rev": "6f0151db42-dirty",
+            "ok": true,
+            "why": "code_rev '6f0151db42-dirty' names PINNED_SRC_REV '6f0151db42d685b9f0219efbba68aab5fcb09f36'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_H2H2_FPU02__c3": {
+            "code_rev": "6f0151db42-dirty",
+            "ok": true,
+            "why": "code_rev '6f0151db42-dirty' names PINNED_SRC_REV '6f0151db42d685b9f0219efbba68aab5fcb09f36'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_H2H2_FPU02__c4": {
+            "code_rev": "6f0151db-dirty",
+            "ok": true,
+            "why": "code_rev '6f0151db-dirty' names PINNED_SRC_REV '6f0151db42d685b9f0219efbba68aab5fcb09f36'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_H2H2_FPU02__c5": {
+            "code_rev": "6f0151db-dirty",
+            "ok": true,
+            "why": "code_rev '6f0151db-dirty' names PINNED_SRC_REV '6f0151db42d685b9f0219efbba68aab5fcb09f36'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_H2H2_FPU02__c6": {
+            "code_rev": "6f0151db-dirty",
+            "ok": true,
+            "why": "code_rev '6f0151db-dirty' names PINNED_SRC_REV '6f0151db42d685b9f0219efbba68aab5fcb09f36'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          },
+          "CELL_H2H2_FPU02__c7": {
+            "code_rev": "6f0151db-dirty",
+            "ok": true,
+            "why": "code_rev '6f0151db-dirty' names PINNED_SRC_REV '6f0151db42d685b9f0219efbba68aab5fcb09f36'; \u26a0\ufe0f whole-tree `-dirty` marker present \u2014 INFORMATIONAL ONLY (the code-path verdict is SRC_CLEAN.jsonl's)"
+          }
+        },
+        "ok": true,
+        "distinct_pins": [
+          "6f0151db42d685b9f0219efbba68aab5fcb09f36"
+        ],
+        "pin": "6f0151db42d685b9f0219efbba68aab5fcb09f36",
+        "why": "every cell's emitted code_rev canonicalizes to the ONE pin 6f0151db42d685b9f0219efbba68aab5fcb09f36 that every box published"
+      },
+      "address": "every chunk's manifest + EACH box's PINNED_SRC_REV",
+      "why": "every cell's emitted code_rev canonicalizes to the ONE pin 6f0151db42d685b9f0219efbba68aab5fcb09f36 that every box published"
+    },
+    {
+      "gate": "G-BLIND",
+      "ok": true,
+      "detail": {
+        "BLIND_COMMIT_by_chunk": {
+          "CELL_H2H2_FPU02__c0": "8dbbbfdacc9547d1f2aff2b8dd6e8a2c8dfb0556",
+          "CELL_H2H2_FPU02__c1": "8dbbbfdacc9547d1f2aff2b8dd6e8a2c8dfb0556",
+          "CELL_H2H2_FPU02__c2": "8dbbbfdacc9547d1f2aff2b8dd6e8a2c8dfb0556",
+          "CELL_H2H2_FPU02__c3": "8dbbbfdacc9547d1f2aff2b8dd6e8a2c8dfb0556",
+          "CELL_H2H2_FPU02__c4": "8dbbbfdacc9547d1f2aff2b8dd6e8a2c8dfb0556",
+          "CELL_H2H2_FPU02__c5": "8dbbbfdacc9547d1f2aff2b8dd6e8a2c8dfb0556",
+          "CELL_H2H2_FPU02__c6": "8dbbbfdacc9547d1f2aff2b8dd6e8a2c8dfb0556",
+          "CELL_H2H2_FPU02__c7": "8dbbbfdacc9547d1f2aff2b8dd6e8a2c8dfb0556"
+        }
+      },
+      "address": "manifest:BLIND_COMMIT, per chunk",
+      "why": "one 40-hex BLIND_COMMIT stamped into every adjudicated manifest"
+    }
+  ],
+  "round_gates_ok": true,
+  "cells": {
+    "CELL_H2H2_FPU02": {
+      "cell": "CELL_H2H2_FPU02",
+      "launch_box": "laptop",
+      "knob": "fpu_reduction",
+      "dose": 0.2,
+      "band": 169000000000,
+      "purpose": "\u2b50\u2b50 STEP 2 OF `ADOPTION_CHAIN`, ROUND 2 \u2014 the PRODUCTION H2H at DOUBLE the n. Candidate = the production champion (k16x1376 = 22016) + the DEPLOYED tie arbiter (B=64, J=4, argmax, salt tiearb2-deploy-v1, eps 0.0, phase_gate all) + `fpu_reduction = 0.2`. Opponent = THE SAME AGENT WITHOUT THE DOSE. \u2b50 The single variable is the knob, measured in the configuration that actually ships. \u26d4 ROUND 1 (band 168e9, n=400) read H-UNRESOLVED and its own \u00a78.2 mandated a NEW round, NEW pair, NEW band, FRESH FUNDING \u2014 this is that round, with the bar UNMOVED and NOTHING POOLED across the two.",
+      "chunk_plan": [
+        {
+          "chunk": 0,
+          "name": "CELL_H2H2_FPU02__c0",
+          "seed_lo": 169000000000,
+          "seed_hi": 169000000099,
+          "n_decks": 100,
+          "n_games": 200
+        },
+        {
+          "chunk": 1,
+          "name": "CELL_H2H2_FPU02__c1",
+          "seed_lo": 169000000100,
+          "seed_hi": 169000000199,
+          "n_decks": 100,
+          "n_games": 200
+        },
+        {
+          "chunk": 2,
+          "name": "CELL_H2H2_FPU02__c2",
+          "seed_lo": 169000000200,
+          "seed_hi": 169000000299,
+          "n_decks": 100,
+          "n_games": 200
+        },
+        {
+          "chunk": 3,
+          "name": "CELL_H2H2_FPU02__c3",
+          "seed_lo": 169000000300,
+          "seed_hi": 169000000399,
+          "n_decks": 100,
+          "n_games": 200
+        },
+        {
+          "chunk": 4,
+          "name": "CELL_H2H2_FPU02__c4",
+          "seed_lo": 169000000400,
+          "seed_hi": 169000000499,
+          "n_decks": 100,
+          "n_games": 200
+        },
+        {
+          "chunk": 5,
+          "name": "CELL_H2H2_FPU02__c5",
+          "seed_lo": 169000000500,
+          "seed_hi": 169000000599,
+          "n_decks": 100,
+          "n_games": 200
+        },
+        {
+          "chunk": 6,
+          "name": "CELL_H2H2_FPU02__c6",
+          "seed_lo": 169000000600,
+          "seed_hi": 169000000699,
+          "n_decks": 100,
+          "n_games": 200
+        },
+        {
+          "chunk": 7,
+          "name": "CELL_H2H2_FPU02__c7",
+          "seed_lo": 169000000700,
+          "seed_hi": 169000000799,
+          "n_decks": 100,
+          "n_games": 200
+        }
+      ],
+      "n_chunks_loaded": 8,
+      "gates": [
+        {
+          "gate": "G-FPU",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "requested_fpu_reduction": 0.2,
+                "fpu_absent": false,
+                "requested_c_puct_override": null,
+                "c_puct_absent": false,
+                "shared_c_puct": 1.5,
+                "frozen": {
+                  "fpu_reduction": 0.2,
+                  "c_puct": null
+                },
+                "addresses": {
+                  "fpu": "manifest:config.cand_search.fpu_reduction",
+                  "c_puct": "manifest:config.cand_search.c_puct"
+                }
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "requested_fpu_reduction": 0.2,
+                "fpu_absent": false,
+                "requested_c_puct_override": null,
+                "c_puct_absent": false,
+                "shared_c_puct": 1.5,
+                "frozen": {
+                  "fpu_reduction": 0.2,
+                  "c_puct": null
+                },
+                "addresses": {
+                  "fpu": "manifest:config.cand_search.fpu_reduction",
+                  "c_puct": "manifest:config.cand_search.c_puct"
+                }
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "requested_fpu_reduction": 0.2,
+                "fpu_absent": false,
+                "requested_c_puct_override": null,
+                "c_puct_absent": false,
+                "shared_c_puct": 1.5,
+                "frozen": {
+                  "fpu_reduction": 0.2,
+                  "c_puct": null
+                },
+                "addresses": {
+                  "fpu": "manifest:config.cand_search.fpu_reduction",
+                  "c_puct": "manifest:config.cand_search.c_puct"
+                }
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "requested_fpu_reduction": 0.2,
+                "fpu_absent": false,
+                "requested_c_puct_override": null,
+                "c_puct_absent": false,
+                "shared_c_puct": 1.5,
+                "frozen": {
+                  "fpu_reduction": 0.2,
+                  "c_puct": null
+                },
+                "addresses": {
+                  "fpu": "manifest:config.cand_search.fpu_reduction",
+                  "c_puct": "manifest:config.cand_search.c_puct"
+                }
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "requested_fpu_reduction": 0.2,
+                "fpu_absent": false,
+                "requested_c_puct_override": null,
+                "c_puct_absent": false,
+                "shared_c_puct": 1.5,
+                "frozen": {
+                  "fpu_reduction": 0.2,
+                  "c_puct": null
+                },
+                "addresses": {
+                  "fpu": "manifest:config.cand_search.fpu_reduction",
+                  "c_puct": "manifest:config.cand_search.c_puct"
+                }
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "requested_fpu_reduction": 0.2,
+                "fpu_absent": false,
+                "requested_c_puct_override": null,
+                "c_puct_absent": false,
+                "shared_c_puct": 1.5,
+                "frozen": {
+                  "fpu_reduction": 0.2,
+                  "c_puct": null
+                },
+                "addresses": {
+                  "fpu": "manifest:config.cand_search.fpu_reduction",
+                  "c_puct": "manifest:config.cand_search.c_puct"
+                }
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "requested_fpu_reduction": 0.2,
+                "fpu_absent": false,
+                "requested_c_puct_override": null,
+                "c_puct_absent": false,
+                "shared_c_puct": 1.5,
+                "frozen": {
+                  "fpu_reduction": 0.2,
+                  "c_puct": null
+                },
+                "addresses": {
+                  "fpu": "manifest:config.cand_search.fpu_reduction",
+                  "c_puct": "manifest:config.cand_search.c_puct"
+                }
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "requested_fpu_reduction": 0.2,
+                "fpu_absent": false,
+                "requested_c_puct_override": null,
+                "c_puct_absent": false,
+                "shared_c_puct": 1.5,
+                "frozen": {
+                  "fpu_reduction": 0.2,
+                  "c_puct": null
+                },
+                "addresses": {
+                  "fpu": "manifest:config.cand_search.fpu_reduction",
+                  "c_puct": "manifest:config.cand_search.c_puct"
+                }
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-FPU: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-FPU passes on every chunk"
+        },
+        {
+          "gate": "G-TWOSIDED",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "resolved": {
+                  "fpu_reduction": {
+                    "candidate": 0.2,
+                    "opponent": null
+                  },
+                  "c_puct": {
+                    "candidate": 1.5,
+                    "opponent": 1.5
+                  }
+                },
+                "cell_knob": "fpu_reduction",
+                "frozen_value": 0.2
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "resolved": {
+                  "fpu_reduction": {
+                    "candidate": 0.2,
+                    "opponent": null
+                  },
+                  "c_puct": {
+                    "candidate": 1.5,
+                    "opponent": 1.5
+                  }
+                },
+                "cell_knob": "fpu_reduction",
+                "frozen_value": 0.2
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "resolved": {
+                  "fpu_reduction": {
+                    "candidate": 0.2,
+                    "opponent": null
+                  },
+                  "c_puct": {
+                    "candidate": 1.5,
+                    "opponent": 1.5
+                  }
+                },
+                "cell_knob": "fpu_reduction",
+                "frozen_value": 0.2
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "resolved": {
+                  "fpu_reduction": {
+                    "candidate": 0.2,
+                    "opponent": null
+                  },
+                  "c_puct": {
+                    "candidate": 1.5,
+                    "opponent": 1.5
+                  }
+                },
+                "cell_knob": "fpu_reduction",
+                "frozen_value": 0.2
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "resolved": {
+                  "fpu_reduction": {
+                    "candidate": 0.2,
+                    "opponent": null
+                  },
+                  "c_puct": {
+                    "candidate": 1.5,
+                    "opponent": 1.5
+                  }
+                },
+                "cell_knob": "fpu_reduction",
+                "frozen_value": 0.2
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "resolved": {
+                  "fpu_reduction": {
+                    "candidate": 0.2,
+                    "opponent": null
+                  },
+                  "c_puct": {
+                    "candidate": 1.5,
+                    "opponent": 1.5
+                  }
+                },
+                "cell_knob": "fpu_reduction",
+                "frozen_value": 0.2
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "resolved": {
+                  "fpu_reduction": {
+                    "candidate": 0.2,
+                    "opponent": null
+                  },
+                  "c_puct": {
+                    "candidate": 1.5,
+                    "opponent": 1.5
+                  }
+                },
+                "cell_knob": "fpu_reduction",
+                "frozen_value": 0.2
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "resolved": {
+                  "fpu_reduction": {
+                    "candidate": 0.2,
+                    "opponent": null
+                  },
+                  "c_puct": {
+                    "candidate": 1.5,
+                    "opponent": 1.5
+                  }
+                },
+                "cell_knob": "fpu_reduction",
+                "frozen_value": 0.2
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-TWOSIDED: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-TWOSIDED passes on every chunk"
+        },
+        {
+          "gate": "G-SINGLEVAR",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "owned_alias": "fpu_reduction",
+                "frozen_value": 0.2,
+                "rows": {
+                  "k_dets": {
+                    "champion": 16,
+                    "opponent": 16,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.k_dets",
+                      "manifest:config.opponent.k_dets"
+                    ]
+                  },
+                  "sims_per_det": {
+                    "champion": 1376,
+                    "opponent": 1376,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.sims_per_det",
+                      "manifest:config.opponent.sims_per_det"
+                    ]
+                  },
+                  "total_sims": {
+                    "champion": 22016,
+                    "opponent": 22016,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.total_sims",
+                      "manifest:config.opponent.total_sims"
+                    ]
+                  },
+                  "c_puct": {
+                    "champion": 1.5,
+                    "opponent": 1.5,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.c_puct",
+                      "manifest:config.opponent.champ_cfg.c_puct"
+                    ]
+                  },
+                  "tau_p": {
+                    "champion": 5.0,
+                    "opponent": 5.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.tau_p",
+                      "manifest:config.opponent.champ_cfg.tau_p"
+                    ]
+                  },
+                  "value_norm": {
+                    "champion": 15.0,
+                    "opponent": 15.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.value_norm",
+                      "manifest:config.opponent.champ_cfg.value_norm"
+                    ]
+                  },
+                  "leaf_quantize": {
+                    "champion": "float",
+                    "opponent": "float",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.leaf_quantize",
+                      "manifest:config.opponent.champ_cfg.leaf_quantize"
+                    ]
+                  },
+                  "final_select": {
+                    "champion": "visits",
+                    "opponent": "visits",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.final_select",
+                      "manifest:config.opponent.champ_cfg.final_select"
+                    ]
+                  },
+                  "fpu_reduction": {
+                    "champion": 0.2,
+                    "opponent": null,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.fpu_reduction",
+                      "manifest:config.opponent.champ_cfg.fpu_reduction"
+                    ]
+                  }
+                },
+                "notes": [
+                  "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+                ]
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "owned_alias": "fpu_reduction",
+                "frozen_value": 0.2,
+                "rows": {
+                  "k_dets": {
+                    "champion": 16,
+                    "opponent": 16,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.k_dets",
+                      "manifest:config.opponent.k_dets"
+                    ]
+                  },
+                  "sims_per_det": {
+                    "champion": 1376,
+                    "opponent": 1376,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.sims_per_det",
+                      "manifest:config.opponent.sims_per_det"
+                    ]
+                  },
+                  "total_sims": {
+                    "champion": 22016,
+                    "opponent": 22016,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.total_sims",
+                      "manifest:config.opponent.total_sims"
+                    ]
+                  },
+                  "c_puct": {
+                    "champion": 1.5,
+                    "opponent": 1.5,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.c_puct",
+                      "manifest:config.opponent.champ_cfg.c_puct"
+                    ]
+                  },
+                  "tau_p": {
+                    "champion": 5.0,
+                    "opponent": 5.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.tau_p",
+                      "manifest:config.opponent.champ_cfg.tau_p"
+                    ]
+                  },
+                  "value_norm": {
+                    "champion": 15.0,
+                    "opponent": 15.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.value_norm",
+                      "manifest:config.opponent.champ_cfg.value_norm"
+                    ]
+                  },
+                  "leaf_quantize": {
+                    "champion": "float",
+                    "opponent": "float",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.leaf_quantize",
+                      "manifest:config.opponent.champ_cfg.leaf_quantize"
+                    ]
+                  },
+                  "final_select": {
+                    "champion": "visits",
+                    "opponent": "visits",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.final_select",
+                      "manifest:config.opponent.champ_cfg.final_select"
+                    ]
+                  },
+                  "fpu_reduction": {
+                    "champion": 0.2,
+                    "opponent": null,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.fpu_reduction",
+                      "manifest:config.opponent.champ_cfg.fpu_reduction"
+                    ]
+                  }
+                },
+                "notes": [
+                  "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+                ]
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "owned_alias": "fpu_reduction",
+                "frozen_value": 0.2,
+                "rows": {
+                  "k_dets": {
+                    "champion": 16,
+                    "opponent": 16,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.k_dets",
+                      "manifest:config.opponent.k_dets"
+                    ]
+                  },
+                  "sims_per_det": {
+                    "champion": 1376,
+                    "opponent": 1376,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.sims_per_det",
+                      "manifest:config.opponent.sims_per_det"
+                    ]
+                  },
+                  "total_sims": {
+                    "champion": 22016,
+                    "opponent": 22016,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.total_sims",
+                      "manifest:config.opponent.total_sims"
+                    ]
+                  },
+                  "c_puct": {
+                    "champion": 1.5,
+                    "opponent": 1.5,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.c_puct",
+                      "manifest:config.opponent.champ_cfg.c_puct"
+                    ]
+                  },
+                  "tau_p": {
+                    "champion": 5.0,
+                    "opponent": 5.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.tau_p",
+                      "manifest:config.opponent.champ_cfg.tau_p"
+                    ]
+                  },
+                  "value_norm": {
+                    "champion": 15.0,
+                    "opponent": 15.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.value_norm",
+                      "manifest:config.opponent.champ_cfg.value_norm"
+                    ]
+                  },
+                  "leaf_quantize": {
+                    "champion": "float",
+                    "opponent": "float",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.leaf_quantize",
+                      "manifest:config.opponent.champ_cfg.leaf_quantize"
+                    ]
+                  },
+                  "final_select": {
+                    "champion": "visits",
+                    "opponent": "visits",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.final_select",
+                      "manifest:config.opponent.champ_cfg.final_select"
+                    ]
+                  },
+                  "fpu_reduction": {
+                    "champion": 0.2,
+                    "opponent": null,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.fpu_reduction",
+                      "manifest:config.opponent.champ_cfg.fpu_reduction"
+                    ]
+                  }
+                },
+                "notes": [
+                  "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+                ]
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "owned_alias": "fpu_reduction",
+                "frozen_value": 0.2,
+                "rows": {
+                  "k_dets": {
+                    "champion": 16,
+                    "opponent": 16,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.k_dets",
+                      "manifest:config.opponent.k_dets"
+                    ]
+                  },
+                  "sims_per_det": {
+                    "champion": 1376,
+                    "opponent": 1376,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.sims_per_det",
+                      "manifest:config.opponent.sims_per_det"
+                    ]
+                  },
+                  "total_sims": {
+                    "champion": 22016,
+                    "opponent": 22016,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.total_sims",
+                      "manifest:config.opponent.total_sims"
+                    ]
+                  },
+                  "c_puct": {
+                    "champion": 1.5,
+                    "opponent": 1.5,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.c_puct",
+                      "manifest:config.opponent.champ_cfg.c_puct"
+                    ]
+                  },
+                  "tau_p": {
+                    "champion": 5.0,
+                    "opponent": 5.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.tau_p",
+                      "manifest:config.opponent.champ_cfg.tau_p"
+                    ]
+                  },
+                  "value_norm": {
+                    "champion": 15.0,
+                    "opponent": 15.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.value_norm",
+                      "manifest:config.opponent.champ_cfg.value_norm"
+                    ]
+                  },
+                  "leaf_quantize": {
+                    "champion": "float",
+                    "opponent": "float",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.leaf_quantize",
+                      "manifest:config.opponent.champ_cfg.leaf_quantize"
+                    ]
+                  },
+                  "final_select": {
+                    "champion": "visits",
+                    "opponent": "visits",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.final_select",
+                      "manifest:config.opponent.champ_cfg.final_select"
+                    ]
+                  },
+                  "fpu_reduction": {
+                    "champion": 0.2,
+                    "opponent": null,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.fpu_reduction",
+                      "manifest:config.opponent.champ_cfg.fpu_reduction"
+                    ]
+                  }
+                },
+                "notes": [
+                  "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+                ]
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "owned_alias": "fpu_reduction",
+                "frozen_value": 0.2,
+                "rows": {
+                  "k_dets": {
+                    "champion": 16,
+                    "opponent": 16,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.k_dets",
+                      "manifest:config.opponent.k_dets"
+                    ]
+                  },
+                  "sims_per_det": {
+                    "champion": 1376,
+                    "opponent": 1376,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.sims_per_det",
+                      "manifest:config.opponent.sims_per_det"
+                    ]
+                  },
+                  "total_sims": {
+                    "champion": 22016,
+                    "opponent": 22016,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.total_sims",
+                      "manifest:config.opponent.total_sims"
+                    ]
+                  },
+                  "c_puct": {
+                    "champion": 1.5,
+                    "opponent": 1.5,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.c_puct",
+                      "manifest:config.opponent.champ_cfg.c_puct"
+                    ]
+                  },
+                  "tau_p": {
+                    "champion": 5.0,
+                    "opponent": 5.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.tau_p",
+                      "manifest:config.opponent.champ_cfg.tau_p"
+                    ]
+                  },
+                  "value_norm": {
+                    "champion": 15.0,
+                    "opponent": 15.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.value_norm",
+                      "manifest:config.opponent.champ_cfg.value_norm"
+                    ]
+                  },
+                  "leaf_quantize": {
+                    "champion": "float",
+                    "opponent": "float",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.leaf_quantize",
+                      "manifest:config.opponent.champ_cfg.leaf_quantize"
+                    ]
+                  },
+                  "final_select": {
+                    "champion": "visits",
+                    "opponent": "visits",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.final_select",
+                      "manifest:config.opponent.champ_cfg.final_select"
+                    ]
+                  },
+                  "fpu_reduction": {
+                    "champion": 0.2,
+                    "opponent": null,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.fpu_reduction",
+                      "manifest:config.opponent.champ_cfg.fpu_reduction"
+                    ]
+                  }
+                },
+                "notes": [
+                  "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+                ]
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "owned_alias": "fpu_reduction",
+                "frozen_value": 0.2,
+                "rows": {
+                  "k_dets": {
+                    "champion": 16,
+                    "opponent": 16,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.k_dets",
+                      "manifest:config.opponent.k_dets"
+                    ]
+                  },
+                  "sims_per_det": {
+                    "champion": 1376,
+                    "opponent": 1376,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.sims_per_det",
+                      "manifest:config.opponent.sims_per_det"
+                    ]
+                  },
+                  "total_sims": {
+                    "champion": 22016,
+                    "opponent": 22016,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.total_sims",
+                      "manifest:config.opponent.total_sims"
+                    ]
+                  },
+                  "c_puct": {
+                    "champion": 1.5,
+                    "opponent": 1.5,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.c_puct",
+                      "manifest:config.opponent.champ_cfg.c_puct"
+                    ]
+                  },
+                  "tau_p": {
+                    "champion": 5.0,
+                    "opponent": 5.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.tau_p",
+                      "manifest:config.opponent.champ_cfg.tau_p"
+                    ]
+                  },
+                  "value_norm": {
+                    "champion": 15.0,
+                    "opponent": 15.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.value_norm",
+                      "manifest:config.opponent.champ_cfg.value_norm"
+                    ]
+                  },
+                  "leaf_quantize": {
+                    "champion": "float",
+                    "opponent": "float",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.leaf_quantize",
+                      "manifest:config.opponent.champ_cfg.leaf_quantize"
+                    ]
+                  },
+                  "final_select": {
+                    "champion": "visits",
+                    "opponent": "visits",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.final_select",
+                      "manifest:config.opponent.champ_cfg.final_select"
+                    ]
+                  },
+                  "fpu_reduction": {
+                    "champion": 0.2,
+                    "opponent": null,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.fpu_reduction",
+                      "manifest:config.opponent.champ_cfg.fpu_reduction"
+                    ]
+                  }
+                },
+                "notes": [
+                  "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+                ]
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "owned_alias": "fpu_reduction",
+                "frozen_value": 0.2,
+                "rows": {
+                  "k_dets": {
+                    "champion": 16,
+                    "opponent": 16,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.k_dets",
+                      "manifest:config.opponent.k_dets"
+                    ]
+                  },
+                  "sims_per_det": {
+                    "champion": 1376,
+                    "opponent": 1376,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.sims_per_det",
+                      "manifest:config.opponent.sims_per_det"
+                    ]
+                  },
+                  "total_sims": {
+                    "champion": 22016,
+                    "opponent": 22016,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.total_sims",
+                      "manifest:config.opponent.total_sims"
+                    ]
+                  },
+                  "c_puct": {
+                    "champion": 1.5,
+                    "opponent": 1.5,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.c_puct",
+                      "manifest:config.opponent.champ_cfg.c_puct"
+                    ]
+                  },
+                  "tau_p": {
+                    "champion": 5.0,
+                    "opponent": 5.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.tau_p",
+                      "manifest:config.opponent.champ_cfg.tau_p"
+                    ]
+                  },
+                  "value_norm": {
+                    "champion": 15.0,
+                    "opponent": 15.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.value_norm",
+                      "manifest:config.opponent.champ_cfg.value_norm"
+                    ]
+                  },
+                  "leaf_quantize": {
+                    "champion": "float",
+                    "opponent": "float",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.leaf_quantize",
+                      "manifest:config.opponent.champ_cfg.leaf_quantize"
+                    ]
+                  },
+                  "final_select": {
+                    "champion": "visits",
+                    "opponent": "visits",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.final_select",
+                      "manifest:config.opponent.champ_cfg.final_select"
+                    ]
+                  },
+                  "fpu_reduction": {
+                    "champion": 0.2,
+                    "opponent": null,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.fpu_reduction",
+                      "manifest:config.opponent.champ_cfg.fpu_reduction"
+                    ]
+                  }
+                },
+                "notes": [
+                  "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+                ]
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "owned_alias": "fpu_reduction",
+                "frozen_value": 0.2,
+                "rows": {
+                  "k_dets": {
+                    "champion": 16,
+                    "opponent": 16,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.k_dets",
+                      "manifest:config.opponent.k_dets"
+                    ]
+                  },
+                  "sims_per_det": {
+                    "champion": 1376,
+                    "opponent": 1376,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.sims_per_det",
+                      "manifest:config.opponent.sims_per_det"
+                    ]
+                  },
+                  "total_sims": {
+                    "champion": 22016,
+                    "opponent": 22016,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.total_sims",
+                      "manifest:config.opponent.total_sims"
+                    ]
+                  },
+                  "c_puct": {
+                    "champion": 1.5,
+                    "opponent": 1.5,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.c_puct",
+                      "manifest:config.opponent.champ_cfg.c_puct"
+                    ]
+                  },
+                  "tau_p": {
+                    "champion": 5.0,
+                    "opponent": 5.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.tau_p",
+                      "manifest:config.opponent.champ_cfg.tau_p"
+                    ]
+                  },
+                  "value_norm": {
+                    "champion": 15.0,
+                    "opponent": 15.0,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.value_norm",
+                      "manifest:config.opponent.champ_cfg.value_norm"
+                    ]
+                  },
+                  "leaf_quantize": {
+                    "champion": "float",
+                    "opponent": "float",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.leaf_quantize",
+                      "manifest:config.opponent.champ_cfg.leaf_quantize"
+                    ]
+                  },
+                  "final_select": {
+                    "champion": "visits",
+                    "opponent": "visits",
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.final_select",
+                      "manifest:config.opponent.champ_cfg.final_select"
+                    ]
+                  },
+                  "fpu_reduction": {
+                    "champion": 0.2,
+                    "opponent": null,
+                    "champion_absent": false,
+                    "opponent_absent": false,
+                    "addresses": [
+                      "manifest:config.champion.fpu_reduction",
+                      "manifest:config.opponent.champ_cfg.fpu_reduction"
+                    ]
+                  }
+                },
+                "notes": [
+                  "\u2b50 fpu_reduction: candidate 0.2 vs opponent None \u2014 the SINGLE VARIABLE, differing as frozen"
+                ]
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-SINGLEVAR: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-SINGLEVAR passes on every chunk"
+        },
+        {
+          "gate": "G-TIEARB-SIDES",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "expected_both_seats": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "resolved": {
+                  "candidate": {
+                    "address": "cand_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  },
+                  "opponent": {
+                    "address": "opp_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  }
+                },
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ],
+                "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+                "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "expected_both_seats": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "resolved": {
+                  "candidate": {
+                    "address": "cand_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  },
+                  "opponent": {
+                    "address": "opp_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  }
+                },
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ],
+                "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+                "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "expected_both_seats": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "resolved": {
+                  "candidate": {
+                    "address": "cand_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  },
+                  "opponent": {
+                    "address": "opp_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  }
+                },
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ],
+                "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+                "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "expected_both_seats": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "resolved": {
+                  "candidate": {
+                    "address": "cand_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  },
+                  "opponent": {
+                    "address": "opp_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  }
+                },
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ],
+                "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+                "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "expected_both_seats": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "resolved": {
+                  "candidate": {
+                    "address": "cand_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  },
+                  "opponent": {
+                    "address": "opp_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  }
+                },
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ],
+                "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+                "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "expected_both_seats": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "resolved": {
+                  "candidate": {
+                    "address": "cand_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  },
+                  "opponent": {
+                    "address": "opp_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  }
+                },
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ],
+                "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+                "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "expected_both_seats": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "resolved": {
+                  "candidate": {
+                    "address": "cand_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  },
+                  "opponent": {
+                    "address": "opp_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  }
+                },
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ],
+                "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+                "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "expected_both_seats": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "resolved": {
+                  "candidate": {
+                    "address": "cand_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  },
+                  "opponent": {
+                    "address": "opp_tiearb",
+                    "spec": {
+                      "enabled": true,
+                      "B": 64,
+                      "J": 4,
+                      "mode": "argmax",
+                      "salt": "tiearb2-deploy-v1",
+                      "eps": 0.0,
+                      "phase_gate": "all"
+                    }
+                  }
+                },
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ],
+                "vocabulary": "scripts/classical_search/tiearb_gates.py (assert_tiearb_sides) \u2014 merged 2026-08-31 with the --opp-tiearb-* plumbing",
+                "not_phasegate": "\u26d4 phasegate's G-TIEARB-ARM ('opponent: no tiearb container') would FAIL this healthy cell; it is NOT reused and NOT edited."
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-TIEARB-SIDES: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-TIEARB-SIDES passes on every chunk"
+        },
+        {
+          "gate": "G-TIEARB-FIRE",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "sides": {
+                  "candidate": {
+                    "games": 200,
+                    "phi": 17.385,
+                    "fired_plies": 3477,
+                    "pickchanges": 2004,
+                    "G_FIRE_fired": false
+                  },
+                  "opponent": {
+                    "games": 200,
+                    "phi": 17.63,
+                    "fired_plies": 3526,
+                    "pickchanges": 2041,
+                    "G_FIRE_fired": false
+                  }
+                },
+                "raw": {
+                  "candidate": {
+                    "tiearb_games": 200,
+                    "tiearb_phi": 17.385,
+                    "tiearb_fired_plies_total": 3477,
+                    "tiearb_pickchanges_total": 2004,
+                    "tiearb_G_FIRE_fired": false,
+                    "tiearb_partial_argmax_total": 0,
+                    "tiearb_errors_total": 0,
+                    "tiearb_B": [
+                      64
+                    ],
+                    "tiearb_J": [
+                      4
+                    ],
+                    "tiearb_phase_gates": [
+                      "all"
+                    ]
+                  },
+                  "opponent": {
+                    "opp_tiearb_games": 200,
+                    "opp_tiearb_phi": 17.63,
+                    "opp_tiearb_fired_plies_total": 3526,
+                    "opp_tiearb_pickchanges_total": 2041,
+                    "opp_tiearb_G_FIRE_fired": false,
+                    "opp_tiearb_partial_argmax_total": 0,
+                    "opp_tiearb_errors_total": 0,
+                    "opp_tiearb_B": [
+                      64
+                    ],
+                    "opp_tiearb_J": [
+                      4
+                    ],
+                    "opp_tiearb_phase_gates": [
+                      "all"
+                    ]
+                  }
+                }
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "sides": {
+                  "candidate": {
+                    "games": 200,
+                    "phi": 17.715,
+                    "fired_plies": 3543,
+                    "pickchanges": 2043,
+                    "G_FIRE_fired": false
+                  },
+                  "opponent": {
+                    "games": 200,
+                    "phi": 17.575,
+                    "fired_plies": 3515,
+                    "pickchanges": 2001,
+                    "G_FIRE_fired": false
+                  }
+                },
+                "raw": {
+                  "candidate": {
+                    "tiearb_games": 200,
+                    "tiearb_phi": 17.715,
+                    "tiearb_fired_plies_total": 3543,
+                    "tiearb_pickchanges_total": 2043,
+                    "tiearb_G_FIRE_fired": false,
+                    "tiearb_partial_argmax_total": 0,
+                    "tiearb_errors_total": 0,
+                    "tiearb_B": [
+                      64
+                    ],
+                    "tiearb_J": [
+                      4
+                    ],
+                    "tiearb_phase_gates": [
+                      "all"
+                    ]
+                  },
+                  "opponent": {
+                    "opp_tiearb_games": 200,
+                    "opp_tiearb_phi": 17.575,
+                    "opp_tiearb_fired_plies_total": 3515,
+                    "opp_tiearb_pickchanges_total": 2001,
+                    "opp_tiearb_G_FIRE_fired": false,
+                    "opp_tiearb_partial_argmax_total": 0,
+                    "opp_tiearb_errors_total": 0,
+                    "opp_tiearb_B": [
+                      64
+                    ],
+                    "opp_tiearb_J": [
+                      4
+                    ],
+                    "opp_tiearb_phase_gates": [
+                      "all"
+                    ]
+                  }
+                }
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "sides": {
+                  "candidate": {
+                    "games": 200,
+                    "phi": 17.08,
+                    "fired_plies": 3416,
+                    "pickchanges": 1992,
+                    "G_FIRE_fired": false
+                  },
+                  "opponent": {
+                    "games": 200,
+                    "phi": 17.515,
+                    "fired_plies": 3503,
+                    "pickchanges": 2034,
+                    "G_FIRE_fired": false
+                  }
+                },
+                "raw": {
+                  "candidate": {
+                    "tiearb_games": 200,
+                    "tiearb_phi": 17.08,
+                    "tiearb_fired_plies_total": 3416,
+                    "tiearb_pickchanges_total": 1992,
+                    "tiearb_G_FIRE_fired": false,
+                    "tiearb_partial_argmax_total": 0,
+                    "tiearb_errors_total": 0,
+                    "tiearb_B": [
+                      64
+                    ],
+                    "tiearb_J": [
+                      4
+                    ],
+                    "tiearb_phase_gates": [
+                      "all"
+                    ]
+                  },
+                  "opponent": {
+                    "opp_tiearb_games": 200,
+                    "opp_tiearb_phi": 17.515,
+                    "opp_tiearb_fired_plies_total": 3503,
+                    "opp_tiearb_pickchanges_total": 2034,
+                    "opp_tiearb_G_FIRE_fired": false,
+                    "opp_tiearb_partial_argmax_total": 0,
+                    "opp_tiearb_errors_total": 0,
+                    "opp_tiearb_B": [
+                      64
+                    ],
+                    "opp_tiearb_J": [
+                      4
+                    ],
+                    "opp_tiearb_phase_gates": [
+                      "all"
+                    ]
+                  }
+                }
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "sides": {
+                  "candidate": {
+                    "games": 200,
+                    "phi": 17.725,
+                    "fired_plies": 3545,
+                    "pickchanges": 2046,
+                    "G_FIRE_fired": false
+                  },
+                  "opponent": {
+                    "games": 200,
+                    "phi": 17.885,
+                    "fired_plies": 3577,
+                    "pickchanges": 2074,
+                    "G_FIRE_fired": false
+                  }
+                },
+                "raw": {
+                  "candidate": {
+                    "tiearb_games": 200,
+                    "tiearb_phi": 17.725,
+                    "tiearb_fired_plies_total": 3545,
+                    "tiearb_pickchanges_total": 2046,
+                    "tiearb_G_FIRE_fired": false,
+                    "tiearb_partial_argmax_total": 0,
+                    "tiearb_errors_total": 0,
+                    "tiearb_B": [
+                      64
+                    ],
+                    "tiearb_J": [
+                      4
+                    ],
+                    "tiearb_phase_gates": [
+                      "all"
+                    ]
+                  },
+                  "opponent": {
+                    "opp_tiearb_games": 200,
+                    "opp_tiearb_phi": 17.885,
+                    "opp_tiearb_fired_plies_total": 3577,
+                    "opp_tiearb_pickchanges_total": 2074,
+                    "opp_tiearb_G_FIRE_fired": false,
+                    "opp_tiearb_partial_argmax_total": 0,
+                    "opp_tiearb_errors_total": 0,
+                    "opp_tiearb_B": [
+                      64
+                    ],
+                    "opp_tiearb_J": [
+                      4
+                    ],
+                    "opp_tiearb_phase_gates": [
+                      "all"
+                    ]
+                  }
+                }
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "sides": {
+                  "candidate": {
+                    "games": 200,
+                    "phi": 17.435,
+                    "fired_plies": 3487,
+                    "pickchanges": 1918,
+                    "G_FIRE_fired": false
+                  },
+                  "opponent": {
+                    "games": 200,
+                    "phi": 17.605,
+                    "fired_plies": 3521,
+                    "pickchanges": 1987,
+                    "G_FIRE_fired": false
+                  }
+                },
+                "raw": {
+                  "candidate": {
+                    "tiearb_games": 200,
+                    "tiearb_phi": 17.435,
+                    "tiearb_fired_plies_total": 3487,
+                    "tiearb_pickchanges_total": 1918,
+                    "tiearb_G_FIRE_fired": false,
+                    "tiearb_partial_argmax_total": 0,
+                    "tiearb_errors_total": 0,
+                    "tiearb_B": [
+                      64
+                    ],
+                    "tiearb_J": [
+                      4
+                    ],
+                    "tiearb_phase_gates": [
+                      "all"
+                    ]
+                  },
+                  "opponent": {
+                    "opp_tiearb_games": 200,
+                    "opp_tiearb_phi": 17.605,
+                    "opp_tiearb_fired_plies_total": 3521,
+                    "opp_tiearb_pickchanges_total": 1987,
+                    "opp_tiearb_G_FIRE_fired": false,
+                    "opp_tiearb_partial_argmax_total": 0,
+                    "opp_tiearb_errors_total": 0,
+                    "opp_tiearb_B": [
+                      64
+                    ],
+                    "opp_tiearb_J": [
+                      4
+                    ],
+                    "opp_tiearb_phase_gates": [
+                      "all"
+                    ]
+                  }
+                }
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "sides": {
+                  "candidate": {
+                    "games": 200,
+                    "phi": 17.49,
+                    "fired_plies": 3498,
+                    "pickchanges": 2022,
+                    "G_FIRE_fired": false
+                  },
+                  "opponent": {
+                    "games": 200,
+                    "phi": 17.395,
+                    "fired_plies": 3479,
+                    "pickchanges": 2029,
+                    "G_FIRE_fired": false
+                  }
+                },
+                "raw": {
+                  "candidate": {
+                    "tiearb_games": 200,
+                    "tiearb_phi": 17.49,
+                    "tiearb_fired_plies_total": 3498,
+                    "tiearb_pickchanges_total": 2022,
+                    "tiearb_G_FIRE_fired": false,
+                    "tiearb_partial_argmax_total": 0,
+                    "tiearb_errors_total": 0,
+                    "tiearb_B": [
+                      64
+                    ],
+                    "tiearb_J": [
+                      4
+                    ],
+                    "tiearb_phase_gates": [
+                      "all"
+                    ]
+                  },
+                  "opponent": {
+                    "opp_tiearb_games": 200,
+                    "opp_tiearb_phi": 17.395,
+                    "opp_tiearb_fired_plies_total": 3479,
+                    "opp_tiearb_pickchanges_total": 2029,
+                    "opp_tiearb_G_FIRE_fired": false,
+                    "opp_tiearb_partial_argmax_total": 0,
+                    "opp_tiearb_errors_total": 0,
+                    "opp_tiearb_B": [
+                      64
+                    ],
+                    "opp_tiearb_J": [
+                      4
+                    ],
+                    "opp_tiearb_phase_gates": [
+                      "all"
+                    ]
+                  }
+                }
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "sides": {
+                  "candidate": {
+                    "games": 200,
+                    "phi": 16.935,
+                    "fired_plies": 3387,
+                    "pickchanges": 1918,
+                    "G_FIRE_fired": false
+                  },
+                  "opponent": {
+                    "games": 200,
+                    "phi": 17.51,
+                    "fired_plies": 3502,
+                    "pickchanges": 2028,
+                    "G_FIRE_fired": false
+                  }
+                },
+                "raw": {
+                  "candidate": {
+                    "tiearb_games": 200,
+                    "tiearb_phi": 16.935,
+                    "tiearb_fired_plies_total": 3387,
+                    "tiearb_pickchanges_total": 1918,
+                    "tiearb_G_FIRE_fired": false,
+                    "tiearb_partial_argmax_total": 0,
+                    "tiearb_errors_total": 0,
+                    "tiearb_B": [
+                      64
+                    ],
+                    "tiearb_J": [
+                      4
+                    ],
+                    "tiearb_phase_gates": [
+                      "all"
+                    ]
+                  },
+                  "opponent": {
+                    "opp_tiearb_games": 200,
+                    "opp_tiearb_phi": 17.51,
+                    "opp_tiearb_fired_plies_total": 3502,
+                    "opp_tiearb_pickchanges_total": 2028,
+                    "opp_tiearb_G_FIRE_fired": false,
+                    "opp_tiearb_partial_argmax_total": 0,
+                    "opp_tiearb_errors_total": 0,
+                    "opp_tiearb_B": [
+                      64
+                    ],
+                    "opp_tiearb_J": [
+                      4
+                    ],
+                    "opp_tiearb_phase_gates": [
+                      "all"
+                    ]
+                  }
+                }
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "sides": {
+                  "candidate": {
+                    "games": 200,
+                    "phi": 17.555,
+                    "fired_plies": 3511,
+                    "pickchanges": 2024,
+                    "G_FIRE_fired": false
+                  },
+                  "opponent": {
+                    "games": 200,
+                    "phi": 17.605,
+                    "fired_plies": 3521,
+                    "pickchanges": 2073,
+                    "G_FIRE_fired": false
+                  }
+                },
+                "raw": {
+                  "candidate": {
+                    "tiearb_games": 200,
+                    "tiearb_phi": 17.555,
+                    "tiearb_fired_plies_total": 3511,
+                    "tiearb_pickchanges_total": 2024,
+                    "tiearb_G_FIRE_fired": false,
+                    "tiearb_partial_argmax_total": 0,
+                    "tiearb_errors_total": 0,
+                    "tiearb_B": [
+                      64
+                    ],
+                    "tiearb_J": [
+                      4
+                    ],
+                    "tiearb_phase_gates": [
+                      "all"
+                    ]
+                  },
+                  "opponent": {
+                    "opp_tiearb_games": 200,
+                    "opp_tiearb_phi": 17.605,
+                    "opp_tiearb_fired_plies_total": 3521,
+                    "opp_tiearb_pickchanges_total": 2073,
+                    "opp_tiearb_G_FIRE_fired": false,
+                    "opp_tiearb_partial_argmax_total": 0,
+                    "opp_tiearb_errors_total": 0,
+                    "opp_tiearb_B": [
+                      64
+                    ],
+                    "opp_tiearb_J": [
+                      4
+                    ],
+                    "opp_tiearb_phase_gates": [
+                      "all"
+                    ]
+                  }
+                }
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-TIEARB-FIRE: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-TIEARB-FIRE passes on every chunk"
+        },
+        {
+          "gate": "G-LEAF",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d",
+                "cand_curve": [
+                  -10.0,
+                  -5.0,
+                  -1.25,
+                  0.0,
+                  2.5,
+                  3.75,
+                  5.0,
+                  6.25
+                ]
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d",
+                "cand_curve": [
+                  -10.0,
+                  -5.0,
+                  -1.25,
+                  0.0,
+                  2.5,
+                  3.75,
+                  5.0,
+                  6.25
+                ]
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d",
+                "cand_curve": [
+                  -10.0,
+                  -5.0,
+                  -1.25,
+                  0.0,
+                  2.5,
+                  3.75,
+                  5.0,
+                  6.25
+                ]
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d",
+                "cand_curve": [
+                  -10.0,
+                  -5.0,
+                  -1.25,
+                  0.0,
+                  2.5,
+                  3.75,
+                  5.0,
+                  6.25
+                ]
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d",
+                "cand_curve": [
+                  -10.0,
+                  -5.0,
+                  -1.25,
+                  0.0,
+                  2.5,
+                  3.75,
+                  5.0,
+                  6.25
+                ]
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d",
+                "cand_curve": [
+                  -10.0,
+                  -5.0,
+                  -1.25,
+                  0.0,
+                  2.5,
+                  3.75,
+                  5.0,
+                  6.25
+                ]
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d",
+                "cand_curve": [
+                  -10.0,
+                  -5.0,
+                  -1.25,
+                  0.0,
+                  2.5,
+                  3.75,
+                  5.0,
+                  6.25
+                ]
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d",
+                "cand_curve": [
+                  -10.0,
+                  -5.0,
+                  -1.25,
+                  0.0,
+                  2.5,
+                  3.75,
+                  5.0,
+                  6.25
+                ]
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-LEAF: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-LEAF passes on every chunk"
+        },
+        {
+          "gate": "G-BUDGET",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "champion": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                }
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "champion": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                }
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "champion": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                }
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "champion": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                }
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "champion": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                }
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "champion": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                }
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "champion": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                }
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "champion": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016
+                }
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-BUDGET: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-BUDGET passes on every chunk"
+        },
+        {
+          "gate": "G-EXACT",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-EXACT: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-EXACT passes on every chunk"
+        },
+        {
+          "gate": "G-RULES",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-RULES: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-RULES passes on every chunk"
+        },
+        {
+          "gate": "G-BACKEND",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                },
+                "converted_sides": {
+                  "value": [
+                    "candidate",
+                    "opponent"
+                  ],
+                  "address": "manifest:config.backend.converted_sides"
+                }
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                },
+                "converted_sides": {
+                  "value": [
+                    "candidate",
+                    "opponent"
+                  ],
+                  "address": "manifest:config.backend.converted_sides"
+                }
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                },
+                "converted_sides": {
+                  "value": [
+                    "candidate",
+                    "opponent"
+                  ],
+                  "address": "manifest:config.backend.converted_sides"
+                }
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                },
+                "converted_sides": {
+                  "value": [
+                    "candidate",
+                    "opponent"
+                  ],
+                  "address": "manifest:config.backend.converted_sides"
+                }
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                },
+                "converted_sides": {
+                  "value": [
+                    "candidate",
+                    "opponent"
+                  ],
+                  "address": "manifest:config.backend.converted_sides"
+                }
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                },
+                "converted_sides": {
+                  "value": [
+                    "candidate",
+                    "opponent"
+                  ],
+                  "address": "manifest:config.backend.converted_sides"
+                }
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                },
+                "converted_sides": {
+                  "value": [
+                    "candidate",
+                    "opponent"
+                  ],
+                  "address": "manifest:config.backend.converted_sides"
+                }
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                },
+                "converted_sides": {
+                  "value": [
+                    "candidate",
+                    "opponent"
+                  ],
+                  "address": "manifest:config.backend.converted_sides"
+                }
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-BACKEND: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-BACKEND passes on every chunk"
+        },
+        {
+          "gate": "G-WHEEL",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+6f0151db42d6+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a9bb2311ab9a635d",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+6f0151db42d6+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a9bb2311ab9a635d",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+6f0151db42d6+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a9bb2311ab9a635d",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+6f0151db42d6+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a9bb2311ab9a635d",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+6f0151db42d6+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a9bb2311ab9a635d",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+6f0151db42d6+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a9bb2311ab9a635d",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+6f0151db42d6+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a9bb2311ab9a635d",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+6f0151db42d6+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a9bb2311ab9a635d",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "G-WHEEL: manifest/summary, PER CHUNK",
+          "why": "\u2b50 G-WHEEL passes on every chunk"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "band_seed_start": 169000000000,
+                "n_decks": 100,
+                "seatings_per_deck": 2,
+                "frozen_chunk_range": [
+                  169000000000,
+                  169000000099
+                ],
+                "addresses": [
+                  "manifest:config.band_seed_start",
+                  "manifest:config.n_decks",
+                  "manifest:config.seatings_per_deck"
+                ]
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "band_seed_start": 169000000100,
+                "n_decks": 100,
+                "seatings_per_deck": 2,
+                "frozen_chunk_range": [
+                  169000000100,
+                  169000000199
+                ],
+                "addresses": [
+                  "manifest:config.band_seed_start",
+                  "manifest:config.n_decks",
+                  "manifest:config.seatings_per_deck"
+                ]
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "band_seed_start": 169000000200,
+                "n_decks": 100,
+                "seatings_per_deck": 2,
+                "frozen_chunk_range": [
+                  169000000200,
+                  169000000299
+                ],
+                "addresses": [
+                  "manifest:config.band_seed_start",
+                  "manifest:config.n_decks",
+                  "manifest:config.seatings_per_deck"
+                ]
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "band_seed_start": 169000000300,
+                "n_decks": 100,
+                "seatings_per_deck": 2,
+                "frozen_chunk_range": [
+                  169000000300,
+                  169000000399
+                ],
+                "addresses": [
+                  "manifest:config.band_seed_start",
+                  "manifest:config.n_decks",
+                  "manifest:config.seatings_per_deck"
+                ]
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "band_seed_start": 169000000400,
+                "n_decks": 100,
+                "seatings_per_deck": 2,
+                "frozen_chunk_range": [
+                  169000000400,
+                  169000000499
+                ],
+                "addresses": [
+                  "manifest:config.band_seed_start",
+                  "manifest:config.n_decks",
+                  "manifest:config.seatings_per_deck"
+                ]
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "band_seed_start": 169000000500,
+                "n_decks": 100,
+                "seatings_per_deck": 2,
+                "frozen_chunk_range": [
+                  169000000500,
+                  169000000599
+                ],
+                "addresses": [
+                  "manifest:config.band_seed_start",
+                  "manifest:config.n_decks",
+                  "manifest:config.seatings_per_deck"
+                ]
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "band_seed_start": 169000000600,
+                "n_decks": 100,
+                "seatings_per_deck": 2,
+                "frozen_chunk_range": [
+                  169000000600,
+                  169000000699
+                ],
+                "addresses": [
+                  "manifest:config.band_seed_start",
+                  "manifest:config.n_decks",
+                  "manifest:config.seatings_per_deck"
+                ]
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "band_seed_start": 169000000700,
+                "n_decks": 100,
+                "seatings_per_deck": 2,
+                "frozen_chunk_range": [
+                  169000000700,
+                  169000000799
+                ],
+                "addresses": [
+                  "manifest:config.band_seed_start",
+                  "manifest:config.n_decks",
+                  "manifest:config.seatings_per_deck"
+                ]
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "manifest:config.band_seed_start, PER CHUNK",
+          "why": "\u2b50 every chunk declares its OWN frozen sub-range of band 169000000000 with 2 seatings per deck"
+        },
+        {
+          "gate": "G-CHUNKS",
+          "ok": true,
+          "detail": {
+            "frozen_chunks": [
+              "CELL_H2H2_FPU02__c0",
+              "CELL_H2H2_FPU02__c1",
+              "CELL_H2H2_FPU02__c2",
+              "CELL_H2H2_FPU02__c3",
+              "CELL_H2H2_FPU02__c4",
+              "CELL_H2H2_FPU02__c5",
+              "CELL_H2H2_FPU02__c6",
+              "CELL_H2H2_FPU02__c7"
+            ],
+            "by_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "present": true,
+                "manifest": true,
+                "summary": true,
+                "n_records": 200,
+                "seed_range": [
+                  169000000000,
+                  169000000099
+                ]
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "present": true,
+                "manifest": true,
+                "summary": true,
+                "n_records": 200,
+                "seed_range": [
+                  169000000100,
+                  169000000199
+                ]
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "present": true,
+                "manifest": true,
+                "summary": true,
+                "n_records": 200,
+                "seed_range": [
+                  169000000200,
+                  169000000299
+                ]
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "present": true,
+                "manifest": true,
+                "summary": true,
+                "n_records": 200,
+                "seed_range": [
+                  169000000300,
+                  169000000399
+                ]
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "present": true,
+                "manifest": true,
+                "summary": true,
+                "n_records": 200,
+                "seed_range": [
+                  169000000400,
+                  169000000499
+                ]
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "present": true,
+                "manifest": true,
+                "summary": true,
+                "n_records": 200,
+                "seed_range": [
+                  169000000500,
+                  169000000599
+                ]
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "present": true,
+                "manifest": true,
+                "summary": true,
+                "n_records": 200,
+                "seed_range": [
+                  169000000600,
+                  169000000699
+                ]
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "present": true,
+                "manifest": true,
+                "summary": true,
+                "n_records": 200,
+                "seed_range": [
+                  169000000700,
+                  169000000799
+                ]
+              }
+            },
+            "unexpected_dirs": []
+          },
+          "address": "the chunk out-dirs under the round's out-root",
+          "why": "\u2b50 all 8 frozen chunks are present and COMPLETE (manifest AND summary)"
+        },
+        {
+          "gate": "G-NODUP",
+          "ok": true,
+          "detail": {
+            "n_chunks_seen": 8,
+            "decks_per_chunk_realized": {
+              "CELL_H2H2_FPU02__c0": 100,
+              "CELL_H2H2_FPU02__c1": 100,
+              "CELL_H2H2_FPU02__c2": 100,
+              "CELL_H2H2_FPU02__c3": 100,
+              "CELL_H2H2_FPU02__c4": 100,
+              "CELL_H2H2_FPU02__c5": 100,
+              "CELL_H2H2_FPU02__c6": 100,
+              "CELL_H2H2_FPU02__c7": 100
+            },
+            "sum_of_chunk_deck_counts": 800,
+            "union_deck_count": 800,
+            "duplicate_deck_seat_pairs": {},
+            "n_duplicate_deck_seat_pairs": 0,
+            "range_overlaps": []
+          },
+          "address": "the pooled raw seed*_a*.json across every chunk dir",
+          "why": "\u2b50 the chunks TILE the band: their realized ranges are pairwise disjoint, every (deck, seat) appears EXACTLY ONCE across the pool, and no chunk's seeds escape its own sub-range"
+        },
+        {
+          "gate": "G-SHARD-IDENT",
+          "ok": true,
+          "detail": {
+            "config.cand_search.fpu_reduction": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 0.2,
+                "CELL_H2H2_FPU02__c1": 0.2,
+                "CELL_H2H2_FPU02__c2": 0.2,
+                "CELL_H2H2_FPU02__c3": 0.2,
+                "CELL_H2H2_FPU02__c4": 0.2,
+                "CELL_H2H2_FPU02__c5": 0.2,
+                "CELL_H2H2_FPU02__c6": 0.2,
+                "CELL_H2H2_FPU02__c7": 0.2
+              },
+              "n_distinct": 1
+            },
+            "config.cand_search.c_puct": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": null,
+                "CELL_H2H2_FPU02__c1": null,
+                "CELL_H2H2_FPU02__c2": null,
+                "CELL_H2H2_FPU02__c3": null,
+                "CELL_H2H2_FPU02__c4": null,
+                "CELL_H2H2_FPU02__c5": null,
+                "CELL_H2H2_FPU02__c6": null,
+                "CELL_H2H2_FPU02__c7": null
+              },
+              "n_distinct": 1
+            },
+            "config.champion.fpu_reduction": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 0.2,
+                "CELL_H2H2_FPU02__c1": 0.2,
+                "CELL_H2H2_FPU02__c2": 0.2,
+                "CELL_H2H2_FPU02__c3": 0.2,
+                "CELL_H2H2_FPU02__c4": 0.2,
+                "CELL_H2H2_FPU02__c5": 0.2,
+                "CELL_H2H2_FPU02__c6": 0.2,
+                "CELL_H2H2_FPU02__c7": 0.2
+              },
+              "n_distinct": 1
+            },
+            "config.champion.c_puct": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 1.5,
+                "CELL_H2H2_FPU02__c1": 1.5,
+                "CELL_H2H2_FPU02__c2": 1.5,
+                "CELL_H2H2_FPU02__c3": 1.5,
+                "CELL_H2H2_FPU02__c4": 1.5,
+                "CELL_H2H2_FPU02__c5": 1.5,
+                "CELL_H2H2_FPU02__c6": 1.5,
+                "CELL_H2H2_FPU02__c7": 1.5
+              },
+              "n_distinct": 1
+            },
+            "config.champion.tau_p": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 5.0,
+                "CELL_H2H2_FPU02__c1": 5.0,
+                "CELL_H2H2_FPU02__c2": 5.0,
+                "CELL_H2H2_FPU02__c3": 5.0,
+                "CELL_H2H2_FPU02__c4": 5.0,
+                "CELL_H2H2_FPU02__c5": 5.0,
+                "CELL_H2H2_FPU02__c6": 5.0,
+                "CELL_H2H2_FPU02__c7": 5.0
+              },
+              "n_distinct": 1
+            },
+            "config.champion.k_dets": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 16,
+                "CELL_H2H2_FPU02__c1": 16,
+                "CELL_H2H2_FPU02__c2": 16,
+                "CELL_H2H2_FPU02__c3": 16,
+                "CELL_H2H2_FPU02__c4": 16,
+                "CELL_H2H2_FPU02__c5": 16,
+                "CELL_H2H2_FPU02__c6": 16,
+                "CELL_H2H2_FPU02__c7": 16
+              },
+              "n_distinct": 1
+            },
+            "config.champion.sims_per_det": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 1376,
+                "CELL_H2H2_FPU02__c1": 1376,
+                "CELL_H2H2_FPU02__c2": 1376,
+                "CELL_H2H2_FPU02__c3": 1376,
+                "CELL_H2H2_FPU02__c4": 1376,
+                "CELL_H2H2_FPU02__c5": 1376,
+                "CELL_H2H2_FPU02__c6": 1376,
+                "CELL_H2H2_FPU02__c7": 1376
+              },
+              "n_distinct": 1
+            },
+            "config.champion.total_sims": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 22016,
+                "CELL_H2H2_FPU02__c1": 22016,
+                "CELL_H2H2_FPU02__c2": 22016,
+                "CELL_H2H2_FPU02__c3": 22016,
+                "CELL_H2H2_FPU02__c4": 22016,
+                "CELL_H2H2_FPU02__c5": 22016,
+                "CELL_H2H2_FPU02__c6": 22016,
+                "CELL_H2H2_FPU02__c7": 22016
+              },
+              "n_distinct": 1
+            },
+            "config.opponent.champ_cfg.fpu_reduction": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": null,
+                "CELL_H2H2_FPU02__c1": null,
+                "CELL_H2H2_FPU02__c2": null,
+                "CELL_H2H2_FPU02__c3": null,
+                "CELL_H2H2_FPU02__c4": null,
+                "CELL_H2H2_FPU02__c5": null,
+                "CELL_H2H2_FPU02__c6": null,
+                "CELL_H2H2_FPU02__c7": null
+              },
+              "n_distinct": 1
+            },
+            "config.opponent.champ_cfg.c_puct": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 1.5,
+                "CELL_H2H2_FPU02__c1": 1.5,
+                "CELL_H2H2_FPU02__c2": 1.5,
+                "CELL_H2H2_FPU02__c3": 1.5,
+                "CELL_H2H2_FPU02__c4": 1.5,
+                "CELL_H2H2_FPU02__c5": 1.5,
+                "CELL_H2H2_FPU02__c6": 1.5,
+                "CELL_H2H2_FPU02__c7": 1.5
+              },
+              "n_distinct": 1
+            },
+            "config.opponent.champ_cfg.tau_p": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 5.0,
+                "CELL_H2H2_FPU02__c1": 5.0,
+                "CELL_H2H2_FPU02__c2": 5.0,
+                "CELL_H2H2_FPU02__c3": 5.0,
+                "CELL_H2H2_FPU02__c4": 5.0,
+                "CELL_H2H2_FPU02__c5": 5.0,
+                "CELL_H2H2_FPU02__c6": 5.0,
+                "CELL_H2H2_FPU02__c7": 5.0
+              },
+              "n_distinct": 1
+            },
+            "config.cand_leaf_hash": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c1": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c2": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c3": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c4": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c5": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c6": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c7": "a36d2e15a3b3d71d"
+              },
+              "n_distinct": 1
+            },
+            "config.opp_leaf_hash": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c1": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c2": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c3": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c4": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c5": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c6": "a36d2e15a3b3d71d",
+                "CELL_H2H2_FPU02__c7": "a36d2e15a3b3d71d"
+              },
+              "n_distinct": 1
+            },
+            "config.endgame.exact_k": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": 2,
+                "CELL_H2H2_FPU02__c1": 2,
+                "CELL_H2H2_FPU02__c2": 2,
+                "CELL_H2H2_FPU02__c3": 2,
+                "CELL_H2H2_FPU02__c4": 2,
+                "CELL_H2H2_FPU02__c5": 2,
+                "CELL_H2H2_FPU02__c6": 2,
+                "CELL_H2H2_FPU02__c7": 2
+              },
+              "n_distinct": 1
+            },
+            "config.endgame.mode": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": "marginalized",
+                "CELL_H2H2_FPU02__c1": "marginalized",
+                "CELL_H2H2_FPU02__c2": "marginalized",
+                "CELL_H2H2_FPU02__c3": "marginalized",
+                "CELL_H2H2_FPU02__c4": "marginalized",
+                "CELL_H2H2_FPU02__c5": "marginalized",
+                "CELL_H2H2_FPU02__c6": "marginalized",
+                "CELL_H2H2_FPU02__c7": "marginalized"
+              },
+              "n_distinct": 1
+            },
+            "config.backend.name": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": "rust",
+                "CELL_H2H2_FPU02__c1": "rust",
+                "CELL_H2H2_FPU02__c2": "rust",
+                "CELL_H2H2_FPU02__c3": "rust",
+                "CELL_H2H2_FPU02__c4": "rust",
+                "CELL_H2H2_FPU02__c5": "rust",
+                "CELL_H2H2_FPU02__c6": "rust",
+                "CELL_H2H2_FPU02__c7": "rust"
+              },
+              "n_distinct": 1
+            },
+            "rules_profile.name": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": "fixed_v1",
+                "CELL_H2H2_FPU02__c1": "fixed_v1",
+                "CELL_H2H2_FPU02__c2": "fixed_v1",
+                "CELL_H2H2_FPU02__c3": "fixed_v1",
+                "CELL_H2H2_FPU02__c4": "fixed_v1",
+                "CELL_H2H2_FPU02__c5": "fixed_v1",
+                "CELL_H2H2_FPU02__c6": "fixed_v1",
+                "CELL_H2H2_FPU02__c7": "fixed_v1"
+              },
+              "n_distinct": 1
+            },
+            "cand_tiearb": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c1": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c2": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c3": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c4": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c5": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c6": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c7": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                }
+              },
+              "n_distinct": 1
+            },
+            "opp_tiearb": {
+              "by_chunk": {
+                "CELL_H2H2_FPU02__c0": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c1": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c2": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c3": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c4": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c5": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c6": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                },
+                "CELL_H2H2_FPU02__c7": {
+                  "enabled": true,
+                  "B": 64,
+                  "J": 4,
+                  "mode": "argmax",
+                  "salt": "tiearb2-deploy-v1",
+                  "eps": 0.0,
+                  "phase_gate": "all"
+                }
+              },
+              "n_distinct": 1
+            }
+          },
+          "address": "manifest:<the resolved-config addresses>, CHUNK vs CHUNK",
+          "why": "\u2b50 every chunk resolved the SAME candidate and the SAME opponent \u2014 the pool is ONE measurement executed in pieces, not several measurements combined"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "n": 1600,
+            "frozen_n_games": 1600,
+            "n_failed": 0,
+            "failure_rate": 0.0,
+            "failure_rate_void_bar": 0.02,
+            "n_common": 800,
+            "n_common_floor": 640.0,
+            "n_common_floor_fraction": 0.8,
+            "notes": [],
+            "addresses": [
+              "summary:n (SUMMED over chunks)",
+              "summary:n_failed (SUMMED over chunks)"
+            ],
+            "per_chunk": [
+              {
+                "chunk": "CELL_H2H2_FPU02__c0",
+                "n": "summary:n",
+                "n_failed": "summary:n_failed",
+                "n_value": 200,
+                "n_failed_value": 0
+              },
+              {
+                "chunk": "CELL_H2H2_FPU02__c1",
+                "n": "summary:n",
+                "n_failed": "summary:n_failed",
+                "n_value": 200,
+                "n_failed_value": 0
+              },
+              {
+                "chunk": "CELL_H2H2_FPU02__c2",
+                "n": "summary:n",
+                "n_failed": "summary:n_failed",
+                "n_value": 200,
+                "n_failed_value": 0
+              },
+              {
+                "chunk": "CELL_H2H2_FPU02__c3",
+                "n": "summary:n",
+                "n_failed": "summary:n_failed",
+                "n_value": 200,
+                "n_failed_value": 0
+              },
+              {
+                "chunk": "CELL_H2H2_FPU02__c4",
+                "n": "summary:n",
+                "n_failed": "summary:n_failed",
+                "n_value": 200,
+                "n_failed_value": 0
+              },
+              {
+                "chunk": "CELL_H2H2_FPU02__c5",
+                "n": "summary:n",
+                "n_failed": "summary:n_failed",
+                "n_value": 200,
+                "n_failed_value": 0
+              },
+              {
+                "chunk": "CELL_H2H2_FPU02__c6",
+                "n": "summary:n",
+                "n_failed": "summary:n_failed",
+                "n_value": 200,
+                "n_failed_value": 0
+              },
+              {
+                "chunk": "CELL_H2H2_FPU02__c7",
+                "n": "summary:n",
+                "n_failed": "summary:n_failed",
+                "n_value": 200,
+                "n_failed_value": 0
+              }
+            ],
+            "tiling_note": "\u2b50\u2b50 THE ACCOUNTING IDENTITY IS ALSO THE TILING CHECK: sum(n) + sum(n_failed) == the frozen game count can only hold if the chunks covered the whole band, so a two-box split that left a hole fails HERE."
+          },
+          "address": "summary.json",
+          "why": "\u2b50 n accounts for every frozen game, the failure rate is below the 2% void bar, and n_common clears the 80% floor"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.5121875,
+            "band": [
+              0.35,
+              0.65
+            ],
+            "n_games": 1600,
+            "W": 804,
+            "D": 31,
+            "L": 765,
+            "footing": "POOLED over every chunk, recomputed from the raw records (RECON certifies this implementation against each chunk's own summary.json)"
+          },
+          "address": "the pooled raw records",
+          "why": "inside the rail"
+        },
+        {
+          "gate": "G-HOST",
+          "ok": true,
+          "detail": {
+            "provenance_map": {
+              "CELL_H2H2_FPU02__c0": {
+                "host": "laptop-wsl",
+                "role": "laptop",
+                "frozen_range": [
+                  169000000000,
+                  169000000099
+                ],
+                "realized_range": [
+                  169000000000,
+                  169000000099
+                ],
+                "n_decks_realized": 100
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "host": "laptop-wsl",
+                "role": "laptop",
+                "frozen_range": [
+                  169000000100,
+                  169000000199
+                ],
+                "realized_range": [
+                  169000000100,
+                  169000000199
+                ],
+                "n_decks_realized": 100
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "host": "laptop-wsl",
+                "role": "laptop",
+                "frozen_range": [
+                  169000000200,
+                  169000000299
+                ],
+                "realized_range": [
+                  169000000200,
+                  169000000299
+                ],
+                "n_decks_realized": 100
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "host": "laptop-wsl",
+                "role": "laptop",
+                "frozen_range": [
+                  169000000300,
+                  169000000399
+                ],
+                "realized_range": [
+                  169000000300,
+                  169000000399
+                ],
+                "n_decks_realized": 100
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "host": "Doctor",
+                "role": "local",
+                "frozen_range": [
+                  169000000400,
+                  169000000499
+                ],
+                "realized_range": [
+                  169000000400,
+                  169000000499
+                ],
+                "n_decks_realized": 100
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "host": "Doctor",
+                "role": "local",
+                "frozen_range": [
+                  169000000500,
+                  169000000599
+                ],
+                "realized_range": [
+                  169000000500,
+                  169000000599
+                ],
+                "n_decks_realized": 100
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "host": "Doctor",
+                "role": "local",
+                "frozen_range": [
+                  169000000600,
+                  169000000699
+                ],
+                "realized_range": [
+                  169000000600,
+                  169000000699
+                ],
+                "n_decks_realized": 100
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "host": "Doctor",
+                "role": "local",
+                "frozen_range": [
+                  169000000700,
+                  169000000799
+                ],
+                "realized_range": [
+                  169000000700,
+                  169000000799
+                ],
+                "n_decks_realized": 100
+              }
+            },
+            "chunks_by_role": {
+              "laptop": [
+                "CELL_H2H2_FPU02__c0",
+                "CELL_H2H2_FPU02__c1",
+                "CELL_H2H2_FPU02__c2",
+                "CELL_H2H2_FPU02__c3"
+              ],
+              "local": [
+                "CELL_H2H2_FPU02__c4",
+                "CELL_H2H2_FPU02__c5",
+                "CELL_H2H2_FPU02__c6",
+                "CELL_H2H2_FPU02__c7"
+              ]
+            },
+            "note": "\u2b50 PROVENANCE-ONLY. Box assignment is THROUGHPUT-ONLY (DESIGN \u00a76.4) and may change mid-round; no bar, gate or branch reads it. G-NODUP owns the proposition that the ranges did not overlap."
+          },
+          "address": "manifest:host, per chunk",
+          "why": "\u2b50 every chunk names a funded box and the chunk -> host -> range map is complete"
+        },
+        {
+          "gate": "RECON",
+          "ok": true,
+          "detail": {
+            "per_chunk": {
+              "CELL_H2H2_FPU02__c0": {
+                "paired_mean_margin": {
+                  "witness": 0.955,
+                  "summary": 0.955,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 0.7345045982791261,
+                  "summary": 0.7345045982791261,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 100,
+                  "summary": 100,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.535,
+                  "summary": 0.535,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 24.36033165250982,
+                  "summary": 24.36033165250982,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "CELL_H2H2_FPU02__c1": {
+                "paired_mean_margin": {
+                  "witness": 0.06,
+                  "summary": 0.06,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 0.050241746211230114,
+                  "summary": 0.050241746211230114,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 100,
+                  "summary": 100,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.485,
+                  "summary": 0.485,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": -10.426196175570956,
+                  "summary": -10.426196175570956,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "CELL_H2H2_FPU02__c2": {
+                "paired_mean_margin": {
+                  "witness": 3.92,
+                  "summary": 3.92,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 3.1757581250192737,
+                  "summary": 3.1757581250192737,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 100,
+                  "summary": 100,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.5375,
+                  "summary": 0.5375,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 26.106692605036596,
+                  "summary": 26.106692605036596,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "CELL_H2H2_FPU02__c3": {
+                "paired_mean_margin": {
+                  "witness": 1.16,
+                  "summary": 1.16,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 0.9443440127138155,
+                  "summary": 0.9443440127138155,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 100,
+                  "summary": 100,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.5125,
+                  "summary": 0.5125,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 8.687699877294484,
+                  "summary": 8.687699877294484,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "CELL_H2H2_FPU02__c4": {
+                "paired_mean_margin": {
+                  "witness": -0.555,
+                  "summary": -0.555,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": -0.3944268839352839,
+                  "summary": -0.3944268839352839,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 100,
+                  "summary": 100,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.4925,
+                  "summary": 0.4925,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": -5.21192470064803,
+                  "summary": -5.21192470064803,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "CELL_H2H2_FPU02__c5": {
+                "paired_mean_margin": {
+                  "witness": -1.61,
+                  "summary": -1.61,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": -1.2866889211026804,
+                  "summary": -1.2866889211026804,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 100,
+                  "summary": 100,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.48,
+                  "summary": 0.48,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": -13.904842503684788,
+                  "summary": -13.904842503684788,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "CELL_H2H2_FPU02__c6": {
+                "paired_mean_margin": {
+                  "witness": 1.175,
+                  "summary": 1.175,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 0.9936949896600308,
+                  "summary": 0.9936949896600308,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 100,
+                  "summary": 100,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.5075,
+                  "summary": 0.5075,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 5.211924700647974,
+                  "summary": 5.211924700647974,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "CELL_H2H2_FPU02__c7": {
+                "paired_mean_margin": {
+                  "witness": 1.785,
+                  "summary": 1.785,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 1.2211630558345412,
+                  "summary": 1.2211630558345412,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 100,
+                  "summary": 100,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.5475,
+                  "summary": 0.5475,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 33.10621598837351,
+                  "summary": 33.10621598837351,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              }
+            },
+            "failed_chunks": [],
+            "n_chunks_checked": 8
+          },
+          "address": "each chunk's summary.json vs its raw records",
+          "why": "\u2b50 the fsum witness agrees with the harness's own arithmetic on all five statistics, in EVERY chunk \u2014 so the same implementation may be applied to the pool"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "range": [
+              169000000000,
+              169000000799
+            ],
+            "n_seeds": 800,
+            "n_common": 800,
+            "frozen_n_decks": 800,
+            "n_common_floor": 640.0,
+            "out_of_range": [],
+            "half_played_decks": [],
+            "n_half_played": 0,
+            "half_played_rate_of_games": 0.0,
+            "half_played_rate_denominator": 1600,
+            "failure_rate_void_bar": 0.02,
+            "range_clashes": [],
+            "notes": [],
+            "all_cell_ranges": [
+              [
+                169000000000,
+                169000000799,
+                "CELL_H2H2_FPU02"
+              ]
+            ]
+          },
+          "address": "raw seed*_a*.json",
+          "why": "\u2b50 every realized seed is inside this cell's own range, the one-seat-only rate is BELOW the 2%-of-games void bar, and n_common clears the 80% floor"
+        }
+      ],
+      "gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "M": 0.86125,
+        "z": 1.8888702350502702,
+        "n_paired": 800,
+        "se": 0.4559603852178224,
+        "UB95": 1.7731707704356447,
+        "LB95": -0.05067077043564483,
+        "bar_effect": 1.0,
+        "bar_note": "\u2b50 ADOPT requires LB95 >= bar; BOUNDED requires UB95 < bar. \u26d4 The POINT ESTIMATE clears nothing on its own \u2014 that is the whole difference from a 2-sigma-hat bar (owner ruling 2026-08-30)."
+      },
+      "secondary_elo": {
+        "elo": 8.47042020323266,
+        "footing": "deck-paired",
+        "sigma_1_paired": 6.1436768388848515,
+        "sigma_1_unpaired": 8.688471108388422,
+        "pairing_factor": 0.7071067811865475,
+        "winrate": 0.5121875,
+        "W": 804,
+        "D": 31,
+        "L": 765,
+        "ci95_elo_paired": [
+          -3.816933474537043,
+          20.757773881002365
+        ],
+        "instrument_2sigma_elo_resolution": 12.3,
+        "resolution_footing": "deck-paired 2\u03c3 at 1600 games / 800 decks \u2014 the SAME footing as ci95_elo_paired (R4)",
+        "warning": "\u26a0\ufe0f\u26a0\ufe0f THIS IS A RESOLUTION, NOT A BAR. The bar is +1.0 pts/deck on the deck-paired MARGIN and no branch reads this block. elo may never be quoted bare; a disagreement between the margin and the elo is DISCLOSED, not arbitrated."
+      },
+      "opponent_production_deviations": {
+        "value": [],
+        "address": "manifest:config.opponent.production_config_deviations",
+        "note": "\u26a0\ufe0f REPORTED, NEVER A BRANCH INPUT. Empty means 'no deviation FOUND', which only means 'matches the champion' when the YAML loader actually loaded (eval_fair_puct._load_prod_knobs says so on stderr when it did not)."
+      },
+      "se_anomaly": {
+        "realized": 0.4559603852178224,
+        "modelled": 0.482582700490289,
+        "ratio": 0.9448336725592957,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "_per_deck": [
+        -20.5,
+        13.5,
+        19.0,
+        17.0,
+        25.5,
+        -1.5,
+        10.5,
+        -16.5,
+        10.0,
+        30.0,
+        10.5,
+        5.0,
+        12.0,
+        -26.0,
+        -16.5,
+        -4.0,
+        -3.5,
+        12.5,
+        -17.5,
+        -10.0,
+        24.5,
+        10.5,
+        22.0,
+        0.5,
+        22.5,
+        -6.0,
+        -8.0,
+        18.5,
+        5.0,
+        -8.0,
+        13.5,
+        10.0,
+        7.5,
+        3.0,
+        -22.5,
+        -19.0,
+        -12.5,
+        3.5,
+        26.0,
+        0.5,
+        3.5,
+        -14.5,
+        16.5,
+        -11.5,
+        1.5,
+        -9.0,
+        25.0,
+        -19.5,
+        -2.5,
+        8.5,
+        15.5,
+        -1.0,
+        -12.5,
+        2.5,
+        17.5,
+        16.5,
+        -1.5,
+        -8.0,
+        -7.0,
+        -2.0,
+        -12.5,
+        -9.5,
+        -12.0,
+        -5.0,
+        3.0,
+        -7.0,
+        -21.5,
+        8.0,
+        -5.0,
+        -16.0,
+        1.5,
+        2.0,
+        0.5,
+        14.5,
+        -10.0,
+        0.5,
+        -13.0,
+        -19.5,
+        13.5,
+        -1.5,
+        0.5,
+        -13.5,
+        13.0,
+        -23.0,
+        -3.5,
+        7.5,
+        -13.5,
+        14.0,
+        -3.0,
+        5.0,
+        3.0,
+        11.5,
+        -7.5,
+        8.5,
+        -8.0,
+        5.5,
+        16.5,
+        -4.5,
+        4.0,
+        13.0,
+        -10.5,
+        -17.5,
+        -6.5,
+        17.0,
+        13.0,
+        -5.5,
+        6.5,
+        -13.5,
+        9.0,
+        -7.0,
+        11.0,
+        -21.5,
+        -1.0,
+        -2.5,
+        20.0,
+        11.5,
+        0.5,
+        9.5,
+        -3.5,
+        -23.5,
+        -12.0,
+        1.0,
+        9.5,
+        0.0,
+        -2.0,
+        -25.5,
+        3.0,
+        -12.0,
+        2.5,
+        -9.5,
+        1.5,
+        -15.0,
+        12.5,
+        3.0,
+        10.0,
+        10.0,
+        9.5,
+        7.0,
+        -14.0,
+        -0.5,
+        -6.5,
+        10.0,
+        -7.5,
+        8.5,
+        -14.5,
+        -6.5,
+        -19.0,
+        -16.5,
+        19.5,
+        -1.5,
+        -24.5,
+        16.0,
+        -7.0,
+        2.0,
+        21.5,
+        1.0,
+        -10.0,
+        -3.5,
+        10.0,
+        9.5,
+        3.5,
+        -11.0,
+        8.5,
+        -19.5,
+        -10.5,
+        5.5,
+        1.0,
+        6.0,
+        23.0,
+        16.5,
+        -24.0,
+        9.5,
+        -7.5,
+        -5.0,
+        1.0,
+        7.0,
+        -15.5,
+        15.0,
+        1.5,
+        10.5,
+        -5.5,
+        -6.0,
+        -10.0,
+        17.5,
+        -11.5,
+        -3.5,
+        10.5,
+        6.5,
+        17.5,
+        -15.0,
+        -7.0,
+        -13.0,
+        5.5,
+        24.0,
+        3.0,
+        12.0,
+        -5.5,
+        -5.0,
+        12.0,
+        18.5,
+        1.5,
+        -3.0,
+        26.0,
+        17.0,
+        -17.0,
+        6.5,
+        3.5,
+        -2.5,
+        15.5,
+        2.0,
+        -21.5,
+        -14.0,
+        19.0,
+        18.5,
+        25.5,
+        4.0,
+        13.5,
+        -19.5,
+        24.0,
+        -5.0,
+        9.5,
+        3.0,
+        -7.5,
+        5.5,
+        -10.5,
+        -0.5,
+        18.0,
+        -10.5,
+        3.0,
+        1.5,
+        -3.0,
+        14.5,
+        -6.5,
+        -17.5,
+        -3.5,
+        3.0,
+        15.5,
+        4.5,
+        -1.5,
+        -13.5,
+        0.5,
+        -5.5,
+        -8.0,
+        2.0,
+        28.5,
+        2.5,
+        -14.5,
+        11.5,
+        -2.5,
+        22.0,
+        0.5,
+        9.0,
+        -16.0,
+        -0.5,
+        24.0,
+        21.5,
+        13.0,
+        -7.0,
+        7.5,
+        -4.5,
+        -6.5,
+        28.0,
+        -4.0,
+        8.0,
+        6.0,
+        -11.5,
+        10.5,
+        1.0,
+        8.5,
+        -3.5,
+        26.5,
+        3.0,
+        -9.5,
+        -2.5,
+        11.0,
+        2.0,
+        -14.5,
+        17.0,
+        4.0,
+        7.5,
+        15.0,
+        4.5,
+        -3.0,
+        22.0,
+        12.0,
+        -3.0,
+        4.0,
+        0.5,
+        -16.0,
+        9.5,
+        -6.5,
+        30.0,
+        32.0,
+        11.5,
+        -15.0,
+        6.0,
+        14.5,
+        4.0,
+        0.5,
+        7.0,
+        -0.5,
+        13.5,
+        17.0,
+        9.5,
+        2.5,
+        -28.5,
+        3.5,
+        -16.5,
+        9.0,
+        4.0,
+        -26.5,
+        -15.5,
+        2.0,
+        7.5,
+        16.5,
+        -1.5,
+        -1.5,
+        1.0,
+        15.0,
+        11.5,
+        5.5,
+        -21.0,
+        -13.0,
+        -7.5,
+        -3.5,
+        -10.5,
+        -1.0,
+        12.0,
+        16.5,
+        -1.0,
+        4.0,
+        6.5,
+        -4.5,
+        -25.5,
+        -8.5,
+        -11.5,
+        -6.5,
+        -1.5,
+        -12.5,
+        6.5,
+        1.5,
+        19.0,
+        -10.5,
+        -2.5,
+        5.0,
+        -14.0,
+        9.5,
+        -9.0,
+        -4.0,
+        -3.0,
+        15.5,
+        9.0,
+        -6.0,
+        6.5,
+        4.0,
+        23.0,
+        47.5,
+        -15.5,
+        15.0,
+        -12.5,
+        7.0,
+        5.0,
+        13.0,
+        11.5,
+        -7.0,
+        -8.0,
+        -6.0,
+        -7.0,
+        6.0,
+        5.0,
+        10.5,
+        -10.0,
+        7.0,
+        9.5,
+        3.0,
+        4.0,
+        -9.0,
+        -24.0,
+        -10.0,
+        8.5,
+        -5.0,
+        -8.0,
+        0.5,
+        -7.0,
+        33.5,
+        2.5,
+        1.5,
+        4.0,
+        -7.5,
+        8.5,
+        7.5,
+        13.0,
+        22.0,
+        12.0,
+        -7.0,
+        1.5,
+        3.0,
+        3.0,
+        16.0,
+        -10.5,
+        10.0,
+        -13.5,
+        -2.0,
+        -9.5,
+        10.5,
+        -34.5,
+        11.5,
+        5.0,
+        6.5,
+        -27.0,
+        -15.0,
+        -15.5,
+        13.5,
+        10.0,
+        -25.5,
+        9.5,
+        -26.5,
+        -1.5,
+        11.0,
+        -4.0,
+        23.0,
+        -4.5,
+        0.0,
+        18.5,
+        -3.0,
+        17.0,
+        1.0,
+        -18.0,
+        -3.5,
+        1.0,
+        4.0,
+        21.5,
+        22.5,
+        -8.5,
+        -11.0,
+        -3.0,
+        12.5,
+        6.0,
+        0.5,
+        2.0,
+        -2.0,
+        1.0,
+        -25.5,
+        6.5,
+        -6.5,
+        -8.0,
+        -6.5,
+        -1.0,
+        29.5,
+        4.0,
+        -3.5,
+        3.5,
+        -14.5,
+        4.0,
+        17.0,
+        -4.5,
+        -7.5,
+        -1.0,
+        -1.5,
+        -11.5,
+        13.5,
+        -20.5,
+        -21.0,
+        2.0,
+        13.0,
+        -21.0,
+        3.0,
+        3.5,
+        10.0,
+        1.5,
+        -18.5,
+        -6.0,
+        9.5,
+        -20.5,
+        23.5,
+        12.0,
+        2.0,
+        24.5,
+        -3.0,
+        -8.5,
+        -32.5,
+        -15.0,
+        -16.0,
+        4.0,
+        -20.5,
+        -28.0,
+        22.5,
+        -7.0,
+        20.0,
+        8.5,
+        9.5,
+        7.5,
+        21.5,
+        -13.0,
+        -13.0,
+        11.0,
+        17.0,
+        -6.0,
+        6.0,
+        6.0,
+        -6.0,
+        2.0,
+        -7.0,
+        24.5,
+        -23.5,
+        -14.5,
+        23.5,
+        11.5,
+        -5.5,
+        -8.5,
+        14.5,
+        -15.5,
+        11.5,
+        -3.5,
+        6.5,
+        -8.0,
+        4.0,
+        10.5,
+        -3.0,
+        9.5,
+        2.0,
+        4.0,
+        -3.0,
+        -32.5,
+        -17.5,
+        -9.5,
+        -5.5,
+        11.0,
+        -5.0,
+        2.0,
+        2.0,
+        -3.0,
+        -11.0,
+        -16.0,
+        -14.5,
+        17.5,
+        -14.5,
+        -5.0,
+        -0.5,
+        -1.0,
+        14.5,
+        -6.0,
+        11.0,
+        0.0,
+        -18.5,
+        -2.0,
+        20.0,
+        -32.0,
+        21.5,
+        23.5,
+        9.0,
+        6.5,
+        -5.0,
+        8.5,
+        -18.5,
+        2.0,
+        -1.5,
+        1.0,
+        -13.0,
+        -12.5,
+        8.5,
+        -4.5,
+        23.5,
+        -0.5,
+        -4.5,
+        18.0,
+        0.0,
+        0.0,
+        -17.0,
+        -10.0,
+        -17.5,
+        9.0,
+        10.0,
+        3.0,
+        -8.5,
+        -9.0,
+        10.5,
+        -14.5,
+        -6.5,
+        1.0,
+        -29.5,
+        -4.5,
+        22.0,
+        -14.0,
+        11.0,
+        3.5,
+        -11.5,
+        -7.5,
+        -12.0,
+        -21.0,
+        1.5,
+        -5.5,
+        3.5,
+        -8.5,
+        14.5,
+        -2.0,
+        1.5,
+        -16.5,
+        -15.0,
+        6.5,
+        9.0,
+        -2.5,
+        6.5,
+        11.5,
+        -20.0,
+        -10.0,
+        -12.0,
+        -10.5,
+        6.5,
+        -17.0,
+        0.5,
+        -1.0,
+        -5.0,
+        24.5,
+        -13.0,
+        6.0,
+        9.5,
+        24.0,
+        6.0,
+        1.0,
+        9.5,
+        16.5,
+        4.0,
+        21.5,
+        0.0,
+        2.0,
+        -2.0,
+        -7.0,
+        8.0,
+        -5.5,
+        20.5,
+        9.5,
+        6.5,
+        -6.5,
+        9.0,
+        18.5,
+        28.5,
+        -12.0,
+        -15.5,
+        -3.5,
+        -22.0,
+        -10.5,
+        -3.5,
+        7.0,
+        -7.5,
+        1.0,
+        -12.0,
+        -16.5,
+        -6.0,
+        2.0,
+        11.5,
+        7.5,
+        4.5,
+        8.0,
+        34.0,
+        16.5,
+        -8.5,
+        13.0,
+        6.0,
+        22.0,
+        -11.0,
+        -5.5,
+        -3.0,
+        7.0,
+        -1.0,
+        -8.0,
+        -18.5,
+        -12.0,
+        -12.0,
+        8.5,
+        -7.5,
+        -7.0,
+        20.5,
+        10.5,
+        -2.0,
+        2.5,
+        6.0,
+        4.0,
+        11.5,
+        -4.5,
+        -19.5,
+        -6.0,
+        -4.0,
+        0.0,
+        -10.5,
+        -9.0,
+        -0.5,
+        7.5,
+        -1.0,
+        -3.0,
+        -1.0,
+        10.5,
+        -2.5,
+        -18.5,
+        31.5,
+        -10.0,
+        1.5,
+        3.5,
+        -4.5,
+        12.0,
+        13.0,
+        -7.0,
+        0.0,
+        -23.5,
+        -7.5,
+        -21.0,
+        -7.5,
+        9.5,
+        20.5,
+        5.0,
+        -6.5,
+        -3.5,
+        5.0,
+        22.5,
+        -11.5,
+        5.0,
+        -4.5,
+        19.5,
+        -5.0,
+        -7.5,
+        0.0,
+        25.5,
+        7.5,
+        -1.0,
+        10.5,
+        1.5,
+        1.0,
+        7.5,
+        -18.0,
+        -12.0,
+        15.0,
+        49.5,
+        18.0,
+        -13.5,
+        15.0,
+        27.0,
+        -4.0,
+        2.5,
+        9.5,
+        -11.0,
+        0.5,
+        14.5,
+        1.5,
+        17.0,
+        12.0,
+        7.0,
+        -1.0,
+        -6.0,
+        -10.0,
+        -33.0,
+        -2.0,
+        5.0,
+        7.0,
+        3.5,
+        -3.5,
+        16.5,
+        7.5,
+        -18.5,
+        5.5,
+        11.5,
+        29.5,
+        -16.0,
+        11.0,
+        -5.5,
+        -20.5,
+        -14.0,
+        4.5,
+        10.0,
+        9.0,
+        -3.5,
+        -13.0,
+        -13.0,
+        34.5,
+        -26.0,
+        10.0,
+        -9.5,
+        -11.5,
+        7.5,
+        -10.0,
+        -0.5,
+        7.0,
+        16.0,
+        -16.5,
+        31.5,
+        16.5,
+        31.0,
+        -12.5,
+        10.5,
+        -2.0,
+        -2.5,
+        5.0,
+        10.0,
+        -16.0,
+        -10.5,
+        -8.0,
+        15.0,
+        -26.0,
+        -13.0,
+        -7.0,
+        16.5
+      ],
+      "branch": "H-UNRESOLVED",
+      "riders": [
+        "\u26d4\u26d4 EVERY CONTEXT ROW IS ON ANOTHER BAND AND NONE IS EVER POOLED OR z-COMBINED WITH THIS CELL \u2014 INCLUDING ROUND 1's. Six are arbiter-OFF (a different AGENT PAIR on top of a different band); the seventh is round 1 of this same H2H at band 168e9, which is the SAME agent pair and is therefore the row most at risk of being averaged in. \u26d4 IT MAY NOT BE. CL-068 measured 1.8-2.2x over-dispersion on merely cross-band contrasts in BOTH statistics, and round 1's own READ_RULE \u00a78.2 pre-committed that its cell could not be pooled with an extension anyway. THIS ROUND IS 800 FRESH DECKS, NOT 400 + 400.",
+        "\u2b50\u2b50 BOX ASSIGNMENT IS THROUGHPUT-ONLY AND WAS PRE-REGISTERED AS MOVABLE MID-ROUND (DESIGN \u00a76.4). The 800 decks are executed as 8 chunks of 100 that TILE the band; a chunk is the unit of box assignment and of provenance; G-NODUP proves the realized ranges are disjoint and every (deck, seat) appears exactly once; G-HOST publishes the chunk -> host -> range map and voids on NOTHING about which box played what. \u26d4 NO CROSS-BOX STATISTIC EXISTS: both seatings of every deck are played inside one chunk on one box, so the box is COMMON TO BOTH ARMS of every contrast and cross-box float identity is not relied on anywhere. Cross-box SOURCE identity is required and is G-REV's (cross_box_rev_gate, the IS-A1 fold).",
+        "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. H-ADOPT licenses PROPOSING the flip and funding step 3; the flip itself needs an OWNER RULING, exactly as the k16 and B=64 folds did.",
+        "\u2b50 THE ARBITER IS ARMED ON BOTH SEATS AT THE FULL DEPLOYED SPEC (B=64, J=4, argmax, salt tiearb2-deploy-v1, eps 0.0, phase_gate all). Its rollout variance therefore rides BOTH arms and CRN deck-pairing absorbs the deck draw as usual \u2014 but the arbiter is STOCHASTIC, so it is a variance source round 1 measured directly: sigma_D 13.6495, INSIDE the arb-off siblings' 13.02-14.30 spread (DESIGN \u00a73.1).",
+        "\u26d4 THIS IS ONE CELL ON ONE FRESH BAND, which retires decision_influenced=yes the moment the read-out lands. feedback_results_table_source_of_truth's confirm-before-promotion rule is satisfied for the AXIS (this cell IS the confirm of the 155e9 screen) and NOT for the deployed configuration beyond it \u2014 step 3 is the out-of-family check and it comes before any general claim.",
+        "\u26a0\ufe0f elo may never be quoted bare, and in this round it is not a bar at all: the bar is +1.0 pts/deck on the deck-paired margin. A disagreement between the margin and the elo is DISCLOSED, never arbitrated.",
+        "\u26a0\ufe0f B=0 -> B=64 TRANSFER RUNS THE OTHER WAY HERE. This cell is the leg that PRICES the ladder's arbiter-off deviation. It therefore says nothing about an arbiter-FREE champion, and no reading here may be quoted back onto the 155e9/164-167e9 cells.",
+        "\u26d4\u26d4 H-UNRESOLVED IS NOT A NULL AND NOT A BOUND (feedback_noisy_plateau_not_a_conclusion). The cell did not resolve its bar in either direction.",
+        "\u26d4 IT DOES NOT DISCHARGE STEP 2 OF THE ADOPTION CHAIN, and it does not license proposing the PRODUCTION.yaml flip. READ_RULE \u00a78 pre-registers its probability at n=800 with the +1.0 bar (~47% under a true null; ~95% if the true effect is round 1's own +1.019) and \u00a78.2 pre-registers its price.",
+        "\u26d4 THE CELL MAY NOT BE EXTENDED, TOPPED UP OR RE-READ AT LARGER n ON ITS OWN BAND. That is the rodv3 failure mode (n bought after seeing the sign), and CL-068 means the extension could not be pooled with the original anyway. A re-run is a NEW round: new pair, new band, new owner funding.",
+        "\u26d4\u26d4 AND A SECOND UNRESOLVED READ IS NOT A LICENCE TO KEEP BUYING ROUNDS. Round 1 read H-UNRESOLVED at n=400; this round doubled n and READ_RULE \u00a78.3 states, BEFORE game 1, what a second one means: the axis is bounded above by what the program can afford, not by what it has measured, and the honest next act is to say so in docs/LEVER_INDEX.md and STOP \u2014 not to fund round 3 at n=1600. Escalating n after each unresolved read is the rodv3 failure mode wearing a new band each time."
+      ]
+    }
+  },
+  "branches": {
+    "CELL_H2H2_FPU02": "H-UNRESOLVED"
+  },
+  "verdict": {
+    "verdict": "H-UNRESOLVED",
+    "voided": [],
+    "missing": [],
+    "bar": 1.0,
+    "why": "\u26d4\u26d4 NOT A NULL AND NOT A BOUND (feedback_noisy_plateau_not_a_conclusion). The round bought no verdict on the deployed configuration. READ_RULE \u00a78 pre-registers its probability at n=800 (~47% under a true null; ~95% if the true effect is round 1's own +1.019), \u00a78.2 pre-commits its price, and \u00a78.3 pre-commits that a SECOND unresolved read closes the axis on affordability rather than funding round 3."
+  },
+  "golden_gate_inheritance": {
+    "inherited_from": "/home/doctor/projects/carcassone/measurement/fpu_ladder_prep/FPU_BITEXACT_LADDER.json",
+    "argument": "\u2b50\u2b50 THE GOLDEN-GATE INHERITANCE, SURFACED IN EVERY READ-OUT.\n\n    \u26d4 THIS ROUND DOES NOT BUILD A NEW GOLDEN GATE, AND `DESIGN.md` \u00a79 STATES THE\n    ARGUMENT RATHER THAN ASSUMING IT. In short:\n\n      * `../fpu_ladder_prep/FPU_BITEXACT_LADDER.json` is `PASS` on wheel\n        `a9bb2311ab9a635d`, ran ~14 h ago, and proves `fpu=None` is the champion\n        BIT-FOR-BIT on that wheel plus a POSITIVE control at each of\n        `0.05/0.1/0.15/0.3` plus `DOSE-DISTINCT`. `run_cells.sh` re-asserts the\n        artefact's `wheel.binary_sha` against THIS BOX's installed binary, so the\n        inheritance is MECHANICALLY CHECKED and not asserted.\n      * The ARBITER path rode the b64-era certificates \u2014 `tiearb_widening_\n        20260817/b64_cell/GATE_NEST.json` (`G-NEST`: the CRN cap draw, world\n        seeds, playout seeds and world bytes are identical at B16 \u2282 B64) \u2014 plus\n        this morning's wiring smoke, which drove the real argparse and read the\n        resolved arbiter dict back out of an EMITTED manifest.\n      * \u26d4\u26d4 **TWO GAPS REMAIN, AND THEY ARE NAMED:** (1) no certificate has ever\n        exercised `fpu` AND the arbiter TOGETHER, and (2) `0.2` is not one of the\n        ladder gate's four control doses (its own control lives in the parent\n        round's `FPU_BITEXACT.json`, on a wheel that no longer exists).\n      * \u2b50 THE GAPS ARE PAID BY `--smoke`'s IDENT LEGS (`--ident-mode`), which\n        are `POSITIVE-0.2-WITH-THE-ARBITER-LIVE` and a cross-process\n        reproducibility check, at the golden gate's own budget.\n    ",
+    "gaps_paid_by": "the launcher's --smoke IDENT legs, adjudicated by `analyze_h2h.py --ident-mode` into IDENT_<role>.json",
+    "arbiter_prior_certificates": [
+      "measurement/tiearb_widening_20260817/b64_cell/GATE_NEST.json (G-NEST, 2026-08-20) \u2014 CRN nesting B16 \u2282 B64, PRE-a9bb2311 wheel, CANDIDATE seat only",
+      "/mnt/c/carc-shared/fpu_ladder/SMOKE_ARBON_H2H (2026-08-31 wiring smoke, n=4 THROWAWAY) \u2014 the resolved arbiter dict incl. phase_gate read back off an EMITTED manifest, CANDIDATE seat only (the opponent seat could not be armed until that afternoon)"
+    ],
+    "verdict": "PASS",
+    "ok": true,
+    "failed": [],
+    "wheel": {
+      "binary_sha": "a9bb2311ab9a635d",
+      "build": "carc_rs-0.1.0+aa84a40ebafb+rustcunpinned",
+      "host": "Doctor",
+      "note": "\u26a0\ufe0f carc_rs_binary_sha is BOX-LOCAL: two boxes compiling identical source produce different bytes. EACH BOX therefore runs its OWN golden gate before its own rungs, and run_cells.sh compares this sha to that box's installed binary."
+    },
+    "checks": {
+      "ONE-WHEEL": true,
+      "TWO-TREES": true,
+      "SAME-SEEDS": true,
+      "SAME-BUDGET": true,
+      "IDENTITY": true,
+      "POSITIVE-0.05": true,
+      "POSITIVE-0.1": true,
+      "POSITIVE-0.15": true,
+      "POSITIVE-0.3": true,
+      "DOSE-DISTINCT": true,
+      "RUNG-SET": true,
+      "AUDIT-ADJUDICATED": true
+    },
+    "why": "\u2b50 INHERITED, WITH THE WHEEL RE-ASSERTED AT LAUNCH. \u26d4 The two named gaps (fpu x arbiter together; a 0.2 control on this wheel) are NOT covered by it and are paid by the IDENT legs."
+  },
+  "riders": [
+    "\u26d4\u26d4 EVERY CONTEXT ROW IS ON ANOTHER BAND AND NONE IS EVER POOLED OR z-COMBINED WITH THIS CELL \u2014 INCLUDING ROUND 1's. Six are arbiter-OFF (a different AGENT PAIR on top of a different band); the seventh is round 1 of this same H2H at band 168e9, which is the SAME agent pair and is therefore the row most at risk of being averaged in. \u26d4 IT MAY NOT BE. CL-068 measured 1.8-2.2x over-dispersion on merely cross-band contrasts in BOTH statistics, and round 1's own READ_RULE \u00a78.2 pre-committed that its cell could not be pooled with an extension anyway. THIS ROUND IS 800 FRESH DECKS, NOT 400 + 400.",
+    "\u2b50\u2b50 BOX ASSIGNMENT IS THROUGHPUT-ONLY AND WAS PRE-REGISTERED AS MOVABLE MID-ROUND (DESIGN \u00a76.4). The 800 decks are executed as 8 chunks of 100 that TILE the band; a chunk is the unit of box assignment and of provenance; G-NODUP proves the realized ranges are disjoint and every (deck, seat) appears exactly once; G-HOST publishes the chunk -> host -> range map and voids on NOTHING about which box played what. \u26d4 NO CROSS-BOX STATISTIC EXISTS: both seatings of every deck are played inside one chunk on one box, so the box is COMMON TO BOTH ARMS of every contrast and cross-box float identity is not relied on anywhere. Cross-box SOURCE identity is required and is G-REV's (cross_box_rev_gate, the IS-A1 fold).",
+    "\u26d4 governance/PRODUCTION.yaml is UNTOUCHED on every branch. H-ADOPT licenses PROPOSING the flip and funding step 3; the flip itself needs an OWNER RULING, exactly as the k16 and B=64 folds did.",
+    "\u2b50 THE ARBITER IS ARMED ON BOTH SEATS AT THE FULL DEPLOYED SPEC (B=64, J=4, argmax, salt tiearb2-deploy-v1, eps 0.0, phase_gate all). Its rollout variance therefore rides BOTH arms and CRN deck-pairing absorbs the deck draw as usual \u2014 but the arbiter is STOCHASTIC, so it is a variance source round 1 measured directly: sigma_D 13.6495, INSIDE the arb-off siblings' 13.02-14.30 spread (DESIGN \u00a73.1).",
+    "\u26d4 THIS IS ONE CELL ON ONE FRESH BAND, which retires decision_influenced=yes the moment the read-out lands. feedback_results_table_source_of_truth's confirm-before-promotion rule is satisfied for the AXIS (this cell IS the confirm of the 155e9 screen) and NOT for the deployed configuration beyond it \u2014 step 3 is the out-of-family check and it comes before any general claim.",
+    "\u26a0\ufe0f elo may never be quoted bare, and in this round it is not a bar at all: the bar is +1.0 pts/deck on the deck-paired margin. A disagreement between the margin and the elo is DISCLOSED, never arbitrated.",
+    "\u26a0\ufe0f B=0 -> B=64 TRANSFER RUNS THE OTHER WAY HERE. This cell is the leg that PRICES the ladder's arbiter-off deviation. It therefore says nothing about an arbiter-FREE champion, and no reading here may be quoted back onto the 155e9/164-167e9 cells."
+  ],
+  "adoption_chain": [
+    "1. THE DOSE LADDER / THE PARENT SCREEN \u2014 a dose reads positive on its own fresh band with the arbiter OFF both sides. \u2b50 DONE: fpu=0.2 read F-RESURRECT (+2.951, z +4.32, band 155e9); the ladder that bracketed it read LADDER-UNRESOLVED (band 164-167e9).",
+    "2. \u2b50\u2b50 THIS LEG \u2014 PRODUCTION H2H: the dose vs the DEPLOYED champion with the TIE ARBITER ARMED ON BOTH SEATS (B=64, PRODUCTION.yaml since 2026-08-20), on a FRESH band. \u26d4 THE LEG THAT PRICES THE ARBITER-OFF DEVIATION every earlier fpu reading carries. \u26a0\ufe0f ROUND 1 (band 168e9, n=400) read H-UNRESOLVED and DISCHARGED NOTHING; THIS IS ROUND 2 (band 169e9, n=800), a separate owner-funded round whose numbers stand alone.",
+    "3. CARCASUM EXTERNAL \u2014 the arm-on T-TRANSFER protocol, the only out-of-family check this program has (feedback_evloss_grader's F4 lesson: judged headroom is family-relative, so out-of-family corroboration comes first).",
+    "4. E4 EPOCH on the phone.",
+    "\u26d4 EACH LEG IS ITS OWN PREREG, ITS OWN BAND AND ITS OWN OWNER FUNDING. A cell firing here funds NOTHING automatically."
+  ],
+  "companions": {
+    "_warning": "\u26d4 COMPANIONS \u2014 NEVER A BRANCH INPUT.",
+    "context_rows": {
+      "\u2b50\u2b50 fpu=0.2 \u2014 fpu_h2h ROUND 1 CELL_H2H_FPU02, band 168e9, ARB ON BOTH SEATS": {
+        "M": 1.01875,
+        "se": 0.6824744405461254,
+        "z": 1.4927298950342849,
+        "LB95": -0.3461988810922507,
+        "UB95": 2.3836988810922506,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 1.7371924043128577,
+        "ci95_elo_paired": [
+          -15.63480402312976,
+          19.109188831755475
+        ],
+        "winrate": 0.5025,
+        "branch": "H-UNRESOLVED",
+        "note": "\u2b50\u2b50 THE DIRECT PREDECESSOR \u2014 the SAME cell, the SAME bar, one band lower, at HALF this round's n. \u26d4\u26d4 AND IT IS STILL A CONTEXT ROW: NEVER POOLED, NEVER z-COMBINED, NEVER AVERAGED WITH THIS CELL. A different band is a different band, and CL-068 measured 1.8-2.2x over-dispersion on exactly that class of contrast in BOTH statistics, with an identity control exonerating the harness. \u26d4 Round 1's own READ_RULE \u00a78.2 forbids extending it at larger n on its own band (the rodv3 failure mode) and states that the extension could not be pooled with the original ANYWAY \u2014 so this round is a fresh measurement that stands alone, not a top-up. \u2b50 What round 1 legitimately contributes is a DESIGN input spent before game 1: its realized DISPERSION (sigma_D 13.6495) is this round's sizing constant, because it is the only arbiter-on-both-seats cell in existence."
+      },
+      "fpu=0.2 \u2014 fpu_resurrection CELL_FPU02, band 155e9, ARB OFF": {
+        "M": 2.95125,
+        "se": 0.6825808836692004,
+        "z": 4.3236634230592745,
+        "LB95": 1.586088232661599,
+        "UB95": 4.316411767338401,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 26.1,
+        "ci95_elo_paired": [
+          8.69,
+          43.53
+        ],
+        "winrate": 0.5375,
+        "branch": "F-RESURRECT",
+        "note": "\u2b50\u2b50 THE DOSE THIS CELL CONFIRMS. The first measurement of `fpu_reduction` on the classical champion (the knob was structurally unreachable on its backend until 2026-08-29). \u26d4 It licensed PROPOSING follow-on work and nothing else, and it is an ARBITER-OFF result on band 155e9."
+      },
+      "fpu=0.4 \u2014 fpu_resurrection CELL_FPU04, band 156e9, ARB OFF": {
+        "M": 0.7543859649122807,
+        "se": 0.7153318548949373,
+        "z": 1.0545957931973815,
+        "LB95": -0.676277744877594,
+        "UB95": 2.1850496747021553,
+        "n_paired": 399,
+        "n_games": 799,
+        "elo": -1.74,
+        "ci95_elo_paired": [
+          -19.12,
+          15.64
+        ],
+        "winrate": 0.4975,
+        "branch": "F-UNRESOLVED (AMENDED \u2014 FPU-A1)",
+        "note": "\u26a0\ufe0f AMENDED from a frozen `U-VOID`: the adjudicator's G-N/G-DECKS condition columns were stricter than their own frozen prose. \u2b50 THIS ROUND'S G-N/G-DECKS ARE WRITTEN TO THAT PROSE, carried from the ladder."
+      },
+      "fpu=0.05 \u2014 fpu_ladder CELL_FPU005, band 164e9, ARB OFF": {
+        "M": 0.08125,
+        "se": 0.6952455594600834,
+        "z": 0.11686,
+        "LB95": -1.30924,
+        "UB95": 1.47174,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": -15.65,
+        "ci95_elo_paired": [
+          -33.03,
+          1.74
+        ],
+        "winrate": 0.4775,
+        "branch": "R-BOUNDED",
+        "note": "the ladder's low bracket point \u2014 bounded below +1.5."
+      },
+      "fpu=0.10 \u2014 fpu_ladder CELL_FPU010, band 165e9, ARB OFF": {
+        "M": 1.5025,
+        "se": 0.6981,
+        "z": 2.152,
+        "LB95": 0.1063,
+        "UB95": 2.8987,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 17.39,
+        "ci95_elo_paired": [
+          -0.01,
+          34.78
+        ],
+        "winrate": 0.525,
+        "branch": "R-UNRESOLVED",
+        "note": "the ladder's middle bracket point."
+      },
+      "fpu=0.15 \u2014 fpu_ladder CELL_FPU015, band 166e9, ARB OFF": {
+        "M": 1.835,
+        "se": 0.6861,
+        "z": 2.674,
+        "LB95": 0.4627,
+        "UB95": 3.2073,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": 9.99,
+        "ci95_elo_paired": [
+          -7.39,
+          27.37
+        ],
+        "winrate": 0.5144,
+        "branch": "R-UNRESOLVED",
+        "note": "\u2b50 the ladder's LARGEST point estimate. \u26d4 It did NOT clear the ladder's +1.5 bar and it would NOT clear this round's +1.0 bar either (LB95 +0.463) \u2014 `sanity_check()` pins that, so nobody reads the lower bar as a bar the ladder already cleared."
+      },
+      "fpu=0.30 \u2014 fpu_ladder CELL_FPU030, band 167e9, ARB OFF": {
+        "M": 1.0588,
+        "se": 0.7152,
+        "z": 1.48,
+        "LB95": -0.3716,
+        "UB95": 2.4891,
+        "n_paired": 400,
+        "n_games": 800,
+        "elo": -3.04,
+        "ci95_elo_paired": [
+          -20.41,
+          14.33
+        ],
+        "winrate": 0.4956,
+        "branch": "R-UNRESOLVED",
+        "note": "the ladder's interior point above."
+      }
+    },
+    "context_warning": "\u26d4\u26d4 CONTEXT ROWS, NEVER A BRANCH INPUT AND NEVER POOLED. This cell is on band 169e9 with the arbiter ARMED ON BOTH SEATS. Six of the seven rows above are on a different band AND are ARBITER-OFF cells \u2014 worse than cross-band, because that is a different AGENT PAIR and not a different deck draw. \u26d4\u26d4 AND THE SEVENTH \u2014 ROUND 1, band 168e9 \u2014 IS THE ONE MOST LIKELY TO BE MIS-USED, precisely BECAUSE it is the same agent pair: it is STILL cross-band, CL-068 measured 1.8-2.2x over-dispersion on exactly that class in BOTH the elo and the deck-paired-margin statistics, and round 1's own READ_RULE \u00a78.2 pre-committed that its cell may not be extended or topped up and could not be pooled with an extension anyway. \u26d4 THIS ROUND IS 800 FRESH DECKS, NOT 400 + 400. \u2b50 What these rows legitimately did is a DESIGN act, spent before any number of this round exists: they fixed WHICH DOSE to confirm (0.2, the only dose that has ever fired), WHAT BAR is worth paying for (unmoved from round 1), and \u2014 from round 1's realized DISPERSION alone \u2014 what n to fund. \u26d4 No branch below reaches back into them.",
+    "round_1_verdict_and_its_mandate": "H-UNRESOLVED (2026-08-31, band 168e9, n=400 decks, ARB ON BOTH SEATS): M = +1.019 +/- 0.683, z +1.49, LB95 -0.346, UB95 +2.384, against the LB95 >= +1.0 ADOPT bar. \u26d4\u26d4 NOT A NULL AND NOT A BOUND: round 1 bought NO verdict on the deployed configuration, did NOT discharge step 2 of the adoption chain, did NOT license step 3, and did NOT retract the arbiter-off +2.951. \u2b50 Its \u00a78.2 pre-committed the price of exactly that read BEFORE its game 1: the band is spent either way, the cell may NOT be extended / topped up / re-read at larger n on its own band (the rodv3 failure mode), and a re-run is A NEW ROUND needing a NEW PAIR, a NEW BAND CLAIM and FRESH OWNER FUNDING. \u2b50\u2b50 THIS ROUND IS THAT, EXECUTED TO THE LETTER \u2014 new pair, new band (169e9), owner-funded 2026-08-31 night, and the bar UNMOVED.",
+    "arb_on_sizing_sibling": {
+      "fpu_h2h ROUND 1 / CELL_H2H_FPU02 (b168e9, n=400 decks, \u2b50 ARB ON BOTH SEATS)": {
+        "realized_se": 0.6824744405461254,
+        "implied_sigma_D": 13.649488810922508,
+        "note": "\u2b50\u2b50 THE SIZING CONSTANT OF THIS ROUND COMES FROM HERE. It is the ONLY arbiter-on-both-seats cell in existence and it is the direct predecessor of this one \u2014 same arms, same budget, same arbiter dict, same leaf, same rules, one band lower. \u26d4 Its MEAN is a CONTEXT ROW and is never pooled (CL-068); its DISPERSION is a design input, spent before game 1."
+      }
+    },
+    "ladder_verdict": "LADDER-UNRESOLVED (2026-08-31): CELL_FPU005 R-BOUNDED; 0.10 / 0.15 / 0.30 all R-UNRESOLVED; none adopted. \u26d4\u26d4 THAT IS NOT A NULL AND NOT A BOUND. The ladder's own READ_RULE \u00a78.3 is explicit that LADDER-UNRESOLVED does NOT discharge the incumbent's confirmation leg the way LADDER-DEAD would \u2014 so THIS ROUND IS FUNDED BY THE OWNER, on the shape of the curve (three of four rungs positive, peaking at the incumbent), and NOT by an automatic trigger the ladder fired. \u26a0\ufe0f `feedback_execute_prereg_triggers` does not apply: no prereg branch authorised this. The owner did.",
+    "production_fold_precedents": {
+      "k16x1376 budget promotion (2026-08-30, h2h_22016_20260824, b148e9)": {
+        "D_pts_per_deck": 1.229,
+        "z": 2.52,
+        "n_decks": 700,
+        "note": "\u2b50 folded into PRODUCTION.yaml on this. Type-M rider stands (the realized effect was below the cell's own MDE, so the MAGNITUDE is biased up and the SIGN is the reliable part)."
+      },
+      "tie-arbiter B=64 fold (2026-08-20, tiearb_widening b64_cell, b139e9)": {
+        "D_pts_per_game": 1.7167,
+        "z": 2.6561,
+        "n_decks": 750,
+        "note": "\u2b50 folded into PRODUCTION.yaml on this, over a frozen B-COSTKILL verdict, by a fresh owner ruling."
+      }
+    },
+    "production_fold_note": "\u2b50 These are what the bar is DERIVED FROM (DESIGN \u00a73), and they are a DESIGN act spent before any number of this round exists. \u26d4 They are not comparanda: both are cross-band and neither measures this knob.",
+    "sizing_siblings": {
+      "fpu_resurrection/CELL_FPU02 (b155e9, n=400, ARB OFF)": 13.65,
+      "fpu_resurrection/CELL_FPU04 (b156e9, n=399, ARB OFF)": 14.29,
+      "fpu_resurrection/CELL_CPUCT10 (b157e9, n=400, ARB OFF)": 13.02,
+      "fpu_ladder/CELL_FPU005 (b164e9, n=400, ARB OFF)": 13.904,
+      "fpu_ladder/CELL_FPU010 (b165e9, n=400, ARB OFF)": 13.962,
+      "fpu_ladder/CELL_FPU015 (b166e9, n=400, ARB OFF)": 13.722,
+      "fpu_ladder/CELL_FPU030 (b167e9, n=400, ARB OFF)": 14.304,
+      "fpu_h2h ROUND 1/CELL_H2H_FPU02 (b168e9, n=400, \u2b50 ARB ON)": 13.6495
+    },
+    "sizing_siblings_warning": "\u2b50 THE MODEL (sigma_D = 13.6495) IS ROUND 1's OWN REALIZED DISPERSION \u2014 the only ARBITER-ON-BOTH-SEATS measurement in existence, and this round's exact agent pair. \u26a0\ufe0f The other seven rows are ARBITER-OFF and are CORROBORATION only: they bracket 13.02-14.30 and the arb-on realization lands inside that spread. \u26d4 It remains POWER ARITHMETIC: every branch is adjudicated at the cell's OWN realized SE (READ_RULE \u00a71), and se_anomaly REPORTS the ratio without ever entering a branch.",
+    "read_distribution_at_launch_time_model": {
+      "delta=0 (true null)": {
+        "delta": 0.0,
+        "se": 0.482582700490289,
+        "bar": 1.0,
+        "H-ADOPT": 2.3287212898348564e-05,
+        "H-BOUNDED": 0.5060220047979321,
+        "H-NEGATIVE": 0.02275013194817921,
+        "H-UNRESOLVED": 0.4712045760409903,
+        "P(bounded below the bar)": 0.5287721367461113
+      },
+      "delta=+1.0 (exactly at the bar)": {
+        "delta": 1.0,
+        "se": 0.482582700490289,
+        "bar": 1.0,
+        "H-ADOPT": 0.02275013194817921,
+        "H-BOUNDED": 0.02272684473528086,
+        "H-NEGATIVE": 2.3287212898348564e-05,
+        "H-UNRESOLVED": 0.9544997361036416,
+        "P(bounded below the bar)": 0.02275013194817921
+      },
+      "\u26d4\u26d4 delta=+1.019 (ROUND 1's OWN point estimate)": {
+        "delta": 1.01875,
+        "se": 0.482582700490289,
+        "bar": 1.0,
+        "H-ADOPT": 0.02493096458913513,
+        "H-BOUNDED": 0.02071263397155909,
+        "H-NEGATIVE": 1.9694292172189876e-05,
+        "H-UNRESOLVED": 0.9543367071471336,
+        "P(bounded below the bar)": 0.02073232826373128
+      },
+      "delta=+1.835 (the ladder's largest point estimate)": {
+        "delta": 1.835,
+        "se": 0.482582700490289,
+        "bar": 1.0,
+        "H-ADOPT": 0.39368528951551085,
+        "H-BOUNDED": 9.563279166424632e-05,
+        "H-NEGATIVE": 3.2675064876031e-09,
+        "H-UNRESOLVED": 0.6062190744253184,
+        "P(bounded below the bar)": 9.563605917073392e-05
+      },
+      "delta=+2.0": {
+        "delta": 2.0,
+        "se": 0.482582700490289,
+        "bar": 1.0,
+        "H-ADOPT": 0.5287721367461113,
+        "H-BOUNDED": 2.328681148416889e-05,
+        "H-NEGATIVE": 4.014141796737647e-10,
+        "H-UNRESOLVED": 0.4712045760409903,
+        "P(bounded below the bar)": 2.3287212898348564e-05
+      },
+      "delta=+2.951 (a repeat of the incumbent)": {
+        "delta": 2.95125,
+        "se": 0.482582700490289,
+        "bar": 1.0,
+        "H-ADOPT": 0.9794910202531836,
+        "H-BOUNDED": 7.547407143704277e-10,
+        "H-NEGATIVE": 2.220446049250313e-16,
+        "H-UNRESOLVED": 0.02050897899207549,
+        "P(bounded below the bar)": 7.547409364150326e-10
+      },
+      "mde_50pct_adopt_power": 1.965165400980578,
+      "n_decks_for_adopt_power(+2.951, 0.80)": 396,
+      "n_decks_for_adopt_power(+2.0, 0.80)": 1505,
+      "n_decks_for_adopt_power(+1.835, 0.80)": 2158,
+      "\u26d4\u26d4 n_decks_for_adopt_power(+1.019 = ROUND 1's estimate, 0.80)": 4279208,
+      "n_decks_for_bounded_power(0.80)": 1505,
+      "note": "\u26d4 MODELLED at se_model(800)=0.4826, PRE-REGISTERED in READ_RULE \u00a78 before game 1. Every BRANCH above is adjudicated at the cell's OWN REALIZED SE, never at this. \u26d4\u26d4 READ THE +1.019 ROW: if the true effect is what round 1 measured, THIS ROUND IS BLIND TO IT (~95% unresolved, and over four MILLION decks would be needed). That is the round's central limitation and it is stated before game 1."
+    }
+  }
+}
