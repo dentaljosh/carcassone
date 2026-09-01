@@ -1,0 +1,267 @@
+{
+ "schema": "defense-primary-pin-verification/v1",
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "execution": {
+  "backend": "rust",
+  "rust_threads": 1,
+  "parallel_workers": null,
+  "profile": "desktop",
+  "source": "profile"
+ },
+ "budget_pin": {
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "exact_max_k": 2,
+  "seed": 0
+ },
+ "resolved": {
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "exact_max_k": 2,
+  "threads": 1,
+  "seed": 0,
+  "jrules_prior_dose": 0.0,
+  "jrules_prior_scope": "all",
+  "jrules_prior_mask": 31,
+  "tiearb_enabled": false,
+  "tiearb_b": 16
+ },
+ "source": "measurement/e1b_armed_continuation_20260901/targets_continuation.jsonl",
+ "n_checked": 20,
+ "n_action_match": 20,
+ "n_divergence_verdict_match": 20,
+ "by_stratum": {
+  "invasion": 4,
+  "defense": 8,
+  "control": 6,
+  "farm_capture": 2
+ },
+ "PASS": true,
+ "wall_s": 18.4,
+ "checks": [
+  {
+   "game": "1785982194_705585.json",
+   "ply": 68,
+   "stratum": "invasion",
+   "banked_counterfactual": 751,
+   "rederived_counterfactual": 751,
+   "match": true,
+   "played_action": 1558,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1785982194_705585.json",
+   "ply": 86,
+   "stratum": "defense",
+   "banked_counterfactual": 840,
+   "rederived_counterfactual": 840,
+   "match": true,
+   "played_action": 1464,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1785984310_1698417952.json",
+   "ply": 40,
+   "stratum": "control",
+   "banked_counterfactual": 1437,
+   "rederived_counterfactual": 1437,
+   "match": true,
+   "played_action": 1453,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1785986044_1911511187.json",
+   "ply": 18,
+   "stratum": "defense",
+   "banked_counterfactual": 1241,
+   "rederived_counterfactual": 1241,
+   "match": true,
+   "played_action": 1240,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1785986044_1911511187.json",
+   "ply": 40,
+   "stratum": "invasion",
+   "banked_counterfactual": 1444,
+   "rederived_counterfactual": 1444,
+   "match": true,
+   "played_action": 1260,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786045035_338139.json",
+   "ply": 60,
+   "stratum": "control",
+   "banked_counterfactual": 1748,
+   "rederived_counterfactual": 1748,
+   "match": true,
+   "played_action": 1258,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786074812_935815.json",
+   "ply": 52,
+   "stratum": "control",
+   "banked_counterfactual": 1554,
+   "rederived_counterfactual": 1554,
+   "match": true,
+   "played_action": 1559,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786074812_935815.json",
+   "ply": 56,
+   "stratum": "invasion",
+   "banked_counterfactual": 952,
+   "rederived_counterfactual": 952,
+   "match": true,
+   "played_action": 1062,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786076853_2116173857.json",
+   "ply": 30,
+   "stratum": "defense",
+   "banked_counterfactual": 845,
+   "rederived_counterfactual": 845,
+   "match": true,
+   "played_action": 1141,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786076853_2116173857.json",
+   "ply": 40,
+   "stratum": "control",
+   "banked_counterfactual": 1552,
+   "rederived_counterfactual": 1552,
+   "match": true,
+   "played_action": 1055,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786113542_627623.json",
+   "ply": 63,
+   "stratum": "defense",
+   "banked_counterfactual": 1364,
+   "rederived_counterfactual": 1364,
+   "match": true,
+   "played_action": 1040,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786113542_627623.json",
+   "ply": 65,
+   "stratum": "invasion",
+   "banked_counterfactual": 1267,
+   "rederived_counterfactual": 1267,
+   "match": true,
+   "played_action": 1140,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786113542_627623.json",
+   "ply": 94,
+   "stratum": "farm_capture",
+   "banked_counterfactual": 2503,
+   "rederived_counterfactual": 2503,
+   "match": true,
+   "played_action": 2509,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786113542_627623.json",
+   "ply": 130,
+   "stratum": "farm_capture",
+   "banked_counterfactual": 2510,
+   "rederived_counterfactual": 2510,
+   "match": true,
+   "played_action": 2507,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786116818_134510.json",
+   "ply": 28,
+   "stratum": "control",
+   "banked_counterfactual": 1447,
+   "rederived_counterfactual": 1447,
+   "match": true,
+   "played_action": 1234,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786116818_134510.json",
+   "ply": 34,
+   "stratum": "defense",
+   "banked_counterfactual": 1056,
+   "rederived_counterfactual": 1056,
+   "match": true,
+   "played_action": 1360,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786118143_1621601234.json",
+   "ply": 73,
+   "stratum": "control",
+   "banked_counterfactual": 1035,
+   "rederived_counterfactual": 1035,
+   "match": true,
+   "played_action": 1646,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786118143_1621601234.json",
+   "ply": 75,
+   "stratum": "defense",
+   "banked_counterfactual": 1440,
+   "rederived_counterfactual": 1440,
+   "match": true,
+   "played_action": 1660,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786118143_1621601234.json",
+   "ply": 95,
+   "stratum": "defense",
+   "banked_counterfactual": 648,
+   "rederived_counterfactual": 648,
+   "match": true,
+   "played_action": 1335,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  },
+  {
+   "game": "1786142936_703591.json",
+   "ply": 14,
+   "stratum": "defense",
+   "banked_counterfactual": 1238,
+   "rederived_counterfactual": 1238,
+   "match": true,
+   "played_action": 1236,
+   "banked_divergent": true,
+   "rederived_divergent": true
+  }
+ ]
+}

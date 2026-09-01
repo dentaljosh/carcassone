@@ -1,0 +1,393 @@
+{
+ "schema": "defense-primary-new-plies/v1",
+ "written_at": 1788285102,
+ "host": "Doctor",
+ "repo": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aff161b39f35fd5de",
+ "code_commit": "51164b2daaa857ca75f5dcae4b4724e92d296438",
+ "stage": "counterfactual",
+ "profile": "fixed_v1",
+ "workers": 2,
+ "rust_threads": 1,
+ "env": {
+  "CARCASSONNE_FIX_R9": "1",
+  "r9_env_expected": true,
+  "r9_env_observed": true
+ },
+ "imports": {
+  "carcassonne_ai": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aff161b39f35fd5de/src/carcassonne_ai/__init__.py",
+  "repo": "/home/doctor/projects/carcassone/.claude/worktrees/agent-aff161b39f35fd5de",
+  "sys_path_head": [
+   "/home/doctor/projects/carcassone/.claude/worktrees/agent-aff161b39f35fd5de/scripts/measurement_infra",
+   "/home/doctor/projects/carcassone/.claude/worktrees/agent-aff161b39f35fd5de/scripts/level2",
+   "/home/doctor/projects/carcassone/.claude/worktrees/agent-aff161b39f35fd5de/scripts/human_anchor",
+   "/home/doctor/projects/carcassone/.claude/worktrees/agent-aff161b39f35fd5de/scripts/analyzer"
+  ]
+ },
+ "constants": {
+  "defense_window_plies": 8,
+  "control_target_n": 50,
+  "control_seed": 20260827,
+  "control_salt": "zlib.crc32(stem)  # DEVIATION D-1, PREREG 2.4"
+ },
+ "budget_pin": {
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "total_sims": 11008,
+  "exact_max_k": 2,
+  "seed": 0,
+  "leaf_hash_of_record": "a36d2e15a3b3d71d"
+ },
+ "production_yaml_observed": {
+  "k_dets": 16,
+  "sims_per_det": 1376,
+  "total_sims": 22016,
+  "tiearb_enabled": true,
+  "drift_vs_pin": true,
+  "note": "fair_deploy moved to k16x1376=22016 on 2026-08-30, AFTER E-1a. This census pins E-1a's budget so its counterfactual is the SAME move E-1a and E-1b priced."
+ },
+ "eligibility": {
+  "rule": "an archive is NEW iff no prior pricing round selected a ply from it (GAME-level exclusion, PREREG 2.1)",
+  "prior_target_sets": [
+   {
+    "path": "measurement/e4_ply_pricing_20260827/targets_fixed_v1.jsonl",
+    "present": true,
+    "n_games": 47,
+    "sha256": "1e166279fae37422d5616f1016874fcb9e1dc5a8f47406ef1468508d59fadbb5"
+   },
+   {
+    "path": "measurement/e4_ply_pricing_20260827/targets_walled.jsonl",
+    "present": true,
+    "n_games": 2,
+    "sha256": "497b7cad07a884bcd844cdcab66229b67c1473077e2051b3b17ea4659a0f3d29"
+   },
+   {
+    "path": "measurement/e4_ply_pricing_20260827/targets_app_aug2.jsonl",
+    "present": true,
+    "n_games": 1,
+    "sha256": "944f3cbe05071b781e110ed6ca2d2d9be6de3617e91fcfb3ab5558d9c133e0b1"
+   },
+   {
+    "path": "measurement/e4_ply_pricing_20260827/diffpos_fixed_v1.jsonl",
+    "present": true,
+    "n_games": 53,
+    "sha256": "d0aaf0be1d4df00afcf8561dc53d1afebc6e7cc1dfec78db17d319bc691d94a8"
+   },
+   {
+    "path": "measurement/e4_ply_pricing_20260827/diffpos_walled.jsonl",
+    "present": true,
+    "n_games": 2,
+    "sha256": "0f49b50382c860a92f9c3ffa64bc150d59466cf59ad18e0011fc1508399ba246"
+   },
+   {
+    "path": "measurement/e4_ply_pricing_20260827/diffpos_app_aug2.jsonl",
+    "present": true,
+    "n_games": 1,
+    "sha256": "f45d0bf3505643bef2ba23d8e12e32bf161a48fec218aea98732971039ccbb09"
+   },
+   {
+    "path": "measurement/e4_continuation_20260828/targets_continuation.jsonl",
+    "present": true,
+    "n_games": 38,
+    "sha256": "5c371bdf9b027e347ff56ad44c722adbd2b6f3a8f867ffd2ed3197baa17140bb"
+   },
+   {
+    "path": "measurement/e1b_armed_continuation_20260901/targets_continuation.jsonl",
+    "present": true,
+    "n_games": 38,
+    "sha256": "5c371bdf9b027e347ff56ad44c722adbd2b6f3a8f867ffd2ed3197baa17140bb"
+   },
+   {
+    "path": "measurement/c1_pricing_prep/targets_c1.jsonl",
+    "present": true,
+    "n_games": 45,
+    "sha256": "fe017faa5846269630333eb88d597e5c158fb4bbb1405112b139566c4c3d6454"
+   }
+  ],
+  "n_eligible": 2,
+  "eligible": [
+   "1787835876_219596.json",
+   "1788178736_589408.json"
+  ],
+  "n_rejected": 56,
+  "rejected": [
+   {
+    "game": "1785205383_867966.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1785466497_161583.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1785975832_66810.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1785982194_705585.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1785984310_1698417952.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1785986044_1911511187.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786045035_338139.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786074812_935815.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786076853_2116173857.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786113542_627623.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786116818_134510.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786118143_1621601234.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786142936_703591.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786242001_49628.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786243458_1382293676.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786325073_523563.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786329790_523563.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786337185_638286.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786367787_389099.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786403231_207028.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786417055_68387.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786418867_411846845.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786454767_166575.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786501074_943197.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786503336_446661.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786511848_634689.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786590116_64346.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786591802_1104719504.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786680851_216289.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786684476_1793735743.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786719876_241820.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786851750_988400.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786853357_1865394167.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786904828_407067.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786906191_1630706897.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786939252_94231.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786940705_1217326033.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786975727_210415.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1786992300_991662233.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787005678_833139.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787017561_548945.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787019007_1477882043.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787024619_442449.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787060359_31068.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787061939_873977203.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787181677_238637.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787189021_930939.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787277974_331305.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787350915_108813.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787532255_79977.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787540385_436222.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787551302_182159.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787579978_682909.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787618319_251279.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787624395_184395.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   },
+   {
+    "game": "1787706106_368012.json",
+    "why": "OLD \u2014 a prior pricing round selected a ply from this game"
+   }
+  ]
+ },
+ "price_wall": {
+  "banned_fields": [
+   "arm_values",
+   "child_values",
+   "delta_pts_mover",
+   "e1a_price",
+   "final_scores_cf",
+   "final_scores_owner",
+   "margin_p0_minus_p1",
+   "price",
+   "price_counterfactual",
+   "price_played",
+   "pts_delta",
+   "solve",
+   "value"
+  ],
+  "gate": "G-NOPRICE"
+ },
+ "result": {
+  "schema": "defense-primary-new-plies/v1",
+  "n_censused_plies": 23,
+  "n_divergent_plies": 12,
+  "n_games": 2,
+  "divergent_by_corpus_stratum": {
+   "carcasum_game/control": 2,
+   "carcasum_game/defense": 3,
+   "champion_game/control": 3,
+   "champion_game/defense": 3,
+   "champion_game/invasion": 1
+  },
+  "DEFENSE_ACCRUAL": {
+   "total": 6,
+   "by_corpus": {
+    "champion_game": 3,
+    "carcasum_game": 3
+   },
+   "by_game": {
+    "1787835876_219596.json": 3,
+    "1788178736_589408.json": 3
+   },
+   "n_games_contributing": 2
+  },
+  "divergence_rate_by_corpus_stratum": {
+   "carcasum_game/control": 0.5,
+   "carcasum_game/defense": 0.75,
+   "carcasum_game/farm_capture": 0.0,
+   "carcasum_game/invasion": 0.0,
+   "champion_game/control": 1.0,
+   "champion_game/defense": 1.0,
+   "champion_game/farm_capture": 0.0,
+   "champion_game/invasion": 0.333
+  },
+  "wall_s": 10.9
+ }
+}

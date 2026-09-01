@@ -1,0 +1,43 @@
+{
+ "schema": "defense-primary-accrual/v1",
+ "checked_at": 1788285493,
+ "ledger": "measurement/defense_primary_prep/NEW_PLIES.jsonl",
+ "n_games_in_ledger": 16,
+ "n_censused_plies": 76,
+ "n_divergent_plies": 35,
+ "DEFENSE_ACCRUAL": 15,
+ "TRIGGER_N_DEFENSE": 36,
+ "REMAINING": 21,
+ "FIRED": false,
+ "by_corpus": {
+  "champion_game": 5,
+  "carcasum_game": 10
+ },
+ "champion_leg": {
+  "n": 5,
+  "threshold": 20,
+  "reads_own_branch": false
+ },
+ "by_budget_epoch": {
+  "champion_22k": 5,
+  "carcasum_A_5000ms": 10
+ },
+ "by_divergence_generator": {
+  "cross_budget_champion": 5,
+  "cross_agent": 10
+ },
+ "n_game_clusters": 9,
+ "divergent_by_corpus_stratum": {
+  "carcasum_game/control": 8,
+  "carcasum_game/defense": 10,
+  "carcasum_game/invasion": 1,
+  "champion_game/control": 8,
+  "champion_game/defense": 5,
+  "champion_game/invasion": 3
+ },
+ "all_strata_divergent_available_to_price": {
+  "control": 16,
+  "defense": 15,
+  "invasion": 4
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "schema": "defense-primary-fixture-provenance/v1",
+ "written_at": 1788285113,
+ "how": "emitted by census_new_plies.py --stage classify then --stage counterfactual on two REAL e4_games archives; copied verbatim. Never hand-edited \u2014 a hand-written fixture only proves the test agrees with whoever wrote the test.",
+ "archives": {
+  "champion": {
+   "game": "1787835876_219596.json",
+   "sha256": "5be4d7d0488078901f3b08107a8f3c2bc906575e5b5218279db9752777ba5d28"
+  },
+  "carcasum": {
+   "game": "1788178736_589408.json",
+   "sha256": "7f594ab809d170e2c06af3554756c8849ac63a6daccbe800a123aafe82179333"
+  }
+ },
+ "outputs": {
+  "candidates_fixture.jsonl": "01b96bca27d12c3efdc62301f7ebfe8ee1328a67a73f8353862abbb29e685a6c",
+  "ledger_fixture.jsonl": "c5551721b80df00792ed5cf88c6c3ced4fdb067b97f3353a5dd589f709b2796d"
+ },
+ "emitter": "measurement/defense_primary_prep/census_new_plies.py",
+ "code_commit": "51164b2daaa857ca75f5dcae4b4724e92d296438"
+}
