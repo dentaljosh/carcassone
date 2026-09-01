@@ -775,6 +775,11 @@ def main(argv=None) -> int:
                     help="do not refuse a hash mismatch (stamps binary_gate=OVERRIDDEN)")
     ap.add_argument("--budget-ms", type=int, default=5000,
                     help="Carcasum's per-turn CPU-time budget (the calibrated 5000)")
+    ap.add_argument("--playouts", type=int, default=None,
+                    help="fixed playout count per turn; when set, budget_ms is "
+                         "stamped None and the driver runs fixed-count mode "
+                         "(tenancy-invariant strength). Mirrors match.py's "
+                         "--opp-playouts plumbing.")
     ap.add_argument("--cp", type=float, default=0.5)
     ap.add_argument("--max-wait-s", type=float, default=90.0,
                     help="how long a /move may block before answering 'timeout'")
@@ -799,10 +804,21 @@ def main(argv=None) -> int:
                       allow_any=args.allow_any_binary)
     opponent = dict(match_mod.DEFAULT_OPPONENT,
                     budget_ms=int(args.budget_ms), cp=float(args.cp))
+    if args.playouts is not None:
+        # Fixed-count mode: the driver prefers a non-null `playouts` over
+        # `budget_ms` (driver/main.cpp §423-435); budget_ms is stamped None so
+        # archives are unambiguous — same convention as match.py's
+        # --opp-playouts. The label follows so every reader that conditions on
+        # opponent identity sees the config epoch.
+        opponent["playouts"], opponent["budget_ms"] = int(args.playouts), None
+        global OPPONENT_LABEL
+        OPPONENT_LABEL = f"carcasum_remote_p{int(args.playouts)}"
     if args.probe_only:
         print(json.dumps({"ok": True, "gate": gate, "opponent": opponent}, indent=1))
         return 0
 
+    budget_desc = (f"playouts={opponent['playouts']}" if opponent.get("playouts")
+                   else f"{opponent['budget_ms']}ms")
     srv = RemoteOpponentServer(
         binary=binary, opponent=opponent, gate=gate,
         verify_replay=not args.no_verify_replay, max_wait_s=args.max_wait_s,
@@ -814,7 +830,7 @@ def main(argv=None) -> int:
         f"  binary   {binary} ({gate['sha256'][:12]}, gate {gate['state']})\n"
         f"  probe    plain 2-tile city scores {gate['probe']['tiny_city_score']} (want 4)\n"
         f"  opponent {opponent['kind']}/{opponent['utility']}/{opponent['playout']} "
-        f"{opponent['budget_ms']}ms cp={opponent['cp']}\n"
+        f"{budget_desc} cp={opponent['cp']}\n"
         f"  label    {OPPONENT_LABEL}\n")
     sys.stderr.flush()
     try:
