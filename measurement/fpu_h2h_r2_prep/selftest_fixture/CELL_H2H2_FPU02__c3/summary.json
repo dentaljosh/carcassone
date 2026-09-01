@@ -1,0 +1,85 @@
+{
+ "n": 6,
+ "n_failed": 0,
+ "n_paired": 3,
+ "paired_mean_margin": 3.0937013425936484,
+ "paired_z": 4.622076816362448,
+ "winrate": 0.6666666666666666,
+ "elo": 120.41199826559246,
+ "k_dets": 16,
+ "sims": 1376,
+ "total_sims": 22016,
+ "exact_k": 2,
+ "tiearb_games": 6,
+ "tiearb_fired_plies_total": 240,
+ "tiearb_tile_plies_total": 413,
+ "tiearb_phi": 40.0,
+ "tiearb_fire_rate_on_tile_plies": 0.58,
+ "tiearb_pickchanges_total": 111,
+ "tiearb_pickchange_rate": 0.4625,
+ "tiearb_mean_arms": 3.11,
+ "tiearb_playouts_total": 47769,
+ "tiearb_secs_total": 240.0,
+ "tiearb_secs_per_game": 40.0,
+ "tiearb_modes": [
+  "argmax"
+ ],
+ "tiearb_B": [
+  64
+ ],
+ "tiearb_J": [
+  4
+ ],
+ "tiearb_phi_offline_prior": 22.96,
+ "tiearb_G_FIRE_floor": 1.0,
+ "tiearb_G_FIRE_fired": false,
+ "tiearb_errors_total": 0,
+ "tiearb_error_rate_on_fired": 0.0,
+ "tiearb_first_error": null,
+ "tiearb_partial_argmax_total": 0,
+ "tiearb_phase_gates": [
+  "all"
+ ],
+ "tiearb_fired_early_total": 72,
+ "tiearb_fired_mid_total": 87,
+ "tiearb_fired_late_total": 81,
+ "tiearb_max_plies": [
+  400
+ ],
+ "opp_tiearb_games": 6,
+ "opp_tiearb_fired_plies_total": 228,
+ "opp_tiearb_tile_plies_total": 393,
+ "opp_tiearb_phi": 38.0,
+ "opp_tiearb_fire_rate_on_tile_plies": 0.58,
+ "opp_tiearb_pickchanges_total": 102,
+ "opp_tiearb_pickchange_rate": 0.4473684210526316,
+ "opp_tiearb_mean_arms": 3.11,
+ "opp_tiearb_playouts_total": 45381,
+ "opp_tiearb_secs_total": 240.0,
+ "opp_tiearb_secs_per_game": 40.0,
+ "opp_tiearb_modes": [
+  "argmax"
+ ],
+ "opp_tiearb_B": [
+  64
+ ],
+ "opp_tiearb_J": [
+  4
+ ],
+ "opp_tiearb_phi_offline_prior": 22.96,
+ "opp_tiearb_G_FIRE_floor": 1.0,
+ "opp_tiearb_G_FIRE_fired": false,
+ "opp_tiearb_errors_total": 0,
+ "opp_tiearb_error_rate_on_fired": 0.0,
+ "opp_tiearb_first_error": null,
+ "opp_tiearb_partial_argmax_total": 0,
+ "opp_tiearb_phase_gates": [
+  "all"
+ ],
+ "opp_tiearb_fired_early_total": 70,
+ "opp_tiearb_fired_mid_total": 82,
+ "opp_tiearb_fired_late_total": 76,
+ "opp_tiearb_max_plies": [
+  400
+ ]
+}

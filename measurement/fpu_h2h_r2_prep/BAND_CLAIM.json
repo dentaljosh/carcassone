@@ -1,0 +1,110 @@
+{
+  "_status": "⛔ PROPOSED, NOT CLAIMED. 0 rows have been appended to governance/BAND_REGISTRY.csv at this commit, and the sibling BAND_CLAIMED file does not exist. run_cells.sh REFUSES a real chunk until it does. ⚠️ The sweep recorded here is EVIDENCE, not the claim: `_order_of_operations` requires a FRESH sweep immediately before the append.",
+
+  "_order_of_operations": [
+    "1. RE-RUN THE TREE SWEEP immediately before the append (not the sweep recorded here — a fresh one), using the COMBINED method in `sweep_2026_09_01.method`.",
+    "2. Append the ONE row in `_csv_rows` to governance/BAND_REGISTRY.csv.",
+    "3. THEN drop the sibling file BAND_CLAIMED.",
+    "⚠️⚠️ IN THAT ORDER. 146000000000 is the trap it exists for: absent from the registry but carrying references in the tree. The registry is NECESSARY AND NOT SUFFICIENT; the TREE SWEEP is the binding check."
+  ],
+
+  "bands": {
+    "169000000000": "CELL_H2H2_FPU02 — candidate = the DEPLOYED champion + fpu_reduction 0.2; opponent = the DEPLOYED champion. 800 decks: 169000000000..169000000799 (x2 seatings = 1600 games), executed as 8 CHUNKS of 100 decks that TILE the band."
+  },
+
+  "_chunking": {
+    "n_chunks": 8,
+    "decks_per_chunk": 100,
+    "chunks": {
+      "CELL_H2H2_FPU02__c0": [169000000000, 169000000099],
+      "CELL_H2H2_FPU02__c1": [169000000100, 169000000199],
+      "CELL_H2H2_FPU02__c2": [169000000200, 169000000299],
+      "CELL_H2H2_FPU02__c3": [169000000300, 169000000399],
+      "CELL_H2H2_FPU02__c4": [169000000400, 169000000499],
+      "CELL_H2H2_FPU02__c5": [169000000500, 169000000599],
+      "CELL_H2H2_FPU02__c6": [169000000600, 169000000699],
+      "CELL_H2H2_FPU02__c7": [169000000700, 169000000799]
+    },
+    "why": "⭐⭐ THE CHUNK IS THE UNIT OF BOX ASSIGNMENT AND OF PROVENANCE (DESIGN §6.3/§6.4). It is not a convenience: eval_fair_puct writes manifest.json at run START and summary.json at run END, so a run killed mid-flight has the first and not the second. With ONE out-dir for the whole band, stopping the laptop to add local would destroy that dir's summary and clobber it on the next launch. With chunks, a killed chunk is RESUMED (its per-game records are cached-skipped by the harness), every completed chunk carries a full manifest+summary pair, and a box change can only land on a chunk BOUNDARY — which is what makes 'which box played which range' exactly answerable. ⛔ THE WHOLE CLAIM IS ONE BAND AND ONE POOLED READ; the chunks are execution, not measurement.",
+    "⛔ still ONE band": "The 8 chunks are ONE cell on ONE band, pooled by ONE read. That is a WITHIN-band, deck-paired pool — the class CL-068 leaves robust — and it is NOT a statistical combination of separate measurements."
+  },
+
+  "throwaway": {
+    "base": 169999999000,
+    "span": 1000,
+    "note": "⛔ NEVER IN THE CLAIM. ⭐ PER-BOX OFFSETS, because round 2 may smoke on TWO boxes and one box's smoke must never be able to stand in for the other's: the §9.2 smoke plays 169999999500+ (laptop) / 169999999520+ (local), and the §9.3 IDENT legs play 169999999700+ (laptop) / 169999999740+ (local), 3 legs x 2 games each on the SAME seeds by design. They buy no deck of the round and their archives are excluded from adjudication by the SMOKE_ prefix scan."
+  },
+
+  "sweep_2026_09_01": {
+    "highest_registered_id": 168000000000,
+    "highest_registered_owner": "FPU PRODUCTION-H2H ROUND 1, CELL_H2H_FPU02 (measurement/fpu_h2h_prep/, claimed and SPENT 2026-08-31 — H-UNRESOLVED, M +1.019 ± 0.683)",
+    "reserved_not_registered": {
+      "162000000000": "S1 G3 reserved (measurement/s1_asymmetry_prep/BAND_CLAIM_G3.json + tests/test_s1_g3_instrument.py). ⛔ NOT TAKEN.",
+      "163000000000": "S1 G3 reserved (same two files). ⛔ NOT TAKEN."
+    },
+    "method": [
+      "⭐ THE COMBINED SINGLE-PASS METHOD, carried from measurement/fpu_h2h_prep/BAND_CLAIM.json (itself carried from the ladder's). ⛔ Do NOT run a per-band full-tree `grep -rIl`: the measurement/ artefact tree is multi-GB and the owner stopped exactly that in the ladder's build.",
+      "(a) TRACKED files -> `git grep -I -n -E '169000000000|170000000000|171000000000'` (reads PACKED OBJECTS, not the working tree; near-zero filesystem IO).",
+      "(b) UNTRACKED files -> exactly ONE filesystem pass over the MAIN TREE's non-tracked files. ⚠️⚠️ THIS HALF MUST BE RUN AGAINST THE MAIN TREE, NOT A WORKTREE: a git worktree has its own index and reports ZERO untracked files, so a sweep run from a worktree silently skips (b) entirely. That was observed and corrected during ROUND 1's build and it is repeated here.",
+      "(c) CLASSIFY per band by reading only the (few) HIT FILES, never the tree again.",
+      "⭐ AND A BOUNDARY READING: a band id is an INTEGER DECK SEED, so a digit run that sits INSIDE A FLOAT MANTISSA or is GLUED to another digit can never be one. The classification pass reads one character either side of every hit and records `glued`."
+    ],
+    "⚠️ method_deviation_disclosed": "This sweep's half (b) was run by an agent isolated in a git WORKTREE, whose PreToolUse hook REFUSES any git operation aimed at the shared checkout — so the canonical `git -C <main> ls-files --others --exclude-standard` was not available. The untracked set was instead computed as (filesystem walk of the MAIN TREE) MINUS (the tracked set from `git ls-files`) MINUS (a pruned set of .git/.venv/node_modules/__pycache__/target/.worktrees/.claude dirs), with binary extensions skipped by suffix. ⭐ THAT SET IS A SUPERSET of the canonical one — it does NOT honour .gitignore, so it also scanned ignored files the canonical form would have skipped — which is why it covered 25,870 files / 649.7 MB against round 1's 7,630 / 141.3 MB. ⛔ The ORCHESTRATOR re-runs the CANONICAL combined method from the main tree immediately before the registry append (`_order_of_operations` step 1); this pass is EVIDENCE, not the claim.",
+    "combined_pass_result": {
+      "tracked_hit_lines_outside_prior_band_claims": 0,
+      "untracked_files_scanned": 25870,
+      "untracked_bytes_scanned_mb": 649.7,
+      "binary_by_extension_skipped": 92633,
+      "hits": {
+        "169000000000": {
+          "tracked": [
+            "measurement/fpu_h2h_prep/BAND_CLAIM.json:30,44 — ROUND 1's OWN sweep record, `\"169000000000\": []`, i.e. a recorded NO-HIT for this id. ⭐ NOT A USE: round 1 swept one id past its own and wrote down that it was free."
+          ],
+          "untracked": [
+            "measurement/value_resurrection_pilot/data/leaf_audit_rows.jsonl:2821,4721,5809,5821 — 4 hits, ALL `glued: true` (a digit on at least one side). ⛔ NOT BAND REFERENCES: they are digit runs inside longer numbers in a diagnostics JSONL."
+          ],
+          "verdict": "⭐ FREE — 0 unglued references, tracked or untracked."
+        },
+        "170000000000": {
+          "tracked": [
+            "measurement/omd2_chain_values_20260830/WITNESS_DIFFS.json:117,119 — `\"rust_bits\": \"4017000000000000\"` — a FLOAT BIT PATTERN, digits glued on both sides. ⛔ NOT A BAND REFERENCE.",
+            "measurement/probe_b_fair_targets/fair_targets_n200_K12_s800.jsonl:100 — inside a float mantissa. ⛔ NOT A BAND REFERENCE.",
+            "measurement/fpu_h2h_prep/{BAND_CLAIM.json,DESIGN.md} — round 1's own record of the two hits above."
+          ],
+          "untracked": [
+            "measurement/value_resurrection_pilot/data/leaf_audit_rows.jsonl — 29 hits, ALL `glued: true`. ⛔ NOT BAND REFERENCES."
+          ],
+          "verdict": "⭐ FREE, and recorded so the next round does not re-derive it. ⚠️ A NAIVE SUBSTRING RULE WOULD REFUSE IT FOREVER — the boundary reading is what makes it takeable."
+        },
+        "171000000000": {
+          "tracked": [],
+          "untracked": [
+            "measurement/value_resurrection_pilot/data/leaf_audit_rows.jsonl:11,2362,8866,9444 — 4 hits, ALL `glued: true`. ⛔ NOT BAND REFERENCES."
+          ],
+          "verdict": "⭐ FREE."
+        }
+      }
+    },
+    "verdict": "⭐ 169000000000 is FREE and is the next MONOTONE id above round 1's spent 168e9. 170e9 and 171e9 are also free and are recorded here so the next round does not re-derive them.",
+    "incidental_digit_runs_recorded_so_the_next_reader_does_not_rediscover_them": {
+      "what": "⭐⭐ A NEW FILE JOINS THE LIST THIS ROUND: `measurement/value_resurrection_pilot/data/leaf_audit_rows.jsonl` is UNTRACKED and carries dozens of GLUED digit runs matching ids across this whole range (169e9: 4, 170e9: 29, 171e9: 4). Every one sits inside a longer integer in a diagnostics row. Round 1's sweep did not see them because the canonical `git ls-files --others --exclude-standard` skips gitignored files and this one is ignored.",
+      "ruling": "⭐ NOT BAND REFERENCES, AND THE READING IS NOT A JUDGEMENT CALL: a band id is an integer deck seed; a digit run glued to another digit, or straddling a decimal point, cannot be one.",
+      "⚠️": "Recorded because the house refusal rule is 'a band with ANY tree reference is not taken', and a naive substring sweep over ignored files would refuse every id in this range forever. The next sweeper should expect these hits and classify them, not stop at them."
+    },
+    "dropped_from_consideration": {
+      "146000000000": ["⚠️⚠️ THE TRAP THE CLAIM ORDER EXISTS FOR — absent from governance/BAND_REGISTRY.csv but carrying references in the tree. ⛔ NOT FREE."],
+      "158000000000": ["⛔ 0 registry rows but LIVE tree hits — carried forward from fpu_resurrection via the ladder and round 1, so the next reader does not rediscover it as 'free'."],
+      "160000000000": ["⛔ same."]
+    }
+  },
+
+  "_why_one_band": "⭐ ONE CELL, ONE BAND, ONE POOLED READ. The primary is this cell's OWN deck-paired margin against zero over all 800 decks, which is the WITHIN-band, deck-paired class CL-068 leaves robust. ⛔⛔ AND IT IS NOT 400 + 400: ROUND 1's 400 decks on 168e9 ARE NOT POOLED WITH THESE. Round 1's own READ_RULE §8.2 pre-committed that its cell may not be extended or topped up on its band, and that an extension could not be pooled with it anyway. What round 1 legitimately contributes is a DESIGN input spent before game 1 — its realized DISPERSION (sigma_D 13.6495, the only arbiter-on-both-seats measurement in existence) is this round's sizing constant.",
+
+  "_retirement": "⛔ 169000000000 retires `decision_influenced=yes` THE MOMENT THE READ-OUT LANDS, on every branch — including H-UNRESOLVED. READ_RULE §8.2: the cell may NOT be extended, topped up or re-read at larger n on this band (the rodv3 failure mode). ⛔⛔ AND §8.3 PRE-COMMITS THAT A SECOND UNRESOLVED READ DOES NOT FUND A ROUND 3: escalating n after each unresolved read is the rodv3 failure mode wearing a new band each time.",
+
+  "_csv_rows": [
+    "169000000000,\"FPU PRODUCTION-H2H **ROUND 2**, CELL_H2H2_FPU02 — STEP 2 OF THE FPU ADOPTION CHAIN, AT DOUBLE THE n. One deck-paired cell, n=1600 games (800 seat-balanced decks x 2 seatings), seeds 169000000000..169000000799, executed as 8 CHUNKS of 100 decks that TILE the band. CANDIDATE = the DEPLOYED production champion (fair PIMC k16x1376=22016 + the deployed root TIE ARBITER B=64/J=4/argmax/salt tiearb2-deploy-v1/eps 0.0/phase_gate all) PLUS fpu_reduction=0.2 on the CANDIDATE SIDE ONLY (--cand-fpu-reduction; a SEARCH knob that moves NO leaf hash). OPPONENT = THE SAME DEPLOYED AGENT WITHOUT THE DOSE, arbiter ARMED ON BOTH SEATS. Leaf a36d2e15a3b3d71d BOTH SIDES, rules_profile fixed_v1 + CARCASSONNE_FIX_R9=1, exact_k 2 marginalized, rust backend. ⭐⭐ BOX ASSIGNMENT IS THROUGHPUT-ONLY AND PRE-REGISTERED AS MOVABLE MID-ROUND (DESIGN §6.4): frozen at launch the LAPTOP plays the full range; the owner may add LOCAL later, executed as a clean exact-pid stop then a relaunch of BOTH boxes on DISJOINT chunk ranges of the un-played remainder. Every chunk stamps its own host; the read POOLS all records on the one band; G-HOST is PROVENANCE-ONLY and G-NODUP asserts the chunk ranges are pairwise disjoint and every (deck,seat) appears exactly once. ⛔ NO CROSS-BOX STATISTIC EXISTS — both seatings of every deck are played inside ONE chunk on ONE box, so the box is common to both arms of every contrast and cross-box float identity is NOT relied on; cross-box SOURCE identity is G-REV's. BARS CARRIED VERBATIM FROM ROUND 1 (owner ruling 2026-08-30, effect-sized, NOT 2 sigma-hat): ADOPT requires LB95(M) >= +1.0 pts/deck, BOUNDED requires UB95(M) < +1.0. ⛔ ROUND 1 (band 168e9, n=400) read H-UNRESOLVED (M +1.019 ± 0.683) and its own §8.2 mandated a NEW round, NEW pair, NEW band, FRESH OWNER FUNDING — this is that round, and NOTHING IS POOLED ACROSS THE TWO (CL-068). ⛔ H-ADOPT licenses PROPOSING a PRODUCTION.yaml fpu flip and funding step 3 (Carcasum external) — never an automatic adoption. Pair: measurement/fpu_h2h_r2_prep/{DESIGN,READ_RULE}.md\",claim,claimed,PENDING,yes,measurement/fpu_h2h_r2_prep/READ_RULE.md,\"Seeds 169000000000..169000000799 = 800 decks x 2 seatings, in 8 chunks of 100. 169999999000..169999999999 inside this band is the THROWAWAY range (per-box smoke offsets +500/+520 and IDENT offsets +700/+740) and is NOT part of the claim. *** Tree sweep re-run immediately before this append (combined method: git grep over tracked + one filesystem pass over the MAIN TREE's untracked files). *** BLIND_COMMIT stamped by the follow-up commit appending this row. *** W_LAPTOP=26 banked from the 2026-08-31 arb-on laptop sweep; W_LOCAL UNSTAMPED at the freeze commit and the launcher REFUSES --role local until it is. W is THROUGHPUT-ONLY and moves no bar, gate or branch. *** The GOLDEN GATE is INHERITED from measurement/fpu_ladder_prep/FPU_BITEXACT_LADDER.json with the wheel re-asserted at launch, PLUS round 1's own banked gate-passing 800-game cell of these exact arms (an INSTRUMENT certificate, inherited per BOX — it was banked on the laptop); its two named gaps (fpu x arbiter together; a 0.2 control on this wheel) are paid by the --smoke IDENT legs, which are MANDATORY PER BOX. *** POWER, PRE-REGISTERED: at se_model(800)=0.4826 a true null reads BOUNDED ~50.6% / UNRESOLVED ~47.1%; a repeat of the incumbent's +2.951 adopts ~97.9%; and AT ROUND 1'S OWN POINT ESTIMATE (+1.019) THIS ROUND IS BLIND (~95.4% unresolved; >4M decks would be needed).\""
+  ],
+
+  "_csv_row_note": "⚠️ The `claimed_date` field reads PENDING and the ORCHESTRATOR replaces it with the append date. ⛔ Do not pre-date it: the row is the record of an act that has not happened yet."
+}

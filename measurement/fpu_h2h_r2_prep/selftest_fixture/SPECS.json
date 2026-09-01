@@ -1,0 +1,12 @@
+[
+ {
+  "name": "CELL_H2H2_FPU02",
+  "role": "laptop",
+  "knob": "fpu_reduction",
+  "value": 0.2,
+  "seed_start": 169999999000,
+  "n_decks": 12,
+  "n_chunks": 4,
+  "purpose": "SYNTHETIC FIXTURE \u2014 not the cell"
+ }
+]

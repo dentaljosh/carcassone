@@ -1,0 +1,170 @@
+{
+ "kind": "eval_fair_puct",
+ "host": "laptop-wsl",
+ "code_rev": "aaaaaaaaa",
+ "BLIND_COMMIT": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+ "carc_rs_build": "carc_rs-0.1.0+aaaaaaaaaaaa+rustcunpinned",
+ "carc_rs_version": "0.1.0",
+ "carc_rs_binary_sha": "2222222222222222",
+ "mixed_builds": false,
+ "n_failed": 0,
+ "_fixture_sha_note": "\u26a0\ufe0f the sha differs by HOST on purpose \u2014 it is BOX-LOCAL, so G-WHEEL-SAME asserts ONE wheel WITHIN a box and never compares across boxes",
+ "cand_tiearb": {
+  "enabled": true,
+  "B": 64,
+  "J": 4,
+  "mode": "argmax",
+  "salt": "tiearb2-deploy-v1",
+  "eps": 0.0,
+  "phase_gate": "all",
+  "fired_plies": 240,
+  "fired_early": 72,
+  "fired_mid": 87,
+  "fired_late": 81,
+  "pickchanges": 111,
+  "tiearb_errors_total": 0,
+  "tiearb_error_rate_on_fired": 0.0
+ },
+ "opp_tiearb": {
+  "enabled": true,
+  "B": 64,
+  "J": 4,
+  "mode": "argmax",
+  "salt": "tiearb2-deploy-v1",
+  "eps": 0.0,
+  "phase_gate": "all",
+  "fired_plies": 228,
+  "fired_early": 70,
+  "fired_mid": 82,
+  "fired_late": 76,
+  "pickchanges": 102,
+  "tiearb_errors_total": 0,
+  "tiearb_error_rate_on_fired": 0.0
+ },
+ "rules_profile": {
+  "name": "fixed_v1",
+  "r9_env_ok": true,
+  "r9_env_observed": true,
+  "r9_env_expected": true,
+  "grid_rule": "centered18",
+  "start_rule": "retail"
+ },
+ "config": {
+  "cand_search": {
+   "fpu_reduction": 0.2,
+   "c_puct": null,
+   "shared_c_puct": 1.5
+  },
+  "cand_tiearb": {
+   "enabled": true,
+   "B": 64,
+   "J": 4,
+   "mode": "argmax",
+   "salt": "tiearb2-deploy-v1",
+   "eps": 0.0,
+   "phase_gate": "all"
+  },
+  "opp_tiearb": {
+   "enabled": true,
+   "B": 64,
+   "J": 4,
+   "mode": "argmax",
+   "salt": "tiearb2-deploy-v1",
+   "eps": 0.0,
+   "phase_gate": "all"
+  },
+  "cand_leaf_hash": "a36d2e15a3b3d71d",
+  "opp_leaf_hash": "a36d2e15a3b3d71d",
+  "cand_leaf_cfg": {
+   "v29_meeple_curve": [
+    -10.0,
+    -5.0,
+    -1.25,
+    0.0,
+    2.5,
+    3.75,
+    5.0,
+    6.25
+   ],
+   "bonus_cap": 8.0,
+   "opp_bonus_cap": 8.0,
+   "meeple_k": 2.0
+  },
+  "band_seed_start": 169999999003,
+  "n_decks": 3,
+  "seatings_per_deck": 2,
+  "paired": true,
+  "n": 6,
+  "seed_start": 169999999003,
+  "champion": {
+   "agent": "FairHeuristicPriorAgent",
+   "c_puct": 1.5,
+   "tau_p": 5.0,
+   "leaf_quantize": "float",
+   "final_select": "visits",
+   "value_norm": 15.0,
+   "jrules_prior_dose": 0.0,
+   "jrules_prior_mask": 31,
+   "jrules_prior_scope": "all",
+   "jrules_filter_mask": 0,
+   "tiearb_enabled": true,
+   "tiearb_b": 64,
+   "tiearb_j": 4,
+   "tiearb_mode": "argmax",
+   "tiearb_salt": "tiearb2-deploy-v1",
+   "tiearb_eps": 0.0,
+   "tiearb_phase_gate": "all",
+   "fpu_reduction": 0.2,
+   "k_dets": 16,
+   "sims_per_det": 1376,
+   "total_sims": 22016,
+   "leaf": "FROZEN v2.9 curve125 production champion leaf"
+  },
+  "opponent": {
+   "agent": "FairHeuristicPriorAgent",
+   "champ_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "leaf_quantize": "float",
+    "final_select": "visits",
+    "value_norm": 15.0,
+    "fpu_reduction": null
+   },
+   "k_dets": 16,
+   "sims": null,
+   "sims_per_det": 1376,
+   "total_sims": 22016,
+   "tiearb": {
+    "enabled": true,
+    "B": 64,
+    "J": 4,
+    "mode": "argmax",
+    "salt": "tiearb2-deploy-v1",
+    "eps": 0.0,
+    "phase_gate": "all"
+   },
+   "leaf_hash": "a36d2e15a3b3d71d",
+   "label": "FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k16x1376)",
+   "mode": "fair-champion",
+   "production_config_deviations": []
+  },
+  "endgame": {
+   "mode": "marginalized",
+   "exact_k": 2,
+   "exact_budget": 2000000,
+   "shared_by_both_arms": true
+  },
+  "backend": {
+   "name": "rust",
+   "requested": "rust",
+   "default": "python",
+   "rust_threads": 1,
+   "mixed_builds": false,
+   "converted_sides": [
+    "candidate",
+    "opponent"
+   ],
+   "carc_rs_binary_sha": "2222222222222222"
+  }
+ }
+}
