@@ -1,0 +1,89 @@
+{
+ "schema": "defense-primary-prereg-constants/v1",
+ "frozen": "2026-09-01",
+ "prereg": "PREREG.md",
+ "note": "The machine-readable half of PREREG.md. Every number here also appears in the prose, and test_defense_primary.py asserts the two agree — a constant that drifts from its prereg is the failure this file exists to prevent.",
+
+ "TRIGGER_N_DEFENSE": 36,
+ "TRIGGER_N_DEFENSE_CHAMPION_LEG": 20,
+ "TRIGGER_RULE": "new divergent defense plies in NEW_PLIES.jsonl, any corpus mix",
+
+ "BAR_FUND": 2.5,
+ "BAR_REOPEN_DEFENSE": 4.5,
+ "BAR_UNITS": "points per ply, mover-signed (delta_pts_mover), armed-continuation family",
+
+ "HOLM_FAMILY": ["PRIMARY_defense_armed_price", "SECONDARY_A_defense_family_DiD"],
+ "HOLM_ALPHA": 0.05,
+ "HOLM_THRESHOLDS": {"larger_abs_z": 2.2414, "smaller_abs_z": 1.96},
+
+ "HOMOGENEITY_CHECK": {
+  "name": "G-HOMOG",
+  "statistic": "champion_game defense mean minus carcasum defense mean",
+  "se": "sqrt(se_champion^2 + se_carcasum^2), each cluster-robust on GAME (the two corpora share no games)",
+  "pool_if": "abs(z) < 1.96",
+  "on_fail": "DP-CORPUS-SPLIT: read the two corpus legs separately under the same Holm family; licences attach only to the corpus that clears"
+ },
+
+ "CONTINUATION": {
+  "family_primary": "S1-armed",
+  "arm_dose": 0.25,
+  "arm_mask": 31,
+  "arm_scope": "opp",
+  "seats": "BOTH",
+  "family_comparator": "champion (dose 0) — the DiD leg",
+  "world_seed": 20260828,
+  "continuation_seed": 0,
+  "m_worlds": 8,
+  "arm_wall_cap_s": 600,
+  "band": null
+ },
+
+ "BUDGET_PIN": {
+  "k_dets": 8,
+  "sims_per_det": 1376,
+  "total_sims": 11008,
+  "exact_max_k": 2,
+  "counterfactual_seed": 0,
+  "leaf_hash_of_record": "a36d2e15a3b3d71d",
+  "source": "E-1a / E-1b, NOT governance/PRODUCTION.yaml (which moved to k16x1376=22016 on 2026-08-30)"
+ },
+
+ "POWER": {
+  "e1b_defense_sd_plies": 6.68414592247678,
+  "e1b_defense_n": 28,
+  "e1b_defense_n_clusters": 20,
+  "e1b_defense_se_realized": 1.3077135034514598,
+  "cluster_design_effect": 1.03524,
+  "projected_se_at_trigger": 1.153,
+  "power_at_BAR_FUND": 0.58,
+  "power_at_e1b_point_3_47": 0.85,
+  "power_at_BAR_REOPEN": 0.97
+ },
+
+ "NULL_READ_DISTRIBUTION": {
+  "assumes": "true effect 0, se 1.153, PRIMARY tested at 1.96",
+  "DP-FUND": 0.015,
+  "DP-NEGATIVE": 0.025,
+  "DP-NULL-BOUNDED": 0.558,
+  "DP-UNRESOLVED": 0.402
+ },
+
+ "EXCLUSION": {
+  "rule": "GAME-level. A ply is NEW iff no prior pricing round selected a ply from its game.",
+  "prior_target_sets": [
+   "measurement/e4_ply_pricing_20260827/targets_fixed_v1.jsonl",
+   "measurement/e4_ply_pricing_20260827/targets_walled.jsonl",
+   "measurement/e4_ply_pricing_20260827/targets_app_aug2.jsonl",
+   "measurement/e4_ply_pricing_20260827/diffpos_fixed_v1.jsonl",
+   "measurement/e4_ply_pricing_20260827/diffpos_walled.jsonl",
+   "measurement/e4_ply_pricing_20260827/diffpos_app_aug2.jsonl",
+   "measurement/e4_continuation_20260828/targets_continuation.jsonl",
+   "measurement/e1b_armed_continuation_20260901/targets_continuation.jsonl",
+   "measurement/c1_pricing_prep/targets_c1.jsonl"
+  ]
+ },
+
+ "STRATIFIERS_DECLARED": ["corpus", "budget_epoch", "divergence_generator"],
+
+ "ACCRUAL_EXIT_CODES": {"0": "TRIGGER FIRED", "1": "not yet", "3": "ERROR / refusal"}
+}

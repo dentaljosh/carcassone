@@ -12,6 +12,20 @@ root_replay contract, plus result summary, per-move AI latencies, and provenance
 > pulls 08-18 → 08-26 (11k epoch close 34W–20L/54; 22k opener) were recorded in memory/
 > DECISIONS but not in a dated ledger file — recount from archives for any pooled stat.
 
+## ⛔ STANDING PREREG CHECKS — RUN BOTH AT EVERY PULL
+
+Two frozen preregs fire on a ply COUNT that accrues as this directory grows. A pull
+that does not check them is a pull that can silently pass a trigger.
+
+| check | how | trigger |
+|---|---|---|
+| **DEFENSE-PRIMARY** ([PREREG](../defense_primary_prep/PREREG.md)) | `measurement/defense_primary_prep/run_accrual_check.sh` — updates the ledger, prints the count, **exit 0 = FIRED / 1 = not yet / 3 = refusal** | ≥ **36** new divergent `defense` plies. **Banked 2026-09-01: 15** (10 Carcasum + 5 champion). |
+| **E-3 new-farm-plies** ([PREREG](../cl083_redteam_20260830/E3_PREREG.md)) | Stage-A census, champion-opponent games only | ≥ **30** new divergent `farm_capture` plies. Did **not** fire at the 2026-09-01 pull. |
+
+⚠️ A fired prereg branch **is** the authorization — run the read, don't re-ask.
+Neither check may look at a price: both are counts, and a count that peeked would
+be a selection on the outcome.
+
 > (superseded) **2026-08-17: 9 NEW ARCHIVES PULLED (2026-08-16 14:27 → 08-17 22:10) + 7 BACKLOG
 > ARCHIVES INGESTED.** Full readout, integrity checks and statistics:
 > **[E4_UPDATE_20260817.md](E4_UPDATE_20260817.md)**. ⚠️ That readout covers **16** games — the
