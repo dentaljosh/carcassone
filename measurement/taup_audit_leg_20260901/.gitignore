@@ -1,0 +1,7 @@
+# runtime files the launcher itself writes into this dir — never the frozen instrument
+PINNED_SRC_REV
+*.log
+RUN_LIVE_*.json
+SMOKE_*.json
+IDENT_*.json
+__pycache__/
