@@ -357,6 +357,23 @@ impl Game {
     /// apply, then carry the centroid sums forward (only a tile placement moves
     /// the centroid) and re-derive the offset.
     pub fn advance(&mut self, action_idx: i32) -> Result<(), String> {
+        self.advance_inner(action_idx, true)
+    }
+
+    /// **L2 — [`advance`] with the terminal `count_final_scores` DEFERRED.**
+    ///
+    /// See [`crate::engine::GameState::apply_action_unscored`] for the contract:
+    /// identical on every transition except the ones that terminate the game,
+    /// where `scores` stay RUNNING and `placed_meeples` stay populated. The
+    /// caller owes the terminal score itself via the flat route. Used by
+    /// `fair::solver`; the shared [`advance`] is untouched.
+    ///
+    /// [`advance`]: Game::advance
+    pub fn advance_unscored(&mut self, action_idx: i32) -> Result<(), String> {
+        self.advance_inner(action_idx, false)
+    }
+
+    fn advance_inner(&mut self, action_idx: i32, score_final: bool) -> Result<(), String> {
         let action = decode(
             action_idx,
             &self.offset,
@@ -372,7 +389,11 @@ impl Game {
             self.tile_count += 1;
         }
         let n_set_aside_before = self.state.set_aside.len();
-        self.state.apply_action(action);
+        if score_final {
+            self.state.apply_action(action);
+        } else {
+            self.state.apply_action_unscored(action);
+        }
         // F9/A3: a tile set aside leaves the game, so `total_tiles` must shrink
         // with it or `total_tiles - tile_count` stops equalling
         // `deck_len + has_next`.  `game_wrapper._next_total_tiles` is the twin.

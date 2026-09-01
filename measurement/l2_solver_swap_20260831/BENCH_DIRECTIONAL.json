@@ -1,0 +1,11 @@
+{
+  "bench": "L2/solver_terminal_scorer",
+  "budget": 2000000,
+  "loadavg_start": 0.68,
+  "loadavg_end": 1.01,
+  "rows": [
+    {"k": 2, "n": 16, "pre_us_per_solve": 395579.0, "post_us_per_solve": 123971.6, "factor": 3.1909, "nodes": 42766, "identity_mismatches": 0},
+    {"k": 3, "n": 4, "pre_us_per_solve": 19895657.9, "post_us_per_solve": 5989236.6, "factor": 3.3219, "nodes": 411481, "identity_mismatches": 0},
+    {"k": 4, "n": 2, "pre_us_per_solve": 354253351.3, "post_us_per_solve": 157148136.6, "factor": 2.2543, "nodes": 0, "identity_mismatches": 0}
+  ]
+}

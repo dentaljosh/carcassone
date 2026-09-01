@@ -1,0 +1,6 @@
+loadavg at start: 0.68   (production budget 2000000)
+K=2  n=16  nodes=42766   PRE   395579.0 us/solve   POST   123971.6 us/solve   FACTOR 3.19x   (identity mismatches: 0)
+K=3  n=4  nodes=411481   PRE 19895657.9 us/solve   POST  5989236.6 us/solve   FACTOR 3.32x   (identity mismatches: 0)
+K=4  n=2  nodes=0   PRE 354253351.3 us/solve   POST 157148136.6 us/solve   FACTOR 2.25x   (identity mismatches: 0)
+loadavg at end:   1.01
+wrote measurement/l2_solver_swap_20260831/BENCH_DIRECTIONAL.json

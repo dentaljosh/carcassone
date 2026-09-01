@@ -1,0 +1,62 @@
+L2 — solver per-node cost decomposition and scorer A/B.
+Captured 2026-08-31 23:56 EDT on the local 5900XT box as an EXCLUSIVE tenant
+(loadavg 0.72 at start; the W36 fpu sweep had drained). Verbatim stdout of
+
+    nice -n 19 ./rust/carc/target/release/examples/solver_component_bench 3 6
+
+`perf` is unavailable on this WSL2 kernel (no linux-tools for
+6.6.87.2-microsoft-standard-WSL2), which is why the budget is decomposed by
+direct interleaved timing rather than by symbol attribution.
+
+--------------------------------------------------------------------------------
+K=3  terminal transitions=40  non-terminal=40
+
+per-node components (solver drives one of each per node):
+  legal_actions (non-terminal node)                    3796 ns   (sink 5)
+  string_repr + sha256 (TT key)                        3270 ns   (sink 1)
+  clone + advance  [NON-terminal]                       742 ns   (sink 0)
+  clone + advance  [TERMINAL: count_final_scores]      24131 ns   (sink 5)
+  clone only (parent game)                              663 ns   (sink 0)
+
+terminal SCORER routes (on already-drained terminal states):
+  GameState::flat_base_score (clone + cfs)              590 ns   (sink 4)
+  decompose_into + leaf::flat_base_score               7655 ns   (sink 1)
+
+scorer A/B on UN-drained late states (parents of terminals):
+  legacy: clone + count_final_scores                  22916 ns   (sink 6)
+  flat: decompose_into + flat_base_score               8013 ns   (sink 0)
+    ...of which decompose_into alone                   7685 ns   (sink 0)
+  SCORER FACTOR (legacy / flat) on un-drained states: 2.86x
+  ns_decomp_only=7685
+  un-drained route equality: 40/40 match
+
+derived:
+  terminal advance premium over non-terminal : 23389 ns  (32.51x)
+  engine flat_base_score / flat route        : 0.08x
+  clone share of the non-terminal advance    : 89%
+  ns_legal=3796 ns_key=3270 ns_adv_nt=742 ns_adv_t=24131 ns_fbs=590 ns_flat=7655
+
+terminal-state route equality: 40/40 match
+--------------------------------------------------------------------------------
+
+READING NOTES
+
+* The "already-drained" block is the UNFAIR comparison and is printed only to
+  expose the trap: `apply_action` has already emptied `placed_meeples` by the
+  time a terminal state exists, so the engine route's second
+  `count_final_scores` is a no-op (590 ns = the clone) while the flat route
+  still pays a full whole-board `decompose_into`. Read the "un-drained" block —
+  both routes on a state that still carries every meeple — as the honest
+  scorer contrast. It is 2.86x, not the 15.28x the perf sweep's L2 row claimed.
+
+* An earlier capture of the same harness under the W36 sweep (loadavg ~33) gave
+  2.79x with every absolute number ~1.05-1.10x inflated. The RATIO is stable
+  across the contention change because the arms are interleaved; the absolutes
+  are not, which is why only this quiet capture is quoted in the READOUT.
+
+* `decompose_into` is 95.9% of the flat route (7685 / 8013). An exact-K
+  terminal is the most expensive board in the game for that function — a full
+  ~70-tile whole-board union-find — which is the root cause of the estimate's
+  inflation: L0's 7.9-9.9x playout-scorer factor was measured on afterstates
+  spanning all game phases, where `decompose_into` is far cheaper, and does not
+  transfer to end-of-game boards.

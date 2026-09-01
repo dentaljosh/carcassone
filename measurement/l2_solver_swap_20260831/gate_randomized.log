@@ -1,0 +1,17 @@
+sampled from 500 seeded tier-1 games: k=2 -> 500, k=3 -> 20  (workers=24)
+  k=2 legs done (2000 checks, 0 mismatches), 105.6s
+  k=3 legs done (40 checks, 0 mismatches), 449.9s
+
+=== L2 randomized bit-identity gate ===
+positions      : 520  (k=2: 500, k=3: 20)
+checks         : 2040
+value bits     : 2040/2040
+optimal sets   : 2040/2040
+child values   : 2040/2040
+node counts    : 2040/2040
+tt entries     : 2040/2040
+win payload    : 2040/2040
+mismatches     : 0
+wall           : 449.9s   workers: 24
+VERDICT        : PASS
+wrote measurement/l2_solver_swap_20260831/GATE_RANDOMIZED.json

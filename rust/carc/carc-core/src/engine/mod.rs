@@ -481,7 +481,44 @@ impl GameState {
     // --- transitions ------------------------------------------------------
 
     /// `StateUpdater.apply_action_inplace` (the shared `_apply_action_to` body).
+    ///
+    /// ⚠️ This is the SHARED transition every consumer drives (tier1 playouts,
+    /// PUCT search, the eval harness, the phone). It is untouched by L2 — see
+    /// [`GameState::apply_action_unscored`] for the solver-scoped variant.
     pub fn apply_action(&mut self, action: Action) {
+        self.apply_action_inner(action, true)
+    }
+
+    /// **L2 — `apply_action` with the terminal `count_final_scores` DEFERRED.**
+    ///
+    /// Identical to [`apply_action`] on every transition except the two that
+    /// terminate the game, where the in-place object scoring is simply not run:
+    /// `scores` keep their RUNNING values and `placed_meeples` keep every
+    /// meeple. A caller that uses this MUST score terminals itself — the flat
+    /// route `leaf::decompose_into` + `leaf::flat_base_score` reproduces exactly
+    /// what the skipped `count_final_scores` would have produced, because
+    /// `flat_base_score` is `running + final_award` (the P2 suite gates that
+    /// equality on every position; L2's own gates re-gate it on solver-reached
+    /// terminals).
+    ///
+    /// Nothing downstream of a solver terminal reads `scores` or
+    /// `placed_meeples`: [`is_terminated`] is `next_tile.is_none()` (score- and
+    /// meeple-independent) and the transposition key is only ever taken on
+    /// NON-terminal nodes, which this variant does not touch. That is the whole
+    /// safety argument, and it is why the substitution is scoped here instead of
+    /// inside the shared [`apply_action`].
+    ///
+    /// [`apply_action`]: GameState::apply_action
+    /// [`is_terminated`]: GameState::is_terminated
+    pub fn apply_action_unscored(&mut self, action: Action) {
+        self.apply_action_inner(action, false)
+    }
+
+    /// The shared body. `score_final` gates ONLY the two terminal
+    /// `count_final_scores()` calls; every other effect is common to both
+    /// entry points, so `apply_action`'s behaviour is unchanged by
+    /// construction rather than by re-derivation.
+    fn apply_action_inner(&mut self, action: Action, score_final: bool) {
         let original_phase = self.phase;
         match action {
             Action::Tile(ta) => {
@@ -512,7 +549,7 @@ impl GameState {
                     if !self.redraw_unplaceable {
                         self.next_player();
                     }
-                    if self.is_terminated() {
+                    if score_final && self.is_terminated() {
                         self.count_final_scores();
                     }
                     return;
@@ -528,7 +565,7 @@ impl GameState {
             self.next_player();
         }
 
-        if self.is_terminated() {
+        if score_final && self.is_terminated() {
             self.count_final_scores();
         }
     }

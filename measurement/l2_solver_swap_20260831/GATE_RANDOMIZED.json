@@ -1,0 +1,16 @@
+{
+  "gate": "L2/solver_terminal_scorer",
+  "positions": 520,
+  "by_k": {"2": 500, "3": 20},
+  "workers": 24,
+  "checks": 2040,
+  "value_bits": 2040,
+  "optimal_sets": 2040,
+  "child_values": 2040,
+  "node_counts": 2040,
+  "tt_entries": 2040,
+  "win_payload": 2040,
+  "n_mismatches": 0,
+  "wall_secs": 449.889,
+  "verdict": "PASS"
+}

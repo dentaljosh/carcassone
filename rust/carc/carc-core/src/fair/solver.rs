@@ -32,11 +32,132 @@
 //! 5. **The marginalized TT key sorts the deck descriptions** (the spec's V5
 //!    no-leak key: states differing only in unrevealed order collide).
 
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
 use crate::game::Game;
+use crate::leaf::{decompose_into, flat_base_score, Decomp, Scratch};
 use crate::sha256::sha256_bytes;
 use crate::tiles;
+
+// ---------------------------------------------------------------------------
+// L2 — the terminal scorer swap
+// ---------------------------------------------------------------------------
+//
+// Every terminal this solver reaches used to be scored TWICE by the object
+// route: once in place by `GameState::apply_action`'s terminal
+// `count_final_scores()` (a from-scratch BFS flood fill per placed meeple, plus
+// `count_farm_points`'s per-farm-node `HashSet<Vec<CoordSide>>` dedup), and once
+// again by `GameState::flat_base_score`, which clones the whole state and re-runs
+// `count_final_scores` on it — a near no-op by then, since the first pass has
+// already drained the meeples, so that second call was paying for a
+// `GameState::clone` and nothing else.
+//
+// L2 replaces both with ONE flat pass:
+//
+//   * the traversal drives `Game::advance_unscored`, which skips the in-place
+//     `count_final_scores` at terminals and leaves `scores` RUNNING with every
+//     meeple still placed;
+//   * the terminal value comes from `leaf::decompose_into` + `leaf::flat_base_score`
+//     (`running + final_award`) over caller-owned, thread-local buffers.
+//
+// **Why this is scoped here and not in `apply_action`.** `apply_action` is the
+// shared transition — tier1 playouts, PUCT search, the eval harness and the
+// phone all drive it, and several of them read a terminal state's `scores` and
+// `placed_meeples` afterwards. Changing it globally would owe a proof that the
+// meeple DRAIN is reproduced exactly as well as the scores. Scoping the
+// substitution to the solver owes only the score, because nothing downstream of
+// a solver terminal reads anything else: `is_terminated()` is
+// `next_tile.is_none()`, and `Solver::key` is only ever taken on NON-terminal
+// nodes (both `value` and `value_win` return before keying a terminal). The
+// shared path is byte-untouched.
+//
+// **Bit-identity.** `leaf::flat_base_score == GameState::flat_base_score` on
+// every position is already gated by the P2 suite and by L0's 240-leg
+// `G-BITEXACT`; L2 re-gates it on solver-reached terminals specifically, and
+// gates the whole solve (value bits, optimal-action set, every child value's
+// bits, node count, TT entries) against the pre-change route.
+
+/// Per-thread flat-route buffers. `decompose_into` is allocation-free only if
+/// the caller keeps the buffers, so ONE pair is reused across every terminal of
+/// every solve on this thread. Thread-local rather than threaded through
+/// `Solver` because the solver is also driven from `std::thread::scope` workers
+/// (the exact-K eval fans solves across threads); TLS gives each its own pair
+/// with no sharing, no locks and no API change — the same discipline L0's
+/// `tier1::SCORER_BUFS` validated under its threading gate.
+#[derive(Default)]
+struct TerminalBufs {
+    decomp: Decomp,
+    scratch: Scratch,
+}
+
+thread_local! {
+    static TERMINAL_BUFS: RefCell<TerminalBufs> = RefCell::new(TerminalBufs::default());
+    /// ⚠️ GATES AND TESTS ONLY — see [`with_legacy_terminal_scorer`].
+    static FORCE_LEGACY_TERMINAL: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Restores [`FORCE_LEGACY_TERMINAL`] even if `f` unwinds.
+struct LegacyTerminalGuard(bool);
+impl Drop for LegacyTerminalGuard {
+    fn drop(&mut self) {
+        FORCE_LEGACY_TERMINAL.with(|c| c.set(self.0));
+    }
+}
+
+/// ⚠️ **GATES AND TESTS ONLY.** Runs `f` with the solver's terminal handling
+/// forced back to the PRE-L2 route **on this thread** — scored `Game::advance`
+/// (in-place `count_final_scores`) plus `GameState::flat_base_score`.
+///
+/// This is not a configuration knob and nothing in production calls it: the swap
+/// is bit-identical, so there is no shape to choose between. It exists so an
+/// identity gate can run BOTH routes over the same positions without
+/// re-implementing the traversal, exactly as `tier1::with_legacy_scorer` does
+/// for L0.
+#[doc(hidden)]
+pub fn with_legacy_terminal_scorer<R>(f: impl FnOnce() -> R) -> R {
+    let prev = FORCE_LEGACY_TERMINAL.with(|c| c.replace(true));
+    let _g = LegacyTerminalGuard(prev);
+    f()
+}
+
+#[inline]
+fn legacy_terminal() -> bool {
+    FORCE_LEGACY_TERMINAL.with(|c| c.get())
+}
+
+/// Apply `a` to a clone of `g`, deferring the terminal scoring (unless the
+/// gate switch has forced the legacy route). Shared with
+/// [`crate::endgame`], which runs the same substitution on its own solver.
+#[inline]
+pub(crate) fn step(g: &Game, a: i32) -> Result<Game, String> {
+    let mut nb = g.clone();
+    if legacy_terminal() {
+        nb.advance(a)?;
+    } else {
+        nb.advance_unscored(a)?;
+    }
+    Ok(nb)
+}
+
+/// The terminal leaf — `flat_base_score(state, 0)`, P0 POV, as an `f64`.
+///
+/// Flat route by default (`running + final_award` off one whole-board
+/// decomposition over the thread-local buffers); the legacy engine route under
+/// [`with_legacy_terminal_scorer`]. `GameState::flat_base_score` is correct on
+/// both a drained and an un-drained terminal, so the two arms differ only in
+/// HOW the same number is computed.
+#[inline]
+pub(crate) fn terminal_value(g: &Game) -> f64 {
+    if legacy_terminal() {
+        return g.flat_base_score(0) as f64;
+    }
+    TERMINAL_BUFS.with(|b| {
+        let b = &mut *b.borrow_mut();
+        decompose_into(&g.state, &mut b.decomp, &mut b.scratch);
+        flat_base_score(&g.state, 0, &b.decomp) as f64
+    })
+}
 
 /// `_TIE` — optimal-set membership tolerance in the marginalized mode.
 pub const TIE: f64 = 1e-6;
@@ -350,7 +471,7 @@ impl<'a> Solver<'a> {
 
     fn value(&mut self, g: &Game) -> Result<f64, SolveError> {
         if g.state.is_terminated() {
-            return Ok(g.flat_base_score(0) as f64);
+            return Ok(terminal_value(g));
         }
         let key = self.key(g);
         if let Some(&v) = self.tt.get(&key) {
@@ -361,8 +482,7 @@ impl<'a> Solver<'a> {
         let was_meeples = g.state.phase == crate::engine::Phase::Meeples;
         let mut vals: Vec<f64> = Vec::new();
         for a in g.legal_actions() {
-            let mut nb = g.clone();
-            nb.advance(a).map_err(SolveError::Engine)?;
+            let nb = step(g, a).map_err(SolveError::Engine)?;
             if drew_a_tile(g, &nb, was_meeples) && !nb.state.is_terminated() {
                 vals.push(self.chance(&nb)?);
             } else {
@@ -446,7 +566,7 @@ impl<'a> Solver<'a> {
 
     fn value_win(&mut self, g: &Game) -> Result<(f64, f64), SolveError> {
         if g.state.is_terminated() {
-            let m = g.flat_base_score(0) as f64;
+            let m = terminal_value(g);
             return Ok((outcome(m, self.cfg.wc_tiebreak), m));
         }
         let key = self.key(g);
@@ -458,8 +578,7 @@ impl<'a> Solver<'a> {
         let was_meeples = g.state.phase == crate::engine::Phase::Meeples;
         let mut vals: Vec<(f64, f64)> = Vec::new();
         for a in g.legal_actions() {
-            let mut nb = g.clone();
-            nb.advance(a).map_err(SolveError::Engine)?;
+            let nb = step(g, a).map_err(SolveError::Engine)?;
             if drew_a_tile(g, &nb, was_meeples) && !nb.state.is_terminated() {
                 vals.push(self.chance_win(&nb)?);
             } else {
@@ -564,10 +683,9 @@ pub fn solve_marginalized(g: &Game, cfg: &SolverConfig) -> Result<SolveResult, S
     let legal = g.legal_actions();
     let mut child_values: Vec<(i32, f64)> = Vec::with_capacity(legal.len());
     for a in legal {
-        let mut nb = g.clone();
-        nb.advance(a).map_err(SolveError::Engine)?;
+        let nb = step(g, a).map_err(SolveError::Engine)?;
         let v = if nb.state.is_terminated() {
-            nb.flat_base_score(0) as f64
+            terminal_value(&nb)
         } else if drew_a_tile(g, &nb, was_meeples) {
             s.chance(&nb)?
         } else {
@@ -614,10 +732,9 @@ fn solve_marginalized_win(g: &Game, cfg: &SolverConfig) -> Result<SolveResult, S
     let legal = g.legal_actions();
     let mut pairs: Vec<(i32, (f64, f64))> = Vec::with_capacity(legal.len());
     for a in legal {
-        let mut nb = g.clone();
-        nb.advance(a).map_err(SolveError::Engine)?;
+        let nb = step(g, a).map_err(SolveError::Engine)?;
         let v = if nb.state.is_terminated() {
-            let m = nb.flat_base_score(0) as f64;
+            let m = terminal_value(&nb);
             (outcome(m, cfg.wc_tiebreak), m)
         } else if drew_a_tile(g, &nb, was_meeples) {
             s.chance_win(&nb)?
@@ -914,6 +1031,190 @@ mod tests {
             wc_tiebreak: true,
             ..win_cfg()
         }
+    }
+
+    // ---- L2: the terminal scorer swap ------------------------------------ //
+
+    /// Every surface of a solve is bit-identical between the PRE-L2 route
+    /// (scored `advance` + `GameState::flat_base_score`) and the shipped flat
+    /// route, in BOTH objectives — value bits, the full optimal-action set,
+    /// every child value's bits, the node count and the TT size.
+    ///
+    /// The randomized 500+-position gate lives in
+    /// `examples/l2_solver_gate.rs`; this is the in-suite pin.
+    #[test]
+    fn l2_flat_terminal_route_is_bit_identical_to_the_legacy_route() {
+        // k=2 over eight seeds is the deployed depth and is cheap; k=3 is
+        // ~10 s/solve, so it gets ONE seed here — the genuinely chance-mixed
+        // regime is covered at n=20 by `examples/l2_solver_gate.rs`.
+        let cells = [
+            ("11", 2usize), ("12", 2), ("13", 2), ("14", 2),
+            ("15", 2), ("16", 2), ("17", 2), ("18", 2),
+            ("11", 3),
+        ];
+        {
+            for (seed, k) in cells {
+                let g = endgame(seed, k);
+                for cfg in [SolverConfig::default(), win_cfg()] {
+                    let pre = with_legacy_terminal_scorer(|| solve_marginalized(&g, &cfg)).unwrap();
+                    let post = solve_marginalized(&g, &cfg).unwrap();
+                    assert_eq!(
+                        pre.value.to_bits(),
+                        post.value.to_bits(),
+                        "seed {seed} k {k}: value bits"
+                    );
+                    assert_eq!(
+                        pre.optimal_actions, post.optimal_actions,
+                        "seed {seed} k {k}: optimal set"
+                    );
+                    assert_eq!(pre.nodes, post.nodes, "seed {seed} k {k}: node count");
+                    assert_eq!(
+                        pre.tt_entries, post.tt_entries,
+                        "seed {seed} k {k}: tt entries"
+                    );
+                    assert_eq!(pre.child_values.len(), post.child_values.len());
+                    for ((a1, v1), (a2, v2)) in
+                        pre.child_values.iter().zip(post.child_values.iter())
+                    {
+                        assert_eq!(a1, a2, "seed {seed} k {k}: child action order");
+                        assert_eq!(
+                            v1.to_bits(),
+                            v2.to_bits(),
+                            "seed {seed} k {k}: child {a1} value bits"
+                        );
+                    }
+                    assert_eq!(
+                        pre.win_value.map(f64::to_bits),
+                        post.win_value.map(f64::to_bits)
+                    );
+                    for ((a1, v1), (a2, v2)) in
+                        pre.child_win_values.iter().zip(post.child_win_values.iter())
+                    {
+                        assert_eq!(a1, a2);
+                        assert_eq!(v1.to_bits(), v2.to_bits());
+                    }
+                }
+            }
+        }
+    }
+
+    /// `advance_unscored` differs from `advance` ONLY at a transition that
+    /// terminates the game. Every non-terminal transition must produce a
+    /// byte-identical state (`state_digest` covers the repr, the legal mask,
+    /// both scores and the terminal flag), and at a terminal the deferred state
+    /// must still yield the SAME `flat_base_score` — which is the whole
+    /// substitution's contract.
+    #[test]
+    fn advance_unscored_defers_only_the_terminal_scoring() {
+        let mut n_terminal = 0usize;
+        let mut n_nonterminal = 0usize;
+        for seed in ["11", "12", "13", "14", "15", "16"] {
+            // A `k_remaining <= 2` TILES root cannot terminate in ONE ply (the
+            // tile placement hands off to the MEEPLES phase), so walk a bounded
+            // sub-tree and test every transition in it — that is what reaches
+            // both classes. The `n_terminal > 0` assertion below is what caught
+            // the one-ply version of this fixture.
+            let mut frontier = vec![endgame(seed, 2)];
+            let mut visited = 0usize;
+            while let Some(g) = frontier.pop() {
+                visited += 1;
+                if visited > 24 {
+                    break;
+                }
+                for a in g.legal_actions() {
+                    let mut scored = g.clone();
+                    let mut deferred = g.clone();
+                    scored.advance(a).unwrap();
+                    deferred.advance_unscored(a).unwrap();
+                    if !scored.state.is_terminated() && frontier.len() < 12 {
+                        frontier.push(scored.clone());
+                    }
+                    assert_eq!(
+                        scored.state.is_terminated(),
+                        deferred.state.is_terminated(),
+                        "termination must not depend on the scoring route"
+                    );
+                    if scored.state.is_terminated() {
+                        n_terminal += 1;
+                        // the deferred state has NOT been drained…
+                        assert!(
+                            deferred.state.placed_meeples[0].len()
+                                + deferred.state.placed_meeples[1].len()
+                                >= scored.state.placed_meeples[0].len()
+                                    + scored.state.placed_meeples[1].len(),
+                            "the deferred route must not drain meeples"
+                        );
+                        // …and yet both routes score it identically, by either scorer.
+                        let want = scored.flat_base_score(0);
+                        assert_eq!(
+                            deferred.flat_base_score(0),
+                            want,
+                            "engine route on the deferred (un-drained) terminal"
+                        );
+                        assert_eq!(
+                            terminal_value(&deferred) as i64,
+                            want,
+                            "flat route on the deferred (un-drained) terminal"
+                        );
+                        assert_eq!(
+                            terminal_value(&scored) as i64,
+                            want,
+                            "flat route on the drained terminal"
+                        );
+                    } else {
+                        n_nonterminal += 1;
+                        assert_eq!(
+                            scored.state_digest(),
+                            deferred.state_digest(),
+                            "a NON-terminal transition must be byte-identical"
+                        );
+                    }
+                }
+            }
+        }
+        assert!(n_terminal > 0, "the fixture must reach terminals");
+        assert!(n_nonterminal > 0, "the fixture must reach non-terminals");
+    }
+
+    /// The flat route's buffers are thread-local; solving the same positions
+    /// concurrently across threads must give the same answers as solving them
+    /// on one thread. (L0's threading gate, at solver granularity.)
+    #[test]
+    fn flat_terminal_buffers_are_thread_safe() {
+        let seeds = ["11", "12", "13", "14", "15", "16", "17", "18"];
+        let games: Vec<Game> = seeds.iter().map(|s| endgame(s, 2)).collect();
+        let cfg = SolverConfig::default();
+        let single: Vec<u64> = games
+            .iter()
+            .map(|g| solve_marginalized(g, &cfg).unwrap().value.to_bits())
+            .collect();
+        let threaded: Vec<u64> = std::thread::scope(|sc| {
+            let hs: Vec<_> = games
+                .iter()
+                .map(|g| {
+                    let cfg = cfg.clone();
+                    sc.spawn(move || solve_marginalized(g, &cfg).unwrap().value.to_bits())
+                })
+                .collect();
+            hs.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+        assert_eq!(single, threaded);
+    }
+
+    /// `with_legacy_terminal_scorer` must restore the previous setting even if
+    /// the closure unwinds, or a panicking gate would leave the whole thread on
+    /// the slow route.
+    #[test]
+    fn the_legacy_switch_is_restored_on_unwind() {
+        assert!(!legacy_terminal());
+        let r = std::panic::catch_unwind(|| {
+            with_legacy_terminal_scorer(|| {
+                assert!(legacy_terminal());
+                panic!("boom");
+            })
+        });
+        assert!(r.is_err());
+        assert!(!legacy_terminal(), "the switch must not leak past an unwind");
     }
 
     /// The DESIGN §2 K<=2 coincidence proposition, ARMED: mirrors
