@@ -45,19 +45,30 @@ _LEAF_ENV_KEYS = (
 )
 
 
-def code_rev() -> str:
-    """git short hash of the working tree, or 'unknown' if git is unavailable."""
+def code_rev(repo: Path | None = None) -> str:
+    """git short hash of the working tree, or 'unknown' if git is unavailable.
+
+    `repo` defaults to this package's own repo (existing behavior); tests pass a
+    tmp git repo fixture to exercise the dirty/clean logic in isolation.
+    """
     try:
-        repo = Path(__file__).resolve().parents[2]
+        if repo is None:
+            repo = Path(__file__).resolve().parents[2]
         out = subprocess.run(
             ["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],
             capture_output=True, text=True, timeout=5,
         )
         rev = out.stdout.strip()
         if rev and out.returncode == 0:
-            # mark dirty trees so a row can't claim a clean commit it wasn't run at
+            # mark dirty trees so a row can't claim a clean commit it wasn't run at.
+            # --untracked-files=no: dirty must mean TRACKED modifications only — plain
+            # --porcelain counts untracked files too, so untracked measurement-dir
+            # churn (logs, banked JSON, etc.) alongside a clean tracked tree produced a
+            # false "-dirty" suffix (see measurement/s1_asymmetry_prep/G3_VERDICT.md
+            # amendment G3-A1, and the --allow-dirty-rev workaround it forced in
+            # analyze_g3.py).
             dirty = subprocess.run(
-                ["git", "-C", str(repo), "status", "--porcelain"],
+                ["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=no"],
                 capture_output=True, text=True, timeout=5,
             ).stdout.strip()
             return rev + ("-dirty" if dirty else "")
