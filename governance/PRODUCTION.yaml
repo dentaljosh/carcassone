@@ -284,7 +284,7 @@ champion:
         total_sims: 22016
         backend: rust                   # as fair_deploy.backend above — read its comment before quoting this.
         parallel_workers: 8             # the PYTHON engine's spawn split; the rust engine uses rust_threads instead.
-        measured_s_per_move: 2.1595     # ⚠️ STALE 2026-08-30: measured at 11008 pre-swap; at 22016 expect ~2x search + ~0.5s arb (post-swap) — re-measure owed. (Was: quiet 5900XT, W=8, p90 2.6167, corrected 2026-07-30 audit F3)
+        measured_s_per_move: 2.433      # RE-MEASURED 2026-09-01 on the flattening+A+L2 wheel (sha c1250fe2, roll-in commit dc35bb5b-era): 22016 (k16x1376), tie-arb ARMED BOTH SEATS B=64 deployed dict, CARCASSONNE_FIX_R9=1 verified in-manifest, quiet 5900XT W=1 sequential, n=3 games/208 moves, per-game 2.371/2.455/2.473 — measurement/wheel_rollin_20260901/bench22016_arbon/. Search-only same wheel: 2.179 (informal, same dir). (Prior 2.1595 was 11008 pre-swap W=8 — different budget AND wheel, not comparable.)
         note: >
           The champion of record. Requires ≥8 usable cores and a multiprocessing-capable runtime.
           Run SEQUENTIALLY it is the same player, just 6.37× slower (13.76 s/move) — that is a clock

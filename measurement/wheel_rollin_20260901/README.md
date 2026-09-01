@@ -24,7 +24,8 @@ rustc 1.96.0 (pinned).
   `CARCASSONNE_FIX_R9` NOT exported (`r9_env_ok=false`) despite `--rules-profile
   fixed_v1`. Direction: ~2.5× vs the pre-L2 ~5.38 deploy figure — consistent with the
   merged 1.174× flattening + solver-swap wins.
-- `bench22016_deployed.sh` — the PROPER probe (arb armed BOTH seats at the deployed
-  dict, R9=1, n=3, W=1, exclusive tenant). Run at the next quiet window (agents must be
-  off the box); writes `bench22016_arbon/` + `BENCH_DONE`. PRODUCTION.yaml gets stamped
-  from THAT manifest, not from the informal number.
+- `bench22016_deployed.sh` — the PROPER probe: ✅ RAN 2026-09-01, exclusive tenant,
+  all gates green (r9_env_ok=True, arb both seats B=64). **2433 ms/move mean**
+  (2371/2455/2473 over 3 games, 208 moves) → PRODUCTION.yaml `measured_s_per_move`
+  stamped 2.433 from `bench22016_arbon/manifest.json`. Deploy arc: ~5.38 (pre-L2 est)
+  → 2.433 measured ≈ 2.2×; arb increment over search-only ≈ +0.25 s.

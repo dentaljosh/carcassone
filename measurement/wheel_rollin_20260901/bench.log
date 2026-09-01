@@ -1,0 +1,21 @@
+[head-to-head] opponent=fair-champion
+[head-to-head] candidate frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] opponent  frozen leaf: curve125 leaf_hash=a36d2e15a3b3d71d frozen_config_hash=6dfffd57051690f2 (champ_env dialect)
+[head-to-head] BOTH SIDES curve125: YES | env DEFAULT_CONFIG (unmoved, no rung in play) leaf_hash=42af12fce22e1a0f
+[tiearb] TIE ARBITER LIVE on the candidate: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0, 'phase_gate': 'all'} (leaf hash does NOT move; gates = manifest cand_tiearb + summary tiearb_phi + the two-sided J13 control)
+[tiearb] TIE ARBITER LIVE on the OPPONENT: {'enabled': True, 'B': 64, 'J': 4, 'mode': 'argmax', 'salt': 'tiearb2-deploy-v1', 'eps': 0.0, 'phase_gate': 'all'} (leaf hash does NOT move; gates = manifest opp_tiearb + summary opp_tiearb_phi + the per-game opp_tiearb telemetry)
+[backend] engine=rust (from --backend rust) rust_threads=1 workers=1 [single-process]
+fair-puct[fair_fair_c1.5_tau5_float_kd16_s1376_vs_fairchamp_k2-leafa36d2e15]: info=fair n=3 paired=False K=2 k_dets=16 sims=1376 | 0 cached, 3 to play, 1 workers, out=measurement/wheel_rollin_20260901/bench22016_arbon
+  3/3 played (339.5s/game, ~0 min left)
+
+=== FAIR-PUCT[fair] (K=2, k_dets=16, sims=1376, total~22016) vs FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k16x1376) ===
+games: 3   candidate: 2W / 0D / 1L   winrate 0.667 (z=+0.58)
+avg score diff (candidate - opponent): -3.33
+ELO: +120.4  (+/- 212.8 1sigma)
+prefix ms/move: candidate 2433  opponent 2483  (ratio 0.98x)
+fair endgame: candidate latched 3/3 games, 0.04s solver/game, timeouts=0
+fair endgame: opponent  latched 3/3 games, 0.20s solver/game, timeouts=0
+tie-arbiter: 3 games, mode(s) argmax — phi 19.33 fired tile plies/game (offline prior 22.96; 58/104 of tile plies), pick-change 0.466, mean arms 3.36, 12480 playouts, 44.1s/game
+tie-arbiter [OPPONENT seat]: 3 games, mode(s) argmax — phi 15.00 fired tile plies/game (offline prior 22.96; 45/103 of tile plies), pick-change 0.533, mean arms 2.84, 8192 playouts, 31.4s/game
+[summary.json] wrote measurement/wheel_rollin_20260901/bench22016_arbon/summary.json
+bench22016_deployed: done
