@@ -1674,19 +1674,63 @@ def test_absent_halt_record_REFUSES_a_real_cell_launch():
     assert not (CELL_DIR / "RUN_LIVE.json").exists()
 
 
-def test_halt_true_refuses_and_halt_false_falls_through_to_the_next_precondition():
-    rc, out = _run_cells("local", "--band", "140000000000",
-                         blind_commit="deadbeefcafe01",
-                         halt_record={"halt": True, "realized": 2100.0,
-                                      "bar": A.SMOKE_HALT_BAR})
+def _run_cells_isolated(tmp_path, *args, blind_commit=None, halt_record=None):
+    """Like `_run_cells`, but points the driver's `$DIR` at an ISOLATED tmp
+    tree via `B32V64_CELL_DIR_OVERRIDE` (added to `run_cells.sh` for exactly
+    this: default unchanged, see its own comment there).
+
+    ⚠️ HERMETICITY DEFECT THIS FIXES: `run_cells.sh` resolves `$DIR` from
+    `WORKERS.conf`'s hard-coded `REPO_LOCAL`/`REPO_REMOTE`, NOT from `$0`/
+    `$HERE` — so every §3 precondition this test cares about (`verdicts/`,
+    `SMOKE_HALT.json`, `DONE_*` stamps) was read from the REAL repo's
+    `b32v64_cell` dir, whose on-disk state is a REAL, LIVE round's (tracked
+    committed PREFLIGHT_*/SMOKE_HALT.json fixtures at minimum, and whatever
+    the live round has additionally written on top). `_run_cells`'s patches
+    landed at `CELL_DIR` while the launcher read a DIFFERENT path entirely —
+    so this test observed the real round's halt/preflight state, not the
+    synthetic one it wrote, and failed (or worse, silently passed for the
+    wrong reason) depending on what the real round happened to have on disk
+    at the moment. Only the round-state artifacts move to the isolated tree;
+    `WORKERS.conf` itself is still read from `$HERE` (`CELL_DIR`), so
+    BLIND_COMMIT patching is unaffected."""
+    import os
+    import subprocess
+    conf = CELL_DIR / "WORKERS.conf"
+    conf_bak = conf.read_text()
+    isolated = tmp_path / "isolated_dir"
+    (isolated / "verdicts").mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ, B32V64_CELL_DIR_OVERRIDE=str(isolated))
+    try:
+        if blind_commit:
+            conf.write_text(conf_bak.replace("BLIND_COMMIT=PENDING",
+                                             f"BLIND_COMMIT={blind_commit}"))
+        if halt_record is not None:
+            (isolated / A.SMOKE_HALT_RECORD).write_text(json.dumps(halt_record))
+        p = subprocess.run([str(CELL_DIR / "run_cells.sh"), *args],
+                           capture_output=True, text=True, timeout=120, env=env)
+        return p.returncode, p.stdout + p.stderr, isolated
+    finally:
+        conf.write_text(conf_bak)
+
+
+def test_halt_true_refuses_and_halt_false_falls_through_to_the_next_precondition(
+        tmp_path):
+    rc, out, isolated = _run_cells_isolated(
+        tmp_path, "local", "--band", "140000000000",
+        blind_commit="deadbeefcafe01",
+        halt_record={"halt": True, "realized": 2100.0,
+                     "bar": A.SMOKE_HALT_BAR})
     assert rc == 9 and "HALT IS IN FORCE" in out
-    rc, out = _run_cells("local", "--band", "140000000000",
-                         blind_commit="deadbeefcafe01",
-                         halt_record={"halt": False, "realized": 800.0,
-                                      "bar": A.SMOKE_HALT_BAR})
-    # the halt gate lets it through; the NEXT precondition (G-J13) stops it
+    rc, out, isolated = _run_cells_isolated(
+        tmp_path, "local", "--band", "140000000000",
+        blind_commit="deadbeefcafe01",
+        halt_record={"halt": False, "realized": 800.0,
+                     "bar": A.SMOKE_HALT_BAR})
+    # the halt gate lets it through; the NEXT precondition (G-J13) stops it —
+    # the isolated verdicts/ dir was created empty, so no host/B can pass it
     assert "HALT IS IN FORCE" not in out and "NO §9.3 HALT RECORD" not in out
     assert "G-J13" in out and rc == 13
+    assert not (isolated / "RUN_LIVE.json").exists()
     assert not (CELL_DIR / "RUN_LIVE.json").exists()
 
 

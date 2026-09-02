@@ -74,7 +74,19 @@ esac
 HOST="$(hostname)"
 PY="$REPO/.venv/bin/python"
 HARNESS="$REPO/scripts/classical_search/eval_fair_puct.py"
-DIR="$REPO/measurement/tiearb_widening_20260817/b32v64_cell"
+# ⚠️ TEST HOOK (default unchanged): WORKERS.conf's REPO_LOCAL/REPO_REMOTE and
+# SHARE_LOCAL/SHARE_REMOTE are HARD-CODED to the real repo/share, so $DIR and
+# $OUT below normally resolve there NO MATTER WHERE THIS SCRIPT ITSELF LIVES —
+# a hermetic test that only patches THIS SCRIPT'S OWN WORKERS.conf/records
+# (i.e. $HERE) still has those writes bypassed, because every §3 precondition
+# below (verdicts/, SMOKE_HALT.json, DONE_* stamps, RUN_LIVE.json) is read
+# from $DIR, not $HERE, and it can therefore also observe a REAL, LIVE round's
+# on-disk state. B32V64_CELL_DIR_OVERRIDE / B32V64_SHARE_OVERRIDE let a test
+# point $DIR/$OUT at an isolated tree instead, so real on-disk state can never
+# leak into an isolated run. Unset (the default) is byte-identical to the
+# prior behavior.
+DIR="${B32V64_CELL_DIR_OVERRIDE:-$REPO/measurement/tiearb_widening_20260817/b32v64_cell}"
+SHARE="${B32V64_SHARE_OVERRIDE:-$SHARE}"
 ADJ="$REPO/$ADJUDICATOR"          # scripts/tiletie/analyze_b32v64_cell.py
 SHARE_RUN="$SHARE/$RUN_ID"
 OUT="$SHARE_RUN"
