@@ -1,5 +1,5 @@
 {
- "blind_commit": "7a8356845ed2206084a4b0f41948e8ba61901364",
+ "blind_commit": "4e8d6bc183ee7065532a4d652800ff286c0915dd",
  "how": "A commit cannot name its own hash. The FREEZE commit lands PREREG.md, the harness, the adjudicator, the tests and the real-emitter fixtures with this field reading PENDING; a SECOND, stamping commit replaces it with the freeze commit's 40-hex sha. `launch_local.sh` REFUSES to launch while it still says PENDING.",
  "freeze_branch": "tiearb2-stage2 (worktree agent-a983a0df04e9b03fc)",
  "what_is_frozen": [
@@ -24,5 +24,6 @@
   "PRODUCTION_yaml_touched": false,
   "governance_touched": false,
   "src_engine_rust_touched": false
- }
+ },
+ "amended_pre_launch": "2026-09-02: blind re-stamped to 4e8d6bc1 (design freeze 7a835684 + band stamp + D-LAUNCH-1 launcher-check correction); 0 units played at re-stamp; the launching commit is this stamp's child"
 }
