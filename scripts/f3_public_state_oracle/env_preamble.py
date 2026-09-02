@@ -1,53 +1,53 @@
 """Production leaf environment for the F3 public-state oracle — import FIRST.
 
-The v2.9 Bmild_cap8 leaf reads these knobs from the environment at import time
-(DEFAULT_CONFIG is import-frozen); the library sets none itself. Every F3 script
-does ``import env_preamble`` as its FIRST import so the fair champion built via
-``champion_factory`` runs the exact production leaf shape and its runtime
-verify (curve125) passes.
+    import env_preamble  # noqa: F401   <- BEFORE any carcassonne_ai import
 
-Byte-identical to ``scripts/classical_search/eval_fair_puct.py``'s ``_CANON_ENV``
-(the sibling fair eval): the env fixes the cap8 / curve100 BASE leaf, and
-``champion_factory.production_prior_cfg`` injects curve125 on top via
-``dataclasses.replace`` — exactly how the deployed champion is constructed.
-setdefault: a caller (orchestrator) who already exported these wins.
+⚠️ CONSOLIDATED 2026-09-02. The values NO LONGER live here. This module is a thin
+adapter over the ONE canonical definition, `carcassonne_ai.prod_env`; read that
+docstring for the import-ordering contract and the PLAY/RULER split. `CANON_ENV`
+is re-exported under its historic name for the existing importers
+(`f3_public_state_oracle/{run_oracle,mine_roots}.py`,
+`measurement_infra/gate_b_depth_transfer.py`, `tests/android/test_bridge.py`).
 
-Pure CPU, net-free: no GPU, no BLAS thread pools (the fair game is a Cython
-leaf + PUCT tree + the marginalized solver — no matmul).
+The profile is RULER — curve100 (the frozen v2.9 substrate) in the environment,
+NOT curve125. That is deliberate and load-bearing, not a stale copy: the F3 fair
+champion is built through `champion_factory`, which injects curve125 on the
+CHAMPION side via `dataclasses.replace`, while the fixed reference side stays on
+the frozen substrate. Exporting curve125 here would silently re-baseline the
+reference. It is byte-identical to `eval_fair_puct`'s ruler env for the same
+reason — both are now the same object.
+
+Pure CPU, net-free: no GPU, no BLAS thread pools (the fair game is a Cython leaf
++ PUCT tree + the marginalized solver — no matmul). setdefault: a caller
+(orchestrator) who already exported these wins.
 """
 from __future__ import annotations
 
-import os
+import sys
+from pathlib import Path
 
-# Verbatim eval_fair_puct._CANON_ENV (curve100 base; curve125 injected by the
-# champion_factory at cfg build time — see module docstring).
-CANON_ENV: dict[str, str] = {
-    "CARCASSONNE_V25_CAP": "8",
-    "CARCASSONNE_V25_OPP_CAP": "8",
-    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
-    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
-    "CARCASSONNE_V25_MEEPLE_K": "2.0",
-    "CARCASSONNE_V25_VALUE_BLEND": "0",
-    "CARCASSONNE_USE_FLAT_LEAF": "1",
-    "CARCASSONNE_USE_CY_LEAF": "1",
-    "CARCASSONNE_USE_CY_REPR": "1",
-    "CUDA_VISIBLE_DEVICES": "",
-    "OMP_NUM_THREADS": "1",
-    "MKL_NUM_THREADS": "1",
-    # OpenBLAS is the real backend (scipy-OpenBLAS DYNAMIC_ARCH, not MKL); left
-    # unpinned it spawns a box-sized busy-wait pool per fork worker and thrashes
-    # the scheduler. Pin to 1 — result-neutral for a net-free CPU stack.
-    "OPENBLAS_NUM_THREADS": "1",
-    "NUMEXPR_NUM_THREADS": "1",
-    "VECLIB_MAXIMUM_THREADS": "1",
-}
+# Make a bare repo checkout work when `carcassonne_ai` is not pip-installed.
+# Append, never prepend, so an installed copy still wins.
+_SRC = str(Path(__file__).resolve().parents[2] / "src")
+if (Path(_SRC) / "carcassonne_ai").is_dir() and _SRC not in sys.path:
+    sys.path.append(_SRC)
+
+from carcassonne_ai import prod_env  # noqa: E402
+from carcassonne_ai.prod_env import RULER as CANON_ENV  # noqa: E402
+
+__all__ = ["CANON_ENV", "apply", "resolved", "RESOLVED"]
 
 
+# Bound to RULER rather than re-exported: `prod_env.apply()` defaults to PLAY
+# (curve125), so a bare `env_preamble.apply()` here must NOT inherit that default.
 def apply() -> dict[str, str]:
-    """Fill any unset production knob; return the resolved subset (for manifests)."""
-    for k, v in CANON_ENV.items():
-        os.environ.setdefault(k, v)
-    return {k: os.environ.get(k, "") for k in CANON_ENV}
+    """Fill any unset RULER knob; return the resolved subset (for manifests)."""
+    return prod_env.apply(CANON_ENV)
+
+
+def resolved() -> dict[str, str]:
+    """The RULER knobs as they stand in os.environ right now."""
+    return prod_env.resolved(CANON_ENV)
 
 
 # Apply on import so `import env_preamble` before `import carcassonne_ai` suffices.

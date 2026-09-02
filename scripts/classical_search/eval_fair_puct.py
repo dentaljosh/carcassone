@@ -278,39 +278,38 @@ convention.
 """
 from __future__ import annotations
 
-import os
+import os  # noqa: F401  (kept: used throughout this module)
+import sys
+from pathlib import Path
 
 # v2.9 Bmild_cap8 leaf env — MUST precede the carcassonne_ai imports (DEFAULT_CONFIG
-# reads these at import). Verbatim from eval_puct_priors.py / fair_agent_smoke.py.
-_CANON_ENV = {
-    "CARCASSONNE_V25_CAP": "8",
-    "CARCASSONNE_V25_OPP_CAP": "8",
-    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
-    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
-    "CARCASSONNE_V25_MEEPLE_K": "2.0",
-    "CARCASSONNE_V25_VALUE_BLEND": "0",
-    "CARCASSONNE_USE_FLAT_LEAF": "1",
-    "CARCASSONNE_USE_CY_LEAF": "1",
-    "CARCASSONNE_USE_CY_REPR": "1",
-    "CUDA_VISIBLE_DEVICES": "",
-    "OMP_NUM_THREADS": "1",
-    "MKL_NUM_THREADS": "1",
-    # ⚠️ The installed numpy is scipy-OpenBLAS (DYNAMIC_ARCH), NOT MKL — so the
-    # OMP/MKL pins above are INERT for the real BLAS backend. Left unpinned,
-    # OpenBLAS spawns a box-sized busy-waiting thread pool in EVERY worker; with
-    # W30(local)+W22(laptop) that thrashes the scheduler and stalls forward
-    # progress (the curve175 n=400 clair hang, root-caused 2026-07-13, commit
-    # e006036 fixed the sibling eval_puct_priors the same way). This harness
-    # shares the multi-worker --shared-claim pattern, so it has the same latent
-    # hang risk. Pin to 1 — result-neutral (fair games are net-free CPU: Cython
-    # leaf + PUCT tree, no BLAS matmul). MUST precede any numpy import; forked
-    # workers inherit the env.
-    "OPENBLAS_NUM_THREADS": "1",
-    "NUMEXPR_NUM_THREADS": "1",
-    "VECLIB_MAXIMUM_THREADS": "1",
-}
-for _k, _v in _CANON_ENV.items():
-    os.environ.setdefault(_k, _v)
+# reads these at import).
+#
+# ⚠️ CONSOLIDATED 2026-09-02: the values now come from `carcassonne_ai.prod_env`, the
+# ONE canonical definition. `_CANON_ENV` keeps its name — the manifest writer below
+# stamps `{k: os.environ.get(k) for k in _CANON_ENV}` into every result file, and the
+# sibling harnesses/tests refer to it by that name. It is the RULER profile:
+# curve100 in the environment, NOT curve125. That is deliberate and load-bearing —
+# `champion_factory` injects curve125 on the CHAMPION side via `dataclasses.replace`
+# (see `_curve125_leaf_cfg` below), while the fixed ruler/anchor side is left on the
+# frozen v2.9 substrate. Exporting curve125 here would silently re-baseline every
+# fixed reference (governance/PRODUCTION.yaml says so in as many words).
+#
+# The profile also pins OPENBLAS/NUMEXPR/VECLIB, not just OMP/MKL: the installed
+# numpy is scipy-OpenBLAS (DYNAMIC_ARCH), NOT MKL, so the OMP/MKL pins are INERT for
+# the real BLAS backend. Left unpinned, OpenBLAS spawns a box-sized busy-waiting
+# thread pool in EVERY worker; with W30(local)+W22(laptop) that thrashes the
+# scheduler and stalls forward progress (the curve175 n=400 clair hang, root-caused
+# 2026-07-13, commit e006036). Result-neutral — fair games are net-free CPU. MUST
+# precede any numpy import; forked workers inherit the env.
+_SRC = str(Path(__file__).resolve().parents[2] / "src")
+if (Path(_SRC) / "carcassonne_ai").is_dir() and _SRC not in sys.path:
+    sys.path.append(_SRC)
+
+from carcassonne_ai import prod_env  # noqa: E402
+from carcassonne_ai.prod_env import RULER as _CANON_ENV  # noqa: E402
+
+prod_env.apply(_CANON_ENV)
 
 import argparse
 import json
@@ -318,12 +317,10 @@ import math
 import multiprocessing as mp
 import re
 import socket
-import sys
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from multiprocessing import Pool
-from pathlib import Path
 
 import numpy as np
 

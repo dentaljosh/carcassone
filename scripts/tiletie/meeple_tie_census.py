@@ -1069,12 +1069,23 @@ def main(argv=None) -> int:
     import chain_census as CC
 
     # `base_deck` latches CARCASSONNE_FIX_R9 into a Rust OnceLock AT IMPORT, so the
-    # rules env must be exported before anything drags `carcassonne_ai` in. The
+    # rules env must be exported before anything drags the engine/leaf in. The
     # r9_env_ok assert below is the real guard; this one names the cause.
-    if "carcassonne_ai" in sys.modules:
+    #
+    # ⚠️ 2026-09-02: tests `prod_env.latched_modules()`, NOT `"carcassonne_ai" in
+    # sys.modules`. `carcassonne_ai/__init__.py` is empty, so the package name is a
+    # PROXY — and `chain_census` (imported just above) now reaches the canonical
+    # `carcassonne_ai.prod_env` through `env_preamble`, which puts the package in
+    # sys.modules while latching nothing. The invariant is unchanged: fire iff a module
+    # that actually latches the tile table or the leaf was already imported.
+    from carcassonne_ai import prod_env  # latches nothing — see its docstring
+
+    _latched = prod_env.latched_modules()
+    if _latched:
         raise RuntimeError(
-            "carcassonne_ai was imported before prepare_env() — the CARCASSONNE_FIX_R9 "
-            "latch is already set and this leg's rules profile cannot be trusted.")
+            f"{list(_latched)} was imported before prepare_env() — the "
+            "CARCASSONNE_FIX_R9 latch is already set and this leg's rules profile "
+            "cannot be trusted.")
     env_resolved = CC.prepare_env(a.profile)
     from carcassonne_ai import rules_profile
     prof = rules_profile.activate(a.profile)

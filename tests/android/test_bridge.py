@@ -189,18 +189,32 @@ def test_bridge_imports_and_sets_prod_env():
 
 
 def test_prod_env_matches_repo_preamble():
-    """The bridge carries a LITERAL copy of env_preamble.PROD_ENV (that file is not in
-    the on-device bundle). If the repo's preamble changes, this fails — update the copy.
+    """The bridge and the repo preamble resolve to the SAME production env.
+
+    ⚠️ 2026-09-02: the bridge used to carry a LITERAL COPY of env_preamble.PROD_ENV and
+    this test was the anti-drift guard for that copy. Both now import
+    ``carcassonne_ai.prod_env`` (which ships in the on-device bundle), so a copy can no
+    longer exist — comparing the two would be vacuously true. The assertions below are
+    therefore about what still CAN break: that the bridge is on the PLAY profile (the
+    deployed champion's curve125 leaf, read from the env), and that the preamble agrees.
+    The value pin itself lives in ``tests/test_prod_env.py::test_play_profile_is_the_
+    champion_leaf``.
 
     Loaded BY PATH: ``scripts/f3_public_state_oracle/env_preamble.py`` shadows the name
     once another test module puts its script dir on sys.path."""
     import importlib.util
+
+    from carcassonne_ai import prod_env
 
     path = REPO / "scripts" / "human_anchor" / "env_preamble.py"
     spec = importlib.util.spec_from_file_location("_human_anchor_env_preamble", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     assert B.PROD_ENV == mod.PROD_ENV
+    # The substantive part: the bridge is on the canonical PLAY profile, i.e. curve125
+    # in the environment, which is what the phone must play.
+    assert B.PROD_ENV is prod_env.PLAY
+    assert B.PROD_ENV["CARCASSONNE_V29_MEEPLE_CURVE"] == prod_env.CURVE125
 
 
 def test_production_yaml_resolved():
