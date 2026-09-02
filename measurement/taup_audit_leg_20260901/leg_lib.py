@@ -58,8 +58,8 @@ class CellSpec:
 #: ⛔ PROPOSED, NOT CLAIMED — see `BAND_CLAIMED.placeholder`. The orchestrator
 #: re-runs the tree sweep and appends `governance/BAND_REGISTRY.csv` (TWO rows);
 #: `run_cells.sh` refuses a real chunk until the sibling `BAND_CLAIMED` exists.
-BAND_TAU3 = 170_000_000_000
-BAND_TAU8 = 171_000_000_000
+BAND_TAU3 = 171_000_000_000  # reassigned at claim 2026-09-01 (170e9 went to fpu_swap_cell); cells ran on 171e9 — manifests verified
+BAND_TAU8 = 172_000_000_000  # reassigned at claim 2026-09-01; cells ran on 172e9 — manifests verified
 THROWAWAY_BASE = 171_999_999_000
 
 N_DECKS = 400
