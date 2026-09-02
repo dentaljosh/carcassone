@@ -335,7 +335,25 @@ def classify_game(stem: str, profile: str, stage_a):
                       "are written for owner=seat 0; refusing rather than mis-signing")
 
     # --- Stage-A structural census (real emitter, no search) ---------------- #
-    g = stage_a.census_game(str(path), profile)
+    # ⚠️ TEST-ISOLATION (chores queue). `stage_a.census_game` calls
+    # `rules_profile.activate(profile)`, which publishes the profile to
+    # `os.environ[rules_profile.ENV_VAR]` and a process-wide cache — a LATCH,
+    # not a scoped call. Any caller running inside a shared pytest PROCESS
+    # (e.g. `test_defense_primary.py` collected ahead of `tests/android/` in
+    # one `pytest` invocation) leaves that latch armed for every test that
+    # runs afterward, breaking farm-rule/cross-rule/mirror tests there that
+    # assume the default (`walled`) profile. Save and restore the prior
+    # activation around the ONE call that mutates it, so `classify_game` is
+    # profile-neutral to its caller regardless of suite ordering.
+    from carcassonne_ai import rules_profile
+    _prior_profile = os.environ.get(rules_profile.ENV_VAR)
+    try:
+        g = stage_a.census_game(str(path), profile)
+    finally:
+        if _prior_profile is None:
+            rules_profile.reset()
+        else:
+            rules_profile.activate(_prior_profile)
     census_rows = stage_a.extract_events(g)
     recon_ok = bool(g["recon_ok"])
 
