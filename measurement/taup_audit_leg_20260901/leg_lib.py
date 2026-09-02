@@ -94,7 +94,7 @@ TIEARB = {"B": 64, "J": 4, "mode": "argmax", "salt": "tiearb2-deploy-v1",
           "eps": 0.0, "phase_gate": "all"}
 
 BOX = "laptop"
-W_LAPTOP = 24            # owner threads ruling 2026-09-01 ("32 and 24")
+W_LAPTOP = 22  # 24 for CELL_TAU3, 22 for CELL_TAU8 (owner order, D-6); W is result-invariant            # owner threads ruling 2026-09-01 ("32 and 24")
 
 # =========================================================================== #
 # 3. THE BAR (READ_RULE / PREREG §5)                                           #

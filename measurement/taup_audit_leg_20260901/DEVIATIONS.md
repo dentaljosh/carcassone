@@ -109,3 +109,17 @@ realized SE, which the FPU family's banked machinery already computes. Writing a
 fourth copy of that arithmetic would be the drift this leg's "one implementation"
 rule exists to prevent. ⚠️ Whoever reads the cells must apply §6 **as written**,
 including the retirement rule in §6.1.
+
+## D-6 — `W_LAPTOP` 24 → 22 BETWEEN cells (owner-ordered, result-safe)
+
+Owner, 2026-09-01 ~22:40 EDT, verbatim: "change it at tau8. carcasum is taking 30s a
+turn." CELL_TAU3 ran to completion at W=24; CELL_TAU8 runs at W=22 so the laptop keeps
+two threads for the owner's pinned-playout Carcasum server (E-5 epoch B: strength is
+tenancy-invariant, only his move latency was suffering). W is a scheduling knob and
+never a branch input — every game is deterministic in its seeds — so the pair's
+adjudication is unaffected; the two cells' manifests will carry different `workers`
+values, which the adjudicator must NOT treat as a config-identity defect. Recorded
+here because the smoke (W=24) and the TAU8 cell (W=22) are no longer
+tenancy-comparable on TIMING fields (irrelevant to this strength leg). Change made
+in the main tree, synced to the laptop and re-pinned at the cell boundary — never
+mid-cell (the cross-rev-split trap).
