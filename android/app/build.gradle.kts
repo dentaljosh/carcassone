@@ -379,8 +379,17 @@ android {
         // one played on versionCode 3 EXCEPT for the peek, which is why a game that
         // used it is stamped `preview_next_tile: true` in the archive rather than
         // left to be inferred from a build date.
-        versionCode = 4
-        versionName = "0.1-m3-ui"
+        // Bumped 4 -> 5 for the two owner rulings of 2026-09-02 ("22k each. fix the
+        // labels."). Still NOT a play epoch against versionCode 4: the champion,
+        // its budget, the rules profile and the tie-arbiter config are unchanged,
+        // and no file under src/, engine/, rust/ or governance/ moved. The only
+        // BEHAVIOURAL change is to remote games, whose archive `opponent` stamp is
+        // now derived from the server's own /health label instead of being the
+        // hardcoded "carcasum_remote_5000ms" — so a remote archive from this build
+        // names the opponent that actually played. Champion archives are byte-for-
+        // byte what versionCode 4 wrote.
+        versionCode = 5
+        versionName = "0.1-m3-ui.1"
 
         // Instrumented tests are the ONLY surface that can run code inside the
         // app's Chaquopy environment (numpy + the carc_rs wheel as pip resolved

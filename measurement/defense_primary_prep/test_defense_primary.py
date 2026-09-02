@@ -149,6 +149,94 @@ def test_unknown_or_absent_opponent_refuses():
 
 
 # --------------------------------------------------------------------------- #
+# 3b. BOTH LABEL SPELLINGS (owner ruling 2026-09-02, "fix the labels")          #
+# --------------------------------------------------------------------------- #
+# Archives written before 2026-09-02 stamp the phone's CONFIGURED label — always
+# `carcasum_remote_5000ms`, whatever the server was really running. Since the
+# ruling the stamp is the server's own `/health` label. The corpus tagger has to
+# read every existing archive AND every future one, and it must keep epoch A (the
+# 5000 ms wall) distinguishable from epoch B (the p103500 pin) across BOTH.
+OLD_LABEL = "carcasum_remote_5000ms"          # what every pre-ruling archive says
+NEW_LABEL_B = "carcasum_remote_p103500"       # the server's own, fixed-playout mode
+NEW_LABEL_A = "carcasum_remote_5000ms"        # the server's own, budget mode
+
+
+@pytest.mark.parametrize("label", [OLD_LABEL, NEW_LABEL_A, NEW_LABEL_B])
+def test_every_label_spelling_is_a_carcasum_game(label):
+    """Whichever way the label is spelled, the game is Carcasum — never champion,
+    never an unknown that refuses. This is the property the archive's `opponent`
+    field is load-bearing for."""
+    tag = C.corpus_tag({"opponent": label})
+    assert tag in ("carcasum_game", "carcasum_p103500"), tag
+    assert C.opponent_kind(tag) == "carcasum"
+
+
+def test_the_epochs_stay_apart_under_the_new_labels():
+    """A budget-mode game and a playout-mode game must not pool, and the label
+    alone is enough to tell them apart when there is no `remote` block."""
+    assert C.corpus_tag({"opponent": NEW_LABEL_A}) == "carcasum_game"
+    assert C.corpus_tag({"opponent": NEW_LABEL_B}) == "carcasum_p103500"
+
+
+def test_the_playout_pin_outranks_a_stale_label():
+    """⛔ THE REASON THE RULING WAS NEEDED, and the reason it is safe to land now.
+
+    Archives exist that say `carcasum_remote_5000ms` while really having run fixed
+    playouts — that mislabelling is exactly what the ruling fixes going forward.
+    Those archives are still classified correctly, because the epoch is decided by
+    `remote.opponent.playouts` (which the manifest block always wrote honestly),
+    not by the label. So the fix does not strand the corpus behind it.
+    """
+    stale = {"opponent": OLD_LABEL, "remote": {"opponent": {"playouts": 103500}}}
+    assert C.corpus_tag(stale) == "carcasum_p103500"
+    # And the converse: a genuine wall-clock game stays in epoch A under either
+    # spelling, because there is no playout pin to find.
+    honest = {"opponent": OLD_LABEL, "remote": {"opponent": {"budget_ms": 5000}}}
+    assert C.corpus_tag(honest) == "carcasum_game"
+
+
+def test_a_third_playout_pin_refuses_rather_than_pooling():
+    """A `p50000` server is a NEW epoch. Tagging it `carcasum_p103500` would pool
+    two strengths into one declared stratum — the failure `corpus_tag`'s final
+    refusal exists to prevent, now reachable for the first time because the label
+    is derived from the server instead of hardcoded."""
+    with pytest.raises(C.Refusal):
+        C.corpus_tag({"opponent": "carcasum_remote_p50000"})
+    with pytest.raises(C.Refusal):
+        C.corpus_tag({"opponent": OLD_LABEL,
+                      "remote": {"opponent": {"playouts": 50000}}})
+
+
+def test_the_ledger_epoch_labels_survive_the_new_spellings():
+    """`summarize_ledger.budget_epoch` is the last link in the chain: it turns a
+    corpus tag into the epoch name the read-out prints.
+
+    It conditions on `corpus`, never on the raw `opponent` string, so it is label-
+    agnostic BY CONSTRUCTION — but epoch A vs epoch B is the distinction the whole
+    E-5 contrast rests on, so the chain is tested end to end from the label the
+    archive actually carries.
+    """
+    for label, want in ((OLD_LABEL, "carcasum_A_5000ms"),
+                        (NEW_LABEL_A, "carcasum_A_5000ms"),
+                        (NEW_LABEL_B, "carcasum_B_p103500")):
+        row = {"corpus": C.corpus_tag({"opponent": label})}
+        assert budget_epoch(row) == want, (label, row["corpus"])
+
+
+def test_accrual_counts_no_carcasum_label_as_a_champion_ply():
+    """`accrual_check` conditions on `corpus == "champion_game"`, so it is agnostic
+    to the label spelling BY CONSTRUCTION — but the accrual number is what the
+    DEFENSE-PRIMARY trigger fires on, so "by construction" is worth a test rather
+    than an argument."""
+    rows = [{"corpus": C.corpus_tag({"opponent": label}), "stratum": "defense",
+             "divergent": True}
+            for label in (OLD_LABEL, NEW_LABEL_A, NEW_LABEL_B)]
+    rows.append({"corpus": "champion_game", "stratum": "defense", "divergent": True})
+    champion_rows = [r for r in rows if r["corpus"] == "champion_game"]
+    assert len(champion_rows) == 1, "only the champion game accrues"
+
+
+# --------------------------------------------------------------------------- #
 # 4. the classifier reproduces its own banked fixture                           #
 # --------------------------------------------------------------------------- #
 def test_fixture_provenance_names_a_real_emitter():
