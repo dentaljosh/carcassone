@@ -280,6 +280,34 @@ indistinguishability).
 
 ---
 
+## D-8b — what was VERIFIED, and on which artifacts
+
+Recorded so the orchestrator's merge review does not have to re-derive it.
+
+| proposition | evidence |
+|---|---|
+| `cargo test --release` | **264 passed / 0 failed / 6 ignored** (baseline before this build: 250 / 0 / 6 — **+14**: 10 in `fair::pool::tests`, 4 agent-level in `fair::tests`) |
+| the round's own instrument | `test_cvar_pool.py` **55 passed** |
+| no banked suite broken | `test_fpu_knob` · `test_fpu_instrument` · `test_fpu_h2h_r2_instrument` · `test_fpu_ladder_instrument` · `test_opp_tiearb_plumbing` · `taup_audit_leg/test_taup_leg` · this round's — **319 passed in ONE process** (which is also the D-7b collision's regression test) |
+| the harness still plays | `test_fair_puct_opponent` · `test_kparallel` · `test_phasegate_instrument` — **84 passed**, exit 0. ⚠️ The τ_p leg's D-4 recorded `test_fair_puct_opponent` failing in a shared process from leaf-env pollution; it did **not** reproduce here |
+| golden gate | `CVAR_BITEXACT.json` **14/14 PASS**, full frozen 12-seed set, re-run against the FINAL harness. IDENTITY exact (`a6fa359d…` on both OLD and NEW). α=0.25: 12/12 games diverge, **227 pick changes over 1498 CVaR plies (reach 0.152), 0 fallbacks**. α=1.0: 12/12 diverge, 70/1550 (0.045) |
+| stale-wheel fail-closed | NEW `src/` + the venv's PRE-GT-M1 wheel: a **mean** config builds fine (the champion is unaffected), a **cvar** config raises `TypeError: SearchConfigRs.__new__() got an unexpected keyword argument 'pool_mode'` |
+| the champion is unmoved on the new wheel | `_leaf_hash` **a36d2e15a3b3d71d** · `_frozen_config_hash` mk2.0 **158f17ff76adaa02** / mk0.0 **6dfffd57051690f2** — all three as recorded in `champion_factory` |
+| the launcher's full ladder | `--plan` and `--dry-run` exercised end to end: golden-gate check → 4-layer probe (argparse → candidate/opponent configs → `SearchConfigRs.pool` getter → **a live 3-ply CVaR agent whose `pool_cvar_plies` moved**) → `G-PROD` → a correct argv with `--cand-pool-mode cvar --cand-pool-alpha 0.25` and no second live knob |
+| the by-path refusal (D-7) | piping the launcher through `bash -s` refuses with the one-line message naming the correct invocation |
+| gate addresses exist | every `G-POOL` / `G-REACH` / `G-BUDGET` / `G-ARB` / `G-SINGLEVAR` address resolves on the byte-untouched `REALCELL_DRY` manifest+summary |
+| `doc_lint.py` | 0 errors (10 pre-existing warnings, none in this round's files) |
+
+⚠️ **The fallback rate is width-sensitive, and that is worth carrying to the
+read-out.** `pool_fallbacks` was **0/1498** at the gate's k=4 and **8/128** at
+the dry cell's k=2 — k=2 is a degenerate width for a rule whose eligibility
+predicate is "visited in EVERY world". At the cells' k=16 × 1376 it should be
+~0, and `summary.pool.candidate.fallback_rate` reports it per cell. A cell with
+a materially nonzero rate is one where the rule often could not express, which
+biases M toward zero.
+
+---
+
 ## D-9 — what this build did NOT do
 
 * **Launched nothing, claimed no band, edited no `governance/`.** The only games
