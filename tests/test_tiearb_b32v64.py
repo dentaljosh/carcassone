@@ -1737,54 +1737,49 @@ def test_halt_true_refuses_and_halt_false_falls_through_to_the_next_precondition
 def test_an_unreadable_halt_record_fails_closed(tmp_path):
     """A corrupt record is not a pass either.
 
-    ⚠️ FIXED (chores queue): this test used to `rec.write_text(...)` straight
-    over the TRACKED `SMOKE_HALT.json` fixture with no backup, then
-    `rec.unlink()` it in `finally` — losing the real committed halt record
-    (CELL_B64's actual §9.3 grading evidence) instead of restoring it, which
-    leaves the tree dirty and breaks any `run_cells.sh` invocation between
-    test runs that expects the record to exist (`test_absent_halt_record_
-    REFUSES_a_real_cell_launch` next to it in this file exists for exactly
-    that failure mode). `run_cells.sh` resolves its own `$DIR` from
-    `WORKERS.conf`'s hard-coded `REPO_LOCAL`/`REPO_REMOTE` (not from `$0`), so
-    the corrupted record still has to land at the REAL path for the
-    subprocess to read it — it cannot be redirected to a tmpdir wholesale —
-    but the ORIGINAL bytes are now copied to `tmp_path` FIRST and restored
-    from there byte-for-byte, so the mutation the real path sees is transient
-    and the fixture is never actually lost."""
-    conf = CELL_DIR / "WORKERS.conf"
-    rec = CELL_DIR / A.SMOKE_HALT_RECORD
-    conf_bak = conf.read_text()
-    rec_existed = rec.is_file()
-    rec_backup = tmp_path / "SMOKE_HALT.json.orig"
-    if rec_existed:
-        rec_backup.write_bytes(rec.read_bytes())
-    import subprocess
-    try:
-        conf.write_text(conf_bak.replace("BLIND_COMMIT=PENDING",
-                                         "BLIND_COMMIT=deadbeefcafe01"))
-        rec.write_text("{ not json at all")
-        p = subprocess.run([str(CELL_DIR / "run_cells.sh"), "local", "--band",
-                            "140000000000"], capture_output=True, text=True,
-                           timeout=120)
-        assert p.returncode == 9
-        assert "HALT IS IN FORCE" in (p.stdout + p.stderr)
-    finally:
-        conf.write_text(conf_bak)
-        if rec_existed:
-            rec.write_bytes(rec_backup.read_bytes())
-        else:
-            rec.unlink(missing_ok=True)
+    ⚠️ FIXED (chores queue, round 2): this test used to write the corrupt
+    bytes straight over the REAL tree's tracked `SMOKE_HALT.json` (with a
+    backup/restore added by an earlier chore) because `run_cells.sh` resolves
+    `$DIR` from `WORKERS.conf`'s hard-coded `REPO_LOCAL`/`REPO_REMOTE`, not
+    `$0` — so it also read whatever a REAL, LIVE round had additionally
+    written on top of that tracked fixture, and the test's `rc`/output
+    depended on that on-disk state rather than on the corrupt record it wrote.
+    `_run_cells_isolated`'s `B32V64_CELL_DIR_OVERRIDE` (added for exactly this)
+    points `$DIR` at an isolated tmp tree instead, so this now corrupts a
+    SYNTHETIC record the real round never sees and never has to be restored."""
+    isolated = tmp_path / "isolated_dir"
+    isolated.mkdir(parents=True, exist_ok=True)
+    (isolated / A.SMOKE_HALT_RECORD).write_text("{ not json at all")
+    rc, out, isolated = _run_cells_isolated(
+        tmp_path, "local", "--band", "140000000000",
+        blind_commit="deadbeefcafe01", halt_record=None)
+    assert rc == 9, out
+    assert "HALT IS IN FORCE" in out
 
 
-def test_dry_run_is_exempt_from_the_halt_preconditions():
+def test_dry_run_is_exempt_from_the_halt_preconditions(tmp_path):
     """A dry run starts no games, so neither the record's absence nor a HALT may
-    stop it — and it must still write nothing."""
-    rc, out = _run_cells("local", "--dry-run", "--band", "140000000000",
-                         halt_record=None)
+    stop it — and it must still write nothing.
+
+    ⚠️ FIXED (chores queue, round 2): the old version checked
+    `CELL_DIR / A.SMOKE_HALT_RECORD` (the REAL tree's path) after calling
+    `_run_cells`, whose own `finally` had ALREADY restored that file from
+    backup by the time the assertion ran — so the assertion was checking
+    post-restore state, not what the dry run itself wrote, and additionally
+    depended on whatever a REAL, LIVE round had on disk at `CELL_DIR` in the
+    meantime (`run_cells.sh` resolves `$DIR` from `WORKERS.conf`'s
+    hard-coded `REPO_LOCAL`, not from `$0`). Routed through
+    `_run_cells_isolated` (`B32V64_CELL_DIR_OVERRIDE`), the isolated tree's
+    own `SMOKE_HALT_RECORD` path is checked directly, with no restore step in
+    between to race."""
+    rc, out, isolated = _run_cells_isolated(
+        tmp_path, "local", "--dry-run", "--band", "140000000000",
+        halt_record=None)
     assert rc == 0, out
     assert "NO §9.3 HALT RECORD" not in out
+    assert not (isolated / "RUN_LIVE.json").exists()
+    assert not (isolated / A.SMOKE_HALT_RECORD).exists()
     assert not (CELL_DIR / "RUN_LIVE.json").exists()
-    assert not (CELL_DIR / A.SMOKE_HALT_RECORD).exists()
     # …but it must SAY that a real cell would be refused, so the dry run is a
     # preview of the launch and not a rosier version of it
     assert "A REAL-CELL LAUNCH WOULD BE REFUSED" in out
