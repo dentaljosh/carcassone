@@ -1,0 +1,41 @@
+{
+  "built_from": "REALCELL_DRY/ — a genuine 2-game k2x32 cell played on the laptop on THROWAWAY seeds 175999999000..1 (DEVIATIONS.md D-1). Byte-untouched.",
+  "budget_promotions": {
+    "config.champion.k_dets": 16,
+    "config.champion.sims_per_det": 1376,
+    "config.champion.total_sims": 22016,
+    "config.opponent.k_dets": 16,
+    "config.opponent.sims_per_det": 1376,
+    "config.opponent.total_sims": 22016
+  },
+  "why_promoted": "A fixture that genuinely ran k16x1376 would cost ~6 h. These six values and NOTHING ELSE are edited so G-BUDGET can pass on SMOKE_PASS; every key path, every other value and the whole document shape are the emitter's own.",
+  "d2_correction": "The dry cell showed config.opponent.champ_cfg.pool_mode ABSENT — champ_cfg is the FIVE-KNOB SHARED dict, not a resolved as_manifest(). eval_fair_puct now states the opponent's pooling rule POSITIVELY there (the same move fpu_reduction: None made for G-FPU), and REALCELL_DRY is the RE-RUN that carries the correction.",
+  "cases": [
+    "REALCELL_DRY",
+    "SMOKE_EMPTY_CELL",
+    "SMOKE_FAIL_arb_candidate_disabled",
+    "SMOKE_FAIL_arb_opponent_absent",
+    "SMOKE_FAIL_arb_wrong_B",
+    "SMOKE_FAIL_budget_stale",
+    "SMOKE_FAIL_pool_candidate_unmoved",
+    "SMOKE_FAIL_pool_leaked_to_opponent",
+    "SMOKE_FAIL_pool_mode_absent",
+    "SMOKE_FAIL_pool_mode_mean",
+    "SMOKE_FAIL_pool_opponent_absent",
+    "SMOKE_FAIL_pool_wrong_dose",
+    "SMOKE_FAIL_reach_below_floor",
+    "SMOKE_FAIL_reach_block_absent",
+    "SMOKE_FAIL_reach_mixed_rev",
+    "SMOKE_FAIL_reach_opponent_leak",
+    "SMOKE_FAIL_reach_rule_never_ran",
+    "SMOKE_FAIL_reach_zero_pickchanges",
+    "SMOKE_FAIL_rules_walled",
+    "SMOKE_FAIL_singlevar_cpuct_live",
+    "SMOKE_FAIL_singlevar_fpu_live",
+    "SMOKE_FAIL_singlevar_taup_absent",
+    "SMOKE_FAIL_unpaired",
+    "SMOKE_NO_MANIFEST",
+    "SMOKE_NO_SUMMARY",
+    "SMOKE_PASS"
+  ]
+}

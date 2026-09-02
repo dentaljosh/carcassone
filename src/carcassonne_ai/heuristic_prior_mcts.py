@@ -291,6 +291,34 @@ class HeuristicPriorConfig:
     # ⚠️ Appended at the END of the field list on purpose: every historical
     # positional construction of this dataclass keeps its meaning.
     fpu_reduction: float | None = None
+    # --- RISK-ASYMMETRIC WORLD POOLING — GT-M1 (measurement/cvar_pool_prep) ----
+    # An AGENT-level knob like the tie arbiter, not a search-node one: it decides
+    # how the k PIMC determinization worlds' root statistics become ONE move.
+    # "mean" (default) is the deployed champion, bit-for-bit — the visit-weighted
+    # pooled Q = sum(W)/sum(N) that `fair_agent.pooled_q_argmax` computes.
+    # "cvar" scores each root action by the mean of its PER-WORLD Q over the
+    # ceil(pool_alpha * k) worlds where it does WORST (the lower tail).
+    #
+    # ⛔ RUST-ONLY, and refused loudly on the python search path (see
+    # `make_heuristic_prior_evaluator`) — the same fail-closed rule surfaces B/C
+    # and the arbiter follow. A python candidate that silently dropped the rule
+    # would play champion-vs-champion and read as a beautiful, meaningless null.
+    #
+    # ⚠️ It moves NO leaf hash, so the wiring gates are the RESOLVED values here
+    # (via `as_manifest`) PLUS the play-derived `FairAgentRs.stats()`
+    # `pool_pickchanges` counter — never a moved hash.
+    #
+    # ⚠️⚠️ `pool_alpha = 1.0` is NOT an identity control for "mean". It is the
+    # EQUAL-WEIGHT-per-world mean; the deployed rule is VISIT-weighted, and the
+    # census that licensed this lever measured the two disagreeing on 18.1% of
+    # contest-exposed plies (measurement/cl083_mech_censuses_20260830/
+    # DEVIATIONS.md D-1). Use alpha=1.0 as the weighting CONTROL arm, never as a
+    # no-op.
+    #
+    # ⚠️ Appended at the END of the field list on purpose: every historical
+    # positional construction of this dataclass keeps its meaning.
+    pool_mode: str = "mean"
+    pool_alpha: float | None = None
 
     def __post_init__(self):
         if self.leaf_quantize not in ("int", "float"):
@@ -370,6 +398,37 @@ class HeuristicPriorConfig:
                     f"optimistic q=0 for unvisited children, i.e. the champion); "
                     f"got {self.fpu_reduction!r}")
             self.fpu_reduction = v
+        # POOLING RULE (GT-M1): validated fail-CLOSED and at BOTH settings, so a
+        # caller who believes they dosed the rule and did not finds out here
+        # rather than 6 h into a cell. `carc_core::fair::PoolMode::parse` refuses
+        # the identical set; this is the python-side mirror so a python-backend
+        # or dry-run caller gets the same refusal without a wheel.
+        if self.pool_mode not in ("mean", "cvar"):
+            raise ValueError(
+                f"pool_mode must be 'mean'|'cvar' ('mean' == the deployed "
+                f"visit-weighted pooled Q, bit-for-bit); got {self.pool_mode!r}")
+        if self.pool_mode == "mean":
+            if self.pool_alpha is not None:
+                raise ValueError(
+                    f"pool_mode='mean' takes NO pool_alpha, got "
+                    f"{self.pool_alpha!r} — a caller that passed an alpha "
+                    "believes it dosed the pooling rule and did not.")
+        else:
+            if self.pool_alpha is None:
+                raise ValueError(
+                    "pool_mode='cvar' requires pool_alpha in (0, 1] — the "
+                    "lower-tail fraction of worlds that enter the mean (0.25 == "
+                    "the worst quarter). There is NO default: a defaulted alpha "
+                    "is a different experiment wearing this cell's name.")
+            a = float(self.pool_alpha)
+            if not _math.isfinite(a) or a <= 0.0 or a > 1.0:
+                raise ValueError(
+                    f"pool_alpha must be finite and in (0, 1]; got "
+                    f"{self.pool_alpha!r}. alpha <= 0 selects zero worlds (the "
+                    "ceil()'s max(1,..) would silently make it 'the single "
+                    "worst world', a DIFFERENT rule) and alpha > 1 selects more "
+                    "worlds than exist.")
+            self.pool_alpha = a
 
     def resolved_leaf_cfg(self):
         return self.leaf_cfg if self.leaf_cfg is not None else DEFAULT_CONFIG
@@ -427,6 +486,18 @@ class HeuristicPriorConfig:
             # compare two LIVE configs to each other).
             "fpu_reduction": (None if self.fpu_reduction is None
                               else float(self.fpu_reduction)),
+            # RESOLVED POOLING RULE — GT-M1's manifest address
+            # (measurement/cvar_pool_prep/READ_RULE, gate `G-POOL`). ABSENT is
+            # FAIL, and `pool_alpha: null` is a POSITIVE statement ("mean pooling
+            # takes no alpha"), never a missing key. ⚠️ Emitted
+            # UNCONDITIONALLY, so `champion_factory._config_hash` moves by
+            # exactly two keys for EVERY config, both sides alike — the same
+            # one-off move `fpu_reduction` and `tiearb_phase_gate` each made. It
+            # is never pinned to a literal anywhere (the only consumers compare
+            # two LIVE configs to each other).
+            "pool_mode": str(self.pool_mode),
+            "pool_alpha": (None if self.pool_alpha is None
+                           else float(self.pool_alpha)),
             "leaf_cfg": leaf,
         }
 
@@ -471,6 +542,20 @@ def make_heuristic_prior_evaluator(game: Game, cfg: HeuristicPriorConfig):
             "tiearb_enabled is set but the python search path has no tie-arbiter "
             "implementation (it is rust-only; carc_core::tiearb + "
             "carc_core::fair::FairAgent::pimc_move). Build this agent with "
+            "backend='rust'."
+        )
+    # RISK-ASYMMETRIC WORLD POOLING (GT-M1) is likewise RUST-ONLY: it binds at
+    # the `pooled_q_argmax` dispatch in carc_core::fair::FairAgent::pimc_move,
+    # while `fair_agent.FairHeuristicPriorAgent._pimc_move` (the python fair
+    # path) pools by the visit-weighted mean unconditionally. Refusing here is
+    # the fail-closed rule: a python-search candidate that quietly dropped the
+    # rule would play champion-vs-champion and grade a perfect, meaningless null
+    # wearing the shape of a real cell.
+    if str(getattr(cfg, "pool_mode", "mean")) != "mean":
+        raise NotImplementedError(
+            f"pool_mode={getattr(cfg, 'pool_mode', None)!r} is set but the "
+            "python search path pools by the visit-weighted mean only (GT-M1 "
+            "is rust-only; carc_core::fair::pool). Build this agent with "
             "backend='rust'."
         )
     leaf_cfg = cfg.resolved_leaf_cfg()

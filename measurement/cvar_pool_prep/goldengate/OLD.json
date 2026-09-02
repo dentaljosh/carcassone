@@ -1,0 +1,341 @@
+{
+  "fixture": "cvar_pool_prep golden gate (GT-M1)",
+  "requested_pool_mode": "mean",
+  "requested_pool_alpha": null,
+  "flag_expressible_on_this_module": false,
+  "requested_but_unreachable": false,
+  "backend": "rust",
+  "tree": "/home/doctor/carc-cvar-gate/oldtree",
+  "evalmod": "/home/doctor/carc-cvar-gate/oldtree/scripts/classical_search/eval_fair_puct.py",
+  "evalmod_sha256": "01d0e2a9f848687d9752455a9756b71034dc641c91fb754101815ff9e3c33dc1",
+  "src_tree": "/home/doctor/carc-cvar-gate/oldtree",
+  "carcassonne_ai_file": "/home/doctor/carc-cvar-gate/oldtree/src/carcassonne_ai/__init__.py",
+  "carc_rs_binary_sha": "2ac56f29cd48c117",
+  "carc_rs_file": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+  "rust_pool_readback": {
+    "has_pool_getter": false,
+    "pool": null,
+    "error": null
+  },
+  "production_knobs": {
+    "c_puct": 1.5,
+    "c_puct_source": "governance/PRODUCTION.yaml",
+    "tau_p": 5.0,
+    "tau_p_source": "governance/PRODUCTION.yaml"
+  },
+  "cand_search": {
+    "fpu_reduction": null,
+    "c_puct": null,
+    "tau_p": null,
+    "shared_c_puct": 1.5,
+    "shared_tau_p": 5.0,
+    "pool_mode": "mean",
+    "pool_alpha": null
+  },
+  "cand_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "fpu_reduction": null,
+    "pool_mode": "MISSING",
+    "pool_alpha": "MISSING"
+  },
+  "opp_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "fpu_reduction": null,
+    "pool_mode": "MISSING",
+    "pool_alpha": "MISSING"
+  },
+  "budget": {
+    "k_dets": 4,
+    "sims_per_det": 96,
+    "exact_k": 2,
+    "note": "⛔ NOT the champion's k16x1376 — this is a CODE-PATH identity fixture, never a strength measurement."
+  },
+  "seeds": [
+    175999999800,
+    175999999801,
+    175999999802,
+    175999999803,
+    175999999804,
+    175999999805,
+    175999999806,
+    175999999807,
+    175999999808,
+    175999999809,
+    175999999810,
+    175999999811
+  ],
+  "frozen_seed_count": 12,
+  "host": "laptop-wsl",
+  "python": "3.14.4",
+  "env_flat_leaf": "1",
+  "wall_secs": 39.992523972003255,
+  "games": [
+    {
+      "seed": 175999999800,
+      "n_actions": 144,
+      "actions_sha256": "11bc72328852cbd19d66715c0321962838f9f6afeb1573e938d9bc8804a1c5a8",
+      "first_8_actions": [
+        1248,
+        2501,
+        1254,
+        2509,
+        1147,
+        2510,
+        1246,
+        2501
+      ],
+      "final_scores": [
+        84,
+        87
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999801,
+      "n_actions": 143,
+      "actions_sha256": "bceb01ed9ffab84714e28ddca3505f61aee857365f457a7e1552b03506f9fad1",
+      "first_8_actions": [
+        1248,
+        2501,
+        1252,
+        2506,
+        1146,
+        2509,
+        1048,
+        2503
+      ],
+      "final_scores": [
+        108,
+        100
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999802,
+      "n_actions": 144,
+      "actions_sha256": "bcf817e5d46a0f513dd2db21496065498a8e672e4517be880c3654ad96a2daa2",
+      "first_8_actions": [
+        1248,
+        2505,
+        1148,
+        2506,
+        1349,
+        2501,
+        1049,
+        2503
+      ],
+      "final_scores": [
+        91,
+        76
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999803,
+      "n_actions": 143,
+      "actions_sha256": "d772ead62f3fc2ddf08dc008c1f5635fac678155182112f41ab84eb3086323f9",
+      "first_8_actions": [
+        1248,
+        2506,
+        1150,
+        2502,
+        1254,
+        2501,
+        1244,
+        2503
+      ],
+      "final_scores": [
+        105,
+        103
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999804,
+      "n_actions": 143,
+      "actions_sha256": "46e858e4f0540c967d13992526cccfcfa59f6e4edf376f64a1c3377b9be01eab",
+      "first_8_actions": [
+        1248,
+        2510,
+        1148,
+        2506,
+        1152,
+        2504,
+        1245,
+        2502
+      ],
+      "final_scores": [
+        76,
+        86
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999805,
+      "n_actions": 144,
+      "actions_sha256": "baf8adba646738ee8d59204f6e553c1232204fa7cd6cef9781135547ae8c7f6c",
+      "first_8_actions": [
+        1248,
+        2503,
+        1244,
+        2510,
+        1352,
+        2510,
+        1240,
+        2502
+      ],
+      "final_scores": [
+        86,
+        76
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999806,
+      "n_actions": 144,
+      "actions_sha256": "df3c46f70c47f9a2dd1306dbc36d292279ab4e6dbacdd52cd2b02ff95dd4e9d9",
+      "first_8_actions": [
+        1248,
+        2506,
+        1246,
+        2501,
+        1152,
+        2501,
+        1144,
+        2501
+      ],
+      "final_scores": [
+        79,
+        112
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999807,
+      "n_actions": 144,
+      "actions_sha256": "d744d5d33ced2d63e6f225f8d9568a7afc154bc74c0f8ba90f40cc0ae4f3c480",
+      "first_8_actions": [
+        1248,
+        2501,
+        1349,
+        2502,
+        1344,
+        2505,
+        1345,
+        2510
+      ],
+      "final_scores": [
+        59,
+        89
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999808,
+      "n_actions": 144,
+      "actions_sha256": "d41fa25473b09c29fb585ce6f1487f8a08733851542cf094f372a65a367d297b",
+      "first_8_actions": [
+        1248,
+        2501,
+        1246,
+        2503,
+        1354,
+        2502,
+        1241,
+        2507
+      ],
+      "final_scores": [
+        76,
+        100
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999809,
+      "n_actions": 144,
+      "actions_sha256": "a38284601da633a38479f9abd7e2ffb2eaa16da5132a2b57dae7441d0c579602",
+      "first_8_actions": [
+        1248,
+        2501,
+        1245,
+        2507,
+        1154,
+        2509,
+        1241,
+        2502
+      ],
+      "final_scores": [
+        93,
+        102
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999810,
+      "n_actions": 144,
+      "actions_sha256": "e6552daa838351280935dda30b464c84c7971ed08e75d6b5e9f6ae84c5acbf14",
+      "first_8_actions": [
+        1248,
+        2506,
+        1148,
+        2501,
+        1146,
+        2503,
+        1448,
+        2501
+      ],
+      "final_scores": [
+        75,
+        91
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    },
+    {
+      "seed": 175999999811,
+      "n_actions": 143,
+      "actions_sha256": "592cca651a322472661d79065f9e9f844c3249c3e0dfbcc8776615ca06604d66",
+      "first_8_actions": [
+        1248,
+        2505,
+        1253,
+        2501,
+        1347,
+        2503,
+        1154,
+        2509
+      ],
+      "final_scores": [
+        105,
+        89
+      ],
+      "resolved_pool_mode": "MISSING",
+      "resolved_pool_alpha": "MISSING",
+      "pool_stats": null
+    }
+  ],
+  "leg_sha256": "a6fa359d1c95b2a855c1982b3a118b22381abb1dd7f0ecb096da60cd7108714c"
+}

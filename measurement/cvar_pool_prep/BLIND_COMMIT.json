@@ -1,0 +1,21 @@
+{
+  "round": "GT-M1 — risk-asymmetric world pooling (measurement/cvar_pool_prep)",
+  "blind_commit": "PENDING",
+  "why_pending": "A commit cannot name its own hash from inside itself. The FREEZE commit lands this pair with PENDING; a small FOLLOW-UP commit — which changes nothing but this file and WORKERS.conf's BLIND_COMMIT line — writes its own parent's 40-hex sha into BOTH places. run_cells.sh REFUSES a real cell while this reads PENDING.",
+  "what_it_gates": "Every read-out of CELL_CVAR25 / CELL_CVAR50 is gated against the commit at which PREREG.md, cvar_lib.py, WORKERS.conf and the branch vocabulary were frozen. A number produced by an instrument that moved after seeing data is not a blind read.",
+  "stamped_in_two_places": [
+    "measurement/cvar_pool_prep/BLIND_COMMIT.json (this file, key `blind_commit`)",
+    "measurement/cvar_pool_prep/WORKERS.conf (line `BLIND_COMMIT=`)"
+  ],
+  "test": "test_cvar_pool.py::test_blind_commit_is_pending_or_a_40_hex_sha asserts the two agree and that the value is PENDING or a 40-hex sha, so a half-stamped pair cannot ride.",
+  "frozen_by_this_commit": {
+    "cells": "CELL_CVAR25 (alpha 0.25) and CELL_CVAR50 (alpha 0.50), 400 deck-paired decks x 2 seatings each, laptop W=22",
+    "primary": "M = deck-paired mean margin (candidate - opponent), pts/deck, per cell within its own band",
+    "bars": "BAR_M = +1.0 pts/deck (effect-sized per the owner ruling 2026-08-30, NEVER 2*se); BAR_REGRESSION = 0.0",
+    "branches": "P-POOLING-MOVES / P-REGRESSION / P-BOUNDED / P-UNRESOLVED / P-VOID",
+    "gates": "G-POOL, G-REACH, G-SINGLEVAR, G-BUDGET, G-ARB (cvar_lib.py), plus the launcher's G-PROD",
+    "golden_gate": "CVAR_BITEXACT.json — 14 checks, full frozen 12-seed set, PASS"
+  },
+  "amendments": [],
+  "notes": "⛔ THIS AGENT CLAIMED NO BAND AND PLAYED NO CELL. The only games it played are the golden gate's 48 (4 legs x 12 seeds, k4x96) and a 2-game k2x32 build-time dry cell, ALL on the THROWAWAY sub-range 175999999xxx, which is not part of either proposed band's claim and never will be."
+}

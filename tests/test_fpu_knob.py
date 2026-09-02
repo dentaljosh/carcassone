@@ -83,10 +83,20 @@ def test_manifest_carries_the_resolved_value_always():
 
 def test_appended_last_so_positional_construction_is_unchanged():
     """The field is at the END of the dataclass, so every historical positional
-    construction keeps its meaning."""
+    construction keeps its meaning.
+
+    ⭐ AMENDED 2026-09-02 (measurement/cvar_pool_prep, GT-M1): `pool_mode` /
+    `pool_alpha` were appended AFTER `fpu_reduction`, under the identical rule
+    and for the identical reason. What this test actually protects is that
+    `fpu_reduction` is at or after the last field that existed when it was
+    written — i.e. that nothing was INSERTED BEFORE it — so it now asserts the
+    ORDER of the tail rather than pinning `fpu_reduction` as the final element.
+    Pinning the last element would make every future append fail this test for
+    no reason, which is the opposite of what it is for."""
     from carcassonne_ai.heuristic_prior_mcts import HeuristicPriorConfig
 
-    assert list(HeuristicPriorConfig.__dataclass_fields__)[-1] == "fpu_reduction"
+    fields = list(HeuristicPriorConfig.__dataclass_fields__)
+    assert fields[-3:] == ["fpu_reduction", "pool_mode", "pool_alpha"]
 
 
 # --------------------------------------------------------------------------- #
@@ -315,7 +325,20 @@ def test_manifest_carries_cand_search_even_when_the_knobs_are_off(tmp_path):
     # nothing downstream reads the key SET — but THIS test does, deliberately, so
     # that a future addition has to be noticed and justified here rather than
     # slipping in.
+    # ⭐ GREW AGAIN 2026-09-02 (measurement/cvar_pool_prep, GT-M1): `pool_mode`
+    # and `pool_alpha` joined the dict when `--cand-pool-mode` /
+    # `--cand-pool-alpha` were added. ADDITIVE and under the SAME
+    # always-present convention — `pool_mode: "mean"` is the POSITIVE statement
+    # "the deployed visit-weighted pooled Q = sum(W)/sum(N)", and
+    # `pool_alpha: null` positively says "mean pooling takes no alpha"; neither
+    # is ever a missing key. ⚠️ There is deliberately NO `shared_pool_mode`,
+    # because unlike c_puct and tau_p there is no shared `--pool-mode` flag at
+    # all: a two-sided pooling change is a different CHAMPION, not a cell, so
+    # the opponent's rule is asserted from the OPPONENT's own resolved config
+    # (`config.opponent.champ_cfg.pool_mode`) instead — see cvar_pool_prep's
+    # G-POOL.
     assert man["config"]["cand_search"] == {
         "fpu_reduction": None, "c_puct": None, "tau_p": None,
-        "shared_c_puct": 1.5, "shared_tau_p": 5.0}
+        "shared_c_puct": 1.5, "shared_tau_p": 5.0,
+        "pool_mode": "mean", "pool_alpha": None}
     assert man["config"]["champion"]["fpu_reduction"] is None

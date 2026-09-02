@@ -293,6 +293,24 @@ pub struct SearchConfig {
     /// arbiter's world fan-out are different budgets on different boxes, and
     /// coupling them would silently flip a deployed `rust_threads = 2` cell.
     pub tiearb_threads: usize,
+    /// ⭐⭐ RISK-ASYMMETRIC WORLD POOLING — GT-M1
+    /// (`measurement/cvar_pool_prep/PREREG.md`; census
+    /// `measurement/cl083_mech_censuses_20260830/READOUT.md` §1).
+    /// [`crate::fair::PoolMode::Mean`] (the default == the champion) NEVER
+    /// touches [`crate::fair::pool`] — the dispatch is one `match` on a `Copy`
+    /// enum immediately before the existing `pooled_q_argmax` call, so the
+    /// default path is the pre-change code BYTE for byte, exactly as
+    /// `tiearb_enabled == false` and `jrules_filter_mask == 0` are.
+    /// [`crate::fair::PoolMode::CVaR`] scores each root action by the mean of
+    /// its per-world `Q` over the `ceil(alpha*k)` WORST worlds.
+    ///
+    /// ⚠️ Read by [`crate::fair::FairAgent`], NOT by the single-world
+    /// [`Searcher`]: pooling is an AGENT-level, once-per-move rule over the k
+    /// PIMC determinizations, and a bare `search_single` has no worlds to pool.
+    /// It moves NO leaf hash, so the wiring gates are the manifest's resolved
+    /// `cand_search.pool_mode` / `.pool_alpha` plus the golden gate's positive
+    /// control — never a moved hash.
+    pub pool_mode: crate::fair::PoolMode,
 }
 
 impl Default for SearchConfig {
@@ -329,6 +347,11 @@ impl Default for SearchConfig {
             tiearb_max_plies: crate::tiearb::TIEARB_MAX_PLIES,
             tiearb_threads: 1,
             wc_tiebreak: false,
+            // ⭐ THE IDENTITY PREMISE of the CVaR round's golden gate: the
+            // default is the deployed visit-weighted pooled mean. A build whose
+            // default were anything else would silently re-decide every cell
+            // this program has ever banked.
+            pool_mode: crate::fair::PoolMode::Mean,
         }
     }
 }

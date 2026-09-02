@@ -1,0 +1,253 @@
+{
+  "gate": "GT-M1 CVaR POOLING GOLDEN GATE (bit-exact-when-unset across a swung tree AND wheel + positive control + candidate-only + the alpha=1.0 equal-weight arm)",
+  "verdict": "PASS",
+  "seeds_played": 12,
+  "frozen_seed_count": 12,
+  "full_frozen_set": true,
+  "checks": [
+    {
+      "check": "WHEEL-SWUNG",
+      "ok": true,
+      "detail": {
+        "OLD": "2ac56f29cd48c117",
+        "NEW": "c1e9748e89d24377",
+        "CVAR25": "c1e9748e89d24377",
+        "ALPHA1": "c1e9748e89d24377",
+        "files": {
+          "OLD": "/home/doctor/projects/carcassone/.venv/lib/python3.14/site-packages/carc_rs/__init__.py",
+          "NEW": "/home/doctor/carc-cvar-gate/wheel/carc_rs/__init__.py",
+          "CVAR25": "/home/doctor/carc-cvar-gate/wheel/carc_rs/__init__.py",
+          "ALPHA1": "/home/doctor/carc-cvar-gate/wheel/carc_rs/__init__.py"
+        }
+      },
+      "why": "OLD ran the PRE-CHANGE carc_rs (the one installed in the venv) and all three NEW legs ran ONE freshly built binary — so the wheel is a named variable of the OLD/NEW contrast, not an uncontrolled one"
+    },
+    {
+      "check": "OLD-WHEEL-IS-STALE",
+      "ok": true,
+      "detail": {
+        "old_has_pool_getter": false
+      },
+      "why": "⭐ the OLD leg's carc_rs has NO `pool` getter — it PREDATES measurement/cvar_pool_prep and could not have expressed the rule under any flag. That is what the IDENTITY leg is identical TO"
+    },
+    {
+      "check": "NEW-WHEEL-IS-FRESH",
+      "ok": true,
+      "detail": {
+        "NEW": true,
+        "CVAR25": true,
+        "ALPHA1": true
+      },
+      "why": "every NEW leg's carc_rs exposes `pool` — the rebuilt wheel is what played, and the launcher's own stale-wheel refusal reads this getter"
+    },
+    {
+      "check": "TREE-SWUNG",
+      "ok": true,
+      "detail": {
+        "OLD": "/home/doctor/carc-cvar-gate/oldtree/src/carcassonne_ai/__init__.py",
+        "NEW": "/home/doctor/carc-cvar-gate/newtree/src/carcassonne_ai/__init__.py",
+        "CVAR25": "/home/doctor/carc-cvar-gate/newtree/src/carcassonne_ai/__init__.py",
+        "ALPHA1": "/home/doctor/carc-cvar-gate/newtree/src/carcassonne_ai/__init__.py",
+        "trees": {
+          "OLD": "/home/doctor/carc-cvar-gate/oldtree",
+          "NEW": "/home/doctor/carc-cvar-gate/newtree",
+          "CVAR25": "/home/doctor/carc-cvar-gate/newtree",
+          "ALPHA1": "/home/doctor/carc-cvar-gate/newtree"
+        }
+      },
+      "why": "⚠️ UNLIKE the tau_p gate, src/carcassonne_ai IS a variable here (GT-M1 touches heuristic_prior_mcts / rust_agent / champion_factory), so OLD resolved a DIFFERENT package than the three NEW legs, and those three resolved the SAME one"
+    },
+    {
+      "check": "HARNESS-SWUNG",
+      "ok": true,
+      "detail": {
+        "OLD": "01d0e2a9f848687d9752455a9756b71034dc641c91fb754101815ff9e3c33dc1",
+        "NEW": "c50bf944b3f1fc1e33e0510aa547c36c185f97489373f627f6ac761156a18359",
+        "CVAR25": "c50bf944b3f1fc1e33e0510aa547c36c185f97489373f627f6ac761156a18359",
+        "ALPHA1": "c50bf944b3f1fc1e33e0510aa547c36c185f97489373f627f6ac761156a18359",
+        "paths": {
+          "OLD": "/home/doctor/carc-cvar-gate/oldtree/scripts/classical_search/eval_fair_puct.py",
+          "NEW": "/home/doctor/carc-cvar-gate/newtree/scripts/classical_search/eval_fair_puct.py",
+          "CVAR25": "/home/doctor/carc-cvar-gate/newtree/scripts/classical_search/eval_fair_puct.py",
+          "ALPHA1": "/home/doctor/carc-cvar-gate/newtree/scripts/classical_search/eval_fair_puct.py"
+        }
+      },
+      "why": "OLD loaded a DIFFERENT eval_fair_puct.py; the three dosed/undosed NEW legs ran the SAME one"
+    },
+    {
+      "check": "SAME-SEEDS",
+      "ok": true,
+      "detail": {
+        "n": 12,
+        "identical": true
+      },
+      "why": "all four legs played the same frozen deck set"
+    },
+    {
+      "check": "SAME-BUDGET",
+      "ok": true,
+      "detail": {
+        "k_dets": 4,
+        "sims_per_det": 96,
+        "exact_k": 2,
+        "note": "⛔ NOT the champion's k16x1376 — this is a CODE-PATH identity fixture, never a strength measurement."
+      },
+      "why": "identical search shape on all four legs"
+    },
+    {
+      "check": "IDENTITY",
+      "ok": true,
+      "detail": {
+        "old": "a6fa359d1c95b2a855c1982b3a118b22381abb1dd7f0ecb096da60cd7108714c",
+        "new": "a6fa359d1c95b2a855c1982b3a118b22381abb1dd7f0ecb096da60cd7108714c",
+        "per_game_mismatches": []
+      },
+      "why": "⭐⭐ BIT-IDENTICAL with --cand-pool-mode UNSET, across a swung TREE and a swung WHEEL: neither the new rust dispatch, the new config fields, the new telemetry nor the harness plumbing moved the champion's play by one action"
+    },
+    {
+      "check": "MEAN-COUNTERS-ZERO",
+      "ok": true,
+      "detail": {
+        "pool_cvar_plies": 0,
+        "pool_pickchanges": 0,
+        "pool_fallbacks": 0
+      },
+      "why": "the Mean-pooled NEW leg never entered carc_core::fair::pool — the counters live inside the CVaR arm of the dispatch, so all-zero is the byte-identity premise stated as a number"
+    },
+    {
+      "check": "POSITIVE",
+      "ok": true,
+      "detail": {
+        "new": "a6fa359d1c95b2a855c1982b3a118b22381abb1dd7f0ecb096da60cd7108714c",
+        "cvar": "8b90a7b4df105ceea1daaf660fea2278552dcb44c6b021e1548ea477f2fbed72",
+        "games_that_differ": 12,
+        "games_total": 12,
+        "cvar_plies": 1498,
+        "pickchanges": 227,
+        "reach_in_play": 0.15153538050734314,
+        "fallbacks": 0,
+        "resolved_pool": {
+          "mode": "cvar",
+          "alpha": 0.25
+        }
+      },
+      "why": "⭐⭐ the knob BINDS, on TWO independent witnesses: every game diverges from the Mean-pooled leg, AND the agent's own play-derived counter says the CVaR rule decided plies and CHANGED the pick on some of them. A flag parsed and dropped on the floor would pass a divergence test only by accident and would fail this one flat"
+    },
+    {
+      "check": "CANDIDATE-ONLY",
+      "ok": true,
+      "detail": {
+        "opponent_pool_per_leg": {
+          "OLD": {
+            "mode": "MISSING",
+            "alpha": "MISSING"
+          },
+          "NEW": {
+            "mode": "mean",
+            "alpha": null
+          },
+          "CVAR25": {
+            "mode": "mean",
+            "alpha": null
+          },
+          "ALPHA1": {
+            "mode": "mean",
+            "alpha": null
+          }
+        },
+        "cvar_candidate_pool": {
+          "mode": "cvar",
+          "alpha": 0.25
+        }
+      },
+      "why": "⭐⭐ the OPPONENT (built by _make_opponent's own _cfg_from_dict call) pools by the deployed visit-weighted mean in EVERY leg while the dosed legs' CANDIDATE carries the rule. There is no shared --pool-mode by design, so any opponent-side cvar here would be a pure LEAK — and a two-sided pooling change is a different CHAMPION, not a cell"
+    },
+    {
+      "check": "ALPHA1-EQUALWEIGHT-ARM",
+      "ok": true,
+      "detail": {
+        "games_that_differ_from_mean": 12,
+        "games_total": 12,
+        "cvar_plies": 1550,
+        "pickchanges": 70,
+        "reach_in_play": 0.04516129032258064,
+        "leg_sha256": "6ce079c101d5462d1bde3ddf151d9f3a13657600e26ecd2d6735a816bfeb12de",
+        "identical_to_mean": false
+      },
+      "why": "⚠️⚠️ THE CORRECTION. alpha=1.0 is the EQUAL-WEIGHT-per-world mean and is NOT an identity control for the deployed rule, which is VISIT-weighted (sum(W)/sum(N)). The census disclosed exactly this (cl083_mech_censuses_20260830/DEVIATIONS.md D-1: the alpha=1.00 rule changes the pick on 18.1% of contest-exposed plies BY ITSELF, which is why `reach_vs_equalweight` exists in that artefact). This check therefore asserts the ARM IS EXPRESSIBLE and records whether it diverges — it does NOT assert identity, and a build that made it identical would be a build that got the rule wrong. The bit-exact statement that IS true — CVaR at alpha=1.0 equals the SORTED-ORDER equal-weight mean — is arithmetic and is pinned in carc_core::fair::pool::tests::alpha_one_is_the_sorted_order_equal_weight_mean"
+    },
+    {
+      "check": "AUDIT-ADJUDICATED",
+      "ok": true,
+      "detail": {
+        "old_module_expressible": false,
+        "new_module_expressible": true
+      },
+      "why": "⭐ the pre-change eval_fair_puct's REAL argparse (driven via main(['--help'])) carries no --cand-pool-mode, so no candidate-side pooling cell was expressible on the classical champion; the patched one carries it and POSITIVE shows it reaching play"
+    },
+    {
+      "check": "DOSES-DISTINCT",
+      "ok": true,
+      "detail": {
+        "cvar25_alpha": 0.25,
+        "alpha1_alpha": 1.0,
+        "k_dets": 4,
+        "note": "at k=4 alpha 0.25 -> ceil(1.0) = 1 world, alpha 1.0 -> 4"
+      },
+      "why": "the two dosed legs select different lower-tail widths, so the gate tests two rules and not one rule twice"
+    }
+  ],
+  "failed": [],
+  "legs": {
+    "OLD": {
+      "tree": "/home/doctor/carc-cvar-gate/oldtree",
+      "evalmod": "/home/doctor/carc-cvar-gate/oldtree/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "a6fa359d1c95b2a855c1982b3a118b22381abb1dd7f0ecb096da60cd7108714c",
+      "carc_rs_binary_sha": "2ac56f29cd48c117",
+      "requested_pool_mode": "mean",
+      "requested_pool_alpha": null,
+      "flag_expressible_on_this_module": false,
+      "host": "laptop-wsl",
+      "wall_secs": 39.992523972003255
+    },
+    "NEW": {
+      "tree": "/home/doctor/carc-cvar-gate/newtree",
+      "evalmod": "/home/doctor/carc-cvar-gate/newtree/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "a6fa359d1c95b2a855c1982b3a118b22381abb1dd7f0ecb096da60cd7108714c",
+      "carc_rs_binary_sha": "c1e9748e89d24377",
+      "requested_pool_mode": "mean",
+      "requested_pool_alpha": null,
+      "flag_expressible_on_this_module": true,
+      "host": "laptop-wsl",
+      "wall_secs": 40.51600458199391
+    },
+    "CVAR25": {
+      "tree": "/home/doctor/carc-cvar-gate/newtree",
+      "evalmod": "/home/doctor/carc-cvar-gate/newtree/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "8b90a7b4df105ceea1daaf660fea2278552dcb44c6b021e1548ea477f2fbed72",
+      "carc_rs_binary_sha": "c1e9748e89d24377",
+      "requested_pool_mode": "cvar",
+      "requested_pool_alpha": 0.25,
+      "flag_expressible_on_this_module": true,
+      "host": "laptop-wsl",
+      "wall_secs": 39.75901616195915
+    },
+    "ALPHA1": {
+      "tree": "/home/doctor/carc-cvar-gate/newtree",
+      "evalmod": "/home/doctor/carc-cvar-gate/newtree/scripts/classical_search/eval_fair_puct.py",
+      "leg_sha256": "6ce079c101d5462d1bde3ddf151d9f3a13657600e26ecd2d6735a816bfeb12de",
+      "carc_rs_binary_sha": "c1e9748e89d24377",
+      "requested_pool_mode": "cvar",
+      "requested_pool_alpha": 1.0,
+      "flag_expressible_on_this_module": true,
+      "host": "laptop-wsl",
+      "wall_secs": 39.731984056008514
+    }
+  },
+  "riders": [
+    "⛔ This is a CODE-PATH gate at a tiny budget (k4 x 96), NEVER a strength measurement. No number in the legs may be quoted as one — including `reach_in_play`, which at this budget and on self-play decks is not comparable to the census's reach(alpha).",
+    "⛔ It proves the DEFAULT path is unmoved across a swung tree AND a swung wheel, that the rule BINDS, and that it binds on the CANDIDATE ONLY. It says NOTHING about whether the rule HELPS — that is what the two cells of measurement/cvar_pool_prep are for, and the census that licensed them explicitly declined to price the change (PREREG §1).",
+    "⚠️⚠️ ALPHA1 IS NOT AN IDENTITY LEG. See the ALPHA1-EQUALWEIGHT-ARM check: alpha=1.0 is the equal-weight-per-world mean, the deployed rule is visit-weighted, and the census measured them disagreeing on 18.1% of contest-exposed plies. A future reader who 'fixes' alpha=1.0 into an identity is breaking the rule, not the gate.",
+    "⛔ The alpha used by the CVAR25 leg is a PLUMBING dose that happens to equal one of the round's two funded doses. At k=4 it selects 1 world where the deployed k=16 selects 4, so it is NOT the round's cell and carries no claim."
+  ]
+}

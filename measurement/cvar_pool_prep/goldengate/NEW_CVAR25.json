@@ -1,0 +1,428 @@
+{
+  "fixture": "cvar_pool_prep golden gate (GT-M1)",
+  "requested_pool_mode": "cvar",
+  "requested_pool_alpha": 0.25,
+  "flag_expressible_on_this_module": true,
+  "requested_but_unreachable": false,
+  "backend": "rust",
+  "tree": "/home/doctor/carc-cvar-gate/newtree",
+  "evalmod": "/home/doctor/carc-cvar-gate/newtree/scripts/classical_search/eval_fair_puct.py",
+  "evalmod_sha256": "c50bf944b3f1fc1e33e0510aa547c36c185f97489373f627f6ac761156a18359",
+  "src_tree": "/home/doctor/carc-cvar-gate/newtree",
+  "carcassonne_ai_file": "/home/doctor/carc-cvar-gate/newtree/src/carcassonne_ai/__init__.py",
+  "carc_rs_binary_sha": "c1e9748e89d24377",
+  "carc_rs_file": "/home/doctor/carc-cvar-gate/wheel/carc_rs/__init__.py",
+  "rust_pool_readback": {
+    "has_pool_getter": true,
+    "pool": {
+      "mode": "cvar",
+      "alpha": 0.25
+    },
+    "error": null
+  },
+  "production_knobs": {
+    "c_puct": 1.5,
+    "c_puct_source": "governance/PRODUCTION.yaml",
+    "tau_p": 5.0,
+    "tau_p_source": "governance/PRODUCTION.yaml"
+  },
+  "cand_search": {
+    "fpu_reduction": null,
+    "c_puct": null,
+    "tau_p": null,
+    "shared_c_puct": 1.5,
+    "shared_tau_p": 5.0,
+    "pool_mode": "cvar",
+    "pool_alpha": 0.25
+  },
+  "cand_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "fpu_reduction": null,
+    "pool_mode": "cvar",
+    "pool_alpha": 0.25
+  },
+  "opp_cfg": {
+    "c_puct": 1.5,
+    "tau_p": 5.0,
+    "fpu_reduction": null,
+    "pool_mode": "mean",
+    "pool_alpha": null
+  },
+  "budget": {
+    "k_dets": 4,
+    "sims_per_det": 96,
+    "exact_k": 2,
+    "note": "⛔ NOT the champion's k16x1376 — this is a CODE-PATH identity fixture, never a strength measurement."
+  },
+  "seeds": [
+    175999999800,
+    175999999801,
+    175999999802,
+    175999999803,
+    175999999804,
+    175999999805,
+    175999999806,
+    175999999807,
+    175999999808,
+    175999999809,
+    175999999810,
+    175999999811
+  ],
+  "frozen_seed_count": 12,
+  "host": "laptop-wsl",
+  "python": "3.14.4",
+  "env_flat_leaf": "1",
+  "wall_secs": 39.75901616195915,
+  "games": [
+    {
+      "seed": 175999999800,
+      "n_actions": 144,
+      "actions_sha256": "14cdc5b037f9c29557c0af87b96fd27ccb02a1415b026fb0f4ee3c6554e1a152",
+      "first_8_actions": [
+        1248,
+        2501,
+        1253,
+        2507,
+        1145,
+        2510,
+        1246,
+        2501
+      ],
+      "final_scores": [
+        119,
+        116
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 131,
+        "pool_pickchanges": 21,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1120
+      }
+    },
+    {
+      "seed": 175999999801,
+      "n_actions": 144,
+      "actions_sha256": "cbbb25675edb5cb3b4dbc76c11a84aa132af03fa7a52fd460d5215e14cc13438",
+      "first_8_actions": [
+        1248,
+        2506,
+        1150,
+        2503,
+        1146,
+        2502,
+        1240,
+        2502
+      ],
+      "final_scores": [
+        87,
+        84
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 127,
+        "pool_pickchanges": 21,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1322
+      }
+    },
+    {
+      "seed": 175999999802,
+      "n_actions": 144,
+      "actions_sha256": "e2febb36845fb402232e619ca6bad8a6027211716aae208383277201795d1995",
+      "first_8_actions": [
+        1248,
+        2505,
+        1148,
+        2506,
+        1349,
+        2501,
+        1049,
+        2503
+      ],
+      "final_scores": [
+        91,
+        105
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 130,
+        "pool_pickchanges": 17,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1166
+      }
+    },
+    {
+      "seed": 175999999803,
+      "n_actions": 144,
+      "actions_sha256": "9586ccf922ddf92eb06a1ddbc31522a5032cd835dd529f1571be4eec3eba3e16",
+      "first_8_actions": [
+        1248,
+        2506,
+        1150,
+        2502,
+        1254,
+        2501,
+        1244,
+        2501
+      ],
+      "final_scores": [
+        95,
+        106
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 131,
+        "pool_pickchanges": 18,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1102
+      }
+    },
+    {
+      "seed": 175999999804,
+      "n_actions": 144,
+      "actions_sha256": "2ead09b9613e9c5483bd0192ec540d1d5783bdc1c9f60c6be4160202f1715d9b",
+      "first_8_actions": [
+        1248,
+        2502,
+        1148,
+        2506,
+        1253,
+        2501,
+        1145,
+        2502
+      ],
+      "final_scores": [
+        72,
+        96
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 126,
+        "pool_pickchanges": 20,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1327
+      }
+    },
+    {
+      "seed": 175999999805,
+      "n_actions": 144,
+      "actions_sha256": "da6f26c7314793f8f0e8cffb95d2cad4b787ae298f2d8eff954b0b3045092abd",
+      "first_8_actions": [
+        1248,
+        2501,
+        1244,
+        2503,
+        1352,
+        2510,
+        1346,
+        2503
+      ],
+      "final_scores": [
+        94,
+        94
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 120,
+        "pool_pickchanges": 23,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1217
+      }
+    },
+    {
+      "seed": 175999999806,
+      "n_actions": 143,
+      "actions_sha256": "52ad0f006bef6eed6edd29274fb48ece89529c68f6c5c58177d6c605c0a4e257",
+      "first_8_actions": [
+        1248,
+        2502,
+        1246,
+        2501,
+        1152,
+        2506,
+        1144,
+        2501
+      ],
+      "final_scores": [
+        92,
+        118
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 132,
+        "pool_pickchanges": 22,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1073
+      }
+    },
+    {
+      "seed": 175999999807,
+      "n_actions": 144,
+      "actions_sha256": "9b018fc6d5529d836a13eb70141fe85257c6bd9f270f522846d7a6c42d7d3395",
+      "first_8_actions": [
+        1248,
+        2501,
+        1349,
+        2502,
+        1344,
+        2505,
+        1345,
+        2507
+      ],
+      "final_scores": [
+        95,
+        95
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 126,
+        "pool_pickchanges": 16,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1265
+      }
+    },
+    {
+      "seed": 175999999808,
+      "n_actions": 144,
+      "actions_sha256": "4d39db38b684f9eb13e17e5d3a4e35f2f949c535890d253436ccd87b827b1a1c",
+      "first_8_actions": [
+        1248,
+        2510,
+        1246,
+        2503,
+        1152,
+        2503,
+        1344,
+        2503
+      ],
+      "final_scores": [
+        55,
+        47
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 107,
+        "pool_pickchanges": 17,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1298
+      }
+    },
+    {
+      "seed": 175999999809,
+      "n_actions": 144,
+      "actions_sha256": "09c41ce9ed8f4de96916d69415cd76bf30d5d11f61d1106a591ade6b93111713",
+      "first_8_actions": [
+        1248,
+        2501,
+        1245,
+        2507,
+        1154,
+        2509,
+        1241,
+        2502
+      ],
+      "final_scores": [
+        96,
+        95
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 120,
+        "pool_pickchanges": 20,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1470
+      }
+    },
+    {
+      "seed": 175999999810,
+      "n_actions": 144,
+      "actions_sha256": "a6af2c0ab1ed46f81139ca1b4f355f0b58c469dfb4e200cce07a63ac23b4ee44",
+      "first_8_actions": [
+        1248,
+        2510,
+        1148,
+        2501,
+        1252,
+        2502,
+        1245,
+        2507
+      ],
+      "final_scores": [
+        93,
+        100
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 126,
+        "pool_pickchanges": 16,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 1235
+      }
+    },
+    {
+      "seed": 175999999811,
+      "n_actions": 143,
+      "actions_sha256": "258f48a81b057fe4c3ce73621111f58ddaa033341f3e3f7eee636d0c278f57bd",
+      "first_8_actions": [
+        1248,
+        2505,
+        1253,
+        2501,
+        1347,
+        2503,
+        1154,
+        2509
+      ],
+      "final_scores": [
+        81,
+        83
+      ],
+      "resolved_pool_mode": "cvar",
+      "resolved_pool_alpha": 0.25,
+      "pool_stats": {
+        "pool_mode": "cvar",
+        "pool_alpha": 0.25,
+        "pool_cvar_plies": 122,
+        "pool_pickchanges": 16,
+        "pool_fallbacks": 0,
+        "pool_eligible_total": 987
+      }
+    }
+  ],
+  "leg_sha256": "8b90a7b4df105ceea1daaf660fea2278552dcb44c6b021e1548ea477f2fbed72"
+}

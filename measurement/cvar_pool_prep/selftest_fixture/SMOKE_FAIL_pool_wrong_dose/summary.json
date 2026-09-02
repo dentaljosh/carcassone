@@ -1,0 +1,236 @@
+{
+  "info": "fair",
+  "exact_k": 2,
+  "k_dets": 2,
+  "sims": 32,
+  "total_sims": 64,
+  "rung_sims": 800,
+  "asymmetric_budgets": true,
+  "candidate_k_dets": 2,
+  "candidate_sims": 32,
+  "candidate_total_sims": 64,
+  "opp_k_dets": 2,
+  "opp_sims": 32,
+  "opp_total_sims": 64,
+  "n_failed": 0,
+  "failure_rate": 0.0,
+  "failure_rate_trigger": 0.005,
+  "validity_trigger_fired": false,
+  "failed_cells": [],
+  "failed_by_seat": {
+    "0": 0,
+    "1": 0
+  },
+  "failed_classes": {},
+  "n_resolved_failures": 0,
+  "resolved_failed_cells": [],
+  "opponent": "fair-champion",
+  "opponent_label": "FAIR PRODUCTION CHAMPION (FairHeuristicPriorAgent, heuristic priors, curve125 leaf, k2x32)",
+  "n": 2,
+  "W": 1,
+  "D": 0,
+  "L": 1,
+  "winrate": 0.5,
+  "winrate_z": 0.0,
+  "elo": 0.0,
+  "elo_sig_1sigma": 245.6740585485502,
+  "avg_diff": 12.0,
+  "paired_mean_margin": null,
+  "paired_z": null,
+  "n_paired": 0,
+  "champ_prefix_ms_per_move": 313.6521739130435,
+  "rung_ms_per_move": 322.14492753623193,
+  "champ_latched_games": 2,
+  "solver_secs_per_game": 0.302,
+  "champ_timeouts": 0,
+  "tiearb_games": 2,
+  "tiearb_fired_plies_total": 30,
+  "tiearb_tile_plies_total": 69,
+  "tiearb_phi": 15.0,
+  "tiearb_fire_rate_on_tile_plies": 0.43478260869565216,
+  "tiearb_pickchanges_total": 20,
+  "tiearb_pickchange_rate": 0.6666666666666666,
+  "tiearb_mean_arms": 2.8666666666666667,
+  "tiearb_playouts_total": 5504,
+  "tiearb_secs_total": 42.910035425000004,
+  "tiearb_secs_per_game": 21.455017712500002,
+  "tiearb_modes": [
+    "argmax"
+  ],
+  "tiearb_B": [
+    64
+  ],
+  "tiearb_J": [
+    4
+  ],
+  "tiearb_phi_offline_prior": 22.96,
+  "tiearb_G_FIRE_floor": 1.0,
+  "tiearb_G_FIRE_fired": false,
+  "tiearb_errors_total": 0,
+  "tiearb_error_rate_on_fired": 0.0,
+  "tiearb_first_error": null,
+  "tiearb_partial_argmax_total": 0,
+  "tiearb_phase_gates": [
+    "all"
+  ],
+  "tiearb_fired_early_total": 12,
+  "tiearb_fired_mid_total": 9,
+  "tiearb_fired_late_total": 9,
+  "tiearb_fired_by_phase_sum": 30,
+  "tiearb_pickchanges_early_total": 8,
+  "tiearb_pickchanges_mid_total": 3,
+  "tiearb_pickchanges_late_total": 9,
+  "tiearb_fired_share_early": 0.4,
+  "tiearb_fired_share_mid": 0.3,
+  "tiearb_fired_share_late": 0.3,
+  "tiearb_fired_share_proxy_note": "DESIGN §6.2's proxy was 0.3380/0.3059/0.3561 (RAW exact-tie shares, corpus champ449, rules_profile=walled/R9-off, NO repr-dedup column). These shares are the DEDUPED runtime split under this cell's own rules epoch and SUPERSEDE it for sizing. Read only on a phase_gate=all cell.",
+  "tiearb_max_plies": [
+    400
+  ],
+  "opp_tiearb_games": 2,
+  "opp_tiearb_fired_plies_total": 25,
+  "opp_tiearb_tile_plies_total": 69,
+  "opp_tiearb_phi": 12.5,
+  "opp_tiearb_fire_rate_on_tile_plies": 0.36231884057971014,
+  "opp_tiearb_pickchanges_total": 17,
+  "opp_tiearb_pickchange_rate": 0.68,
+  "opp_tiearb_mean_arms": 3.04,
+  "opp_tiearb_playouts_total": 4864,
+  "opp_tiearb_secs_total": 44.079549215,
+  "opp_tiearb_secs_per_game": 22.0397746075,
+  "opp_tiearb_modes": [
+    "argmax"
+  ],
+  "opp_tiearb_B": [
+    64
+  ],
+  "opp_tiearb_J": [
+    4
+  ],
+  "opp_tiearb_phi_offline_prior": 22.96,
+  "opp_tiearb_G_FIRE_floor": 1.0,
+  "opp_tiearb_G_FIRE_fired": false,
+  "opp_tiearb_errors_total": 0,
+  "opp_tiearb_error_rate_on_fired": 0.0,
+  "opp_tiearb_first_error": null,
+  "opp_tiearb_partial_argmax_total": 0,
+  "opp_tiearb_phase_gates": [
+    "all"
+  ],
+  "opp_tiearb_fired_early_total": 10,
+  "opp_tiearb_fired_mid_total": 10,
+  "opp_tiearb_fired_late_total": 5,
+  "opp_tiearb_fired_by_phase_sum": 25,
+  "opp_tiearb_pickchanges_early_total": 9,
+  "opp_tiearb_pickchanges_mid_total": 7,
+  "opp_tiearb_pickchanges_late_total": 1,
+  "opp_tiearb_fired_share_early": 0.4,
+  "opp_tiearb_fired_share_mid": 0.4,
+  "opp_tiearb_fired_share_late": 0.2,
+  "opp_tiearb_fired_share_proxy_note": "DESIGN §6.2's proxy was 0.3380/0.3059/0.3561 (RAW exact-tie shares, corpus champ449, rules_profile=walled/R9-off, NO repr-dedup column). These shares are the DEDUPED runtime split under this cell's own rules epoch and SUPERSEDE it for sizing. Read only on a phase_gate=all cell.",
+  "opp_tiearb_max_plies": [
+    400
+  ],
+  "jr_expansions": {
+    "candidate": {
+      "total": 0,
+      "own_mover": 0,
+      "boosted": 0
+    },
+    "opponent": {
+      "total": 0,
+      "own_mover": 0,
+      "boosted": 0
+    }
+  },
+  "cand_jr_expansions": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+  },
+  "opp_jr_expansions": {
+    "total": 0,
+    "own_mover": 0,
+    "boosted": 0
+  },
+  "pool": {
+    "candidate": {
+      "cvar_plies": 128,
+      "pickchanges": 3,
+      "fallbacks": 8,
+      "eligible_total": 476,
+      "games": 2,
+      "games_missing": 0,
+      "mode": "cvar",
+      "alpha": 0.25,
+      "modes_observed": [
+        "cvar"
+      ],
+      "alphas_observed": [
+        0.25
+      ],
+      "modes_disagree": false,
+      "reach_in_play": 0.0234375,
+      "fallback_rate": 0.0625,
+      "mean_eligible": 3.71875
+    },
+    "opponent": {
+      "cvar_plies": 0,
+      "pickchanges": 0,
+      "fallbacks": 0,
+      "eligible_total": 0,
+      "games": 2,
+      "games_missing": 0,
+      "mode": "mean",
+      "alpha": null,
+      "modes_observed": [
+        "mean"
+      ],
+      "alphas_observed": [],
+      "modes_disagree": false,
+      "reach_in_play": 0.0,
+      "fallback_rate": 0.0,
+      "mean_eligible": 0.0
+    }
+  },
+  "cand_pool": {
+    "cvar_plies": 128,
+    "pickchanges": 3,
+    "fallbacks": 8,
+    "eligible_total": 476,
+    "games": 2,
+    "games_missing": 0,
+    "mode": "cvar",
+    "alpha": 0.25,
+    "modes_observed": [
+      "cvar"
+    ],
+    "alphas_observed": [
+      0.25
+    ],
+    "modes_disagree": false,
+    "reach_in_play": 0.0234375,
+    "fallback_rate": 0.0625,
+    "mean_eligible": 3.71875
+  },
+  "opp_pool": {
+    "cvar_plies": 0,
+    "pickchanges": 0,
+    "fallbacks": 0,
+    "eligible_total": 0,
+    "games": 2,
+    "games_missing": 0,
+    "mode": "mean",
+    "alpha": null,
+    "modes_observed": [
+      "mean"
+    ],
+    "alphas_observed": [],
+    "modes_disagree": false,
+    "reach_in_play": 0.0,
+    "fallback_rate": 0.0,
+    "mean_eligible": 0.0
+  },
+  "wc_tiebreak": false,
+  "wc_tie_resolved_games": 0
+}

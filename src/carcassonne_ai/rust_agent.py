@@ -324,6 +324,31 @@ def search_config_rs(cfg, sims: int):
             # produce a perfectly healthy-looking duplicate of ARB_FULL.
             tiearb_phase_gate=str(getattr(cfg, "tiearb_phase_gate", "all")),
         )
+    # ⭐⭐ RISK-ASYMMETRIC WORLD POOLING — GT-M1 (measurement/cvar_pool_prep).
+    # SAME conditional-keyword rule, and it exists for the SAME reason the FPU
+    # docstring above records at length: THIS FUNCTION IS WHERE KNOBS GO MISSING.
+    # `fpu_reduction` sat here as a hard-coded `None` for months while both legs
+    # claimed to implement it, and the only cells ever measured on the axis were
+    # unconfirmable. So this surface is forwarded from `cfg`, never defaulted at
+    # this seam, and `tests/test_cvar_pool_knob.py` asserts the RESOLVED rust
+    # config carries it rather than asserting the source text mentions it.
+    #
+    # A carc_rs build predating GT-M1 keeps serving every default-`mean`
+    # (champion) config unchanged — the keys are simply not passed — while a
+    # `cvar` request against that stale wheel raises TypeError: fail-closed loud,
+    # never a silently mean-pooled candidate, which would read as "risk-averse
+    # pooling is worth nothing" instead of "it never ran".
+    pool = {}
+    if str(getattr(cfg, "pool_mode", "mean")) != "mean":
+        pool = dict(
+            pool_mode=str(cfg.pool_mode),
+            # ⛔ NOT coerced to a default. `HeuristicPriorConfig.__post_init__`
+            # already refused `cvar` without an alpha, and `PoolMode::parse`
+            # refuses it again on the rust side; if it is somehow None here the
+            # rust layer must be the one to say so.
+            pool_alpha=(None if getattr(cfg, "pool_alpha", None) is None
+                        else float(cfg.pool_alpha)),
+        )
     # ⚠️ `resolved_leaf_cfg()`, NOT `cfg.leaf_cfg` (fixed 2026-08-02). `leaf_cfg=None`
     # is the SENTINEL for "the env-built DEFAULT_CONFIG", and it is what every caller
     # that relies on the leaf env rather than an explicit override passes — including
@@ -351,6 +376,7 @@ def search_config_rs(cfg, sims: int):
         **jrules_prior,
         **jrules_filter,
         **tiearb,
+        **pool,
     )
 
 
