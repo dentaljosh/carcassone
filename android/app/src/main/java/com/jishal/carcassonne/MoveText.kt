@@ -107,9 +107,36 @@ object MoveText {
      * The chip/status form of an opponent name: a weakened preset calls itself
      * `Champion(weakened k4x172)`, and the parenthetical belongs in the budget
      * note, not in every sentence that names the opponent.
+     *
+     * ⚠️ The empty-string fallback is "Opponent", NOT "Champion" (2026-09-02 text
+     * audit). It is reached only when the bridge supplied no name at all — during
+     * the first frames of a session, or on a failed start — and in a remote game
+     * that is precisely when calling the opponent "Champion" is a lie. Nothing in
+     * the app may name the opponent from a constant; the live `opponent_name` is
+     * the only source.
      */
     fun shortOpponent(name: String): String =
-        name.substringBefore('(').trim().ifEmpty { "Champion" }
+        name.substringBefore('(').trim().ifEmpty { "Opponent" }
+
+    /**
+     * A tile's engine description as words: `city_bottom_road_shield` ->
+     * `city bottom road · pennant`.
+     *
+     * Only two tokens are translated, and both because they are RULES vocabulary
+     * the player is entitled to see spelled out: `shield` is the pennant (+1 point
+     * per tile in that city, which is why a pennanted face is never merged with its
+     * plain twin in the bag), and `flowers` is the decorative garden that carries
+     * no scoring at all in the locked 2p Base+Farmers scope — so it is dropped
+     * rather than named, matching the grouping.
+     */
+    fun tileDescription(raw: String): String {
+        val parts = raw.trim().split('_').filter { it.isNotEmpty() }
+        if (parts.isEmpty()) return raw.trim()
+        val pennant = parts.any { it == "shield" }
+        val words = parts.filter { it != "shield" && it != "flowers" }
+        val body = words.joinToString(" ").ifEmpty { raw.trim() }
+        return if (pennant) "$body · pennant" else body
+    }
 
     private val TILE_RE = Regex("""tile @ \(([+-]?\d+),\s*([+-]?\d+)\) rot=\d+""")
     private val MEEPLE_RE = Regex("""([A-Z_]+) on ([A-Z_]+)""")

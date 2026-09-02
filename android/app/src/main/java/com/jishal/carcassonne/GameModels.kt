@@ -152,11 +152,86 @@ data class BagFace(
     val image: String?,
     val remaining: Int,
     val total: Int,
+    /**
+     * The face's FUNCTIONAL type, from `android_bridge.tile_type_key` — the engine's
+     * own tile data, canonicalised over the four rotations. Faces sharing this are
+     * the same tile with different art (in the base deck, exactly the eight
+     * `*_flowers` garden variants), and [groupBagFaces] collapses them.
+     *
+     * Empty on a bridge that predates the field, which [groupBagFaces] reads as
+     * "group by description" — i.e. the old ungrouped list, never a wrong merge.
+     */
+    val typeKey: String = "",
 )
+
+/**
+ * One row of the tile-bag view: every face that plays identically, as one entry.
+ *
+ * [remaining] / [total] are the SUMS across the group, so the view's numbers still
+ * add up to the deck. [art] is one representative image; [variants] is how many
+ * distinct art files fed the group, so the UI can say so instead of silently
+ * hiding seven of them.
+ */
+data class BagGroup(
+    val key: String,
+    val art: String?,
+    val description: String,
+    val remaining: Int,
+    val total: Int,
+    val variants: Int,
+)
+
+/**
+ * Collapse [faces] to one row per functional tile type.
+ *
+ * Deterministic and total, because it is also what the JVM test pins:
+ *  - grouping key is [BagFace.typeKey], falling back to the description when the
+ *    bridge did not supply one (an older bundle ⇒ the ungrouped list);
+ *  - the representative is the group's most numerous face in the base
+ *    distribution, ties broken by description, so the garden variant never wins
+ *    over the plain one and the choice cannot flip between calls;
+ *  - rows are sorted by remaining (desc), then total (desc), then description, so
+ *    "what is still likely to come" reads top-down and an exhausted type sinks.
+ */
+fun groupBagFaces(faces: List<BagFace>): List<BagGroup> =
+    faces.groupBy { it.typeKey.ifEmpty { it.description } }
+        .map { (key, members) ->
+            val rep = members.maxWithOrNull(
+                compareBy<BagFace> { it.total }.thenByDescending { it.description }
+            ) ?: members.first()
+            BagGroup(
+                key = key,
+                art = rep.image,
+                description = rep.description,
+                remaining = members.sumOf { it.remaining },
+                total = members.sumOf { it.total },
+                variants = members.size,
+            )
+        }
+        .sortedWith(
+            compareByDescending<BagGroup> { it.remaining }
+                .thenByDescending { it.total }
+                .thenBy { it.description }
+        )
 
 data class BagInfo(
     val faces: List<BagFace>,
     val totalRemaining: Int,
+) {
+    /** The grouped view (see [groupBagFaces]); computed once per fetched bag. */
+    val groups: List<BagGroup> by lazy { groupBagFaces(faces) }
+}
+
+/**
+ * The tile the human is next in line to draw — `android_bridge.peek_next_tile`.
+ *
+ * [provisional] is the redraw rule speaking: under `fixed_v1` an unplaceable draw
+ * is set aside and the player draws again, so the opponent's move can still change
+ * which tile actually arrives. The panel says so rather than promising.
+ */
+data class NextTilePeek(
+    val tile: TileArt,
+    val provisional: Boolean,
 )
 
 /**
@@ -380,7 +455,9 @@ object BridgeJson {
         board = o.optJSONArray("board").map { placedTile(it) },
         meeples = o.optJSONArray("meeples").map { placedMeeple(it) },
         legal = o.optJSONObject("legal")?.let(::legalBlock) ?: LegalBlock(),
-        opponentName = o.optString("opponent_name", "Champion"),
+        // Never "Champion": the fallback is reached on a payload that named no
+// opponent, and in a remote game that default would be a lie.
+opponentName = o.optString("opponent_name", "Opponent"),
         budgetNote = o.optNullableString("budget_note"),
         aiLastTile = o.optJSONObject("ai_last_tile")?.let { Cell(it.optInt("row"), it.optInt("col")) },
         aiLastMove = o.optJSONObject("ai_last_move")?.let {
@@ -469,10 +546,20 @@ object BridgeJson {
                 image = it.optNullableString("image"),
                 remaining = it.optInt("remaining", 0),
                 total = it.optInt("total", 0),
+                typeKey = it.optString("type_key", ""),
             )
         },
         totalRemaining = o.optInt("total_remaining", 0),
     )
+
+    /** `peek_next_tile`. Null when the deck is empty or the payload has no tile. */
+    fun nextTilePeek(o: JSONObject): NextTilePeek? {
+        val t = o.optJSONObject("tile") ?: return null
+        return NextTilePeek(
+            tile = tileArt(t),
+            provisional = o.optBoolean("provisional", false),
+        )
+    }
 
     /**
      * One archive file. Total like every parser here: a record written by an older
@@ -486,7 +573,9 @@ object BridgeJson {
             finishedAt = o.optLong("finished_at", 0L),
             deckSeed = o.optInt("deck_seed", 0),
             humanPlayer = o.optInt("human_player", 0),
-            opponentName = o.optString("opponent_name", "Champion"),
+            // Never "Champion": the fallback is reached on a payload that named no
+// opponent, and in a remote game that default would be a lie.
+opponentName = o.optString("opponent_name", "Opponent"),
             scores = intList(o.optJSONArray("scores")),
             result = o.optJSONObject("result")?.let(::gameResult),
             tilesPlaced = o.optInt("tiles_placed", 0),

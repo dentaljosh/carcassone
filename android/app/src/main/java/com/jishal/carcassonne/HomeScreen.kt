@@ -40,7 +40,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * so it prints what `production_budget()` read back — and says it is still
  * reading rather than inventing a figure.
  */
-private fun homeOpponentLine(ui: GameUiState): String {
+internal fun homeOpponentLine(ui: GameUiState): String {
+    // ⛔ THE OPPONENT AXIS COMES FIRST (2026-09-02 text audit). Every line below
+    // describes the on-device CHAMPION, and with "Remote Carcasum" selected the
+    // Difficulty preset does not decide the opponent at all — its sims/k_dets are
+    // simply not used, so printing them named an agent that was not going to play.
+    if (ui.opponentMode == OpponentMode.REMOTE_CARCASUM) {
+        return "Opponent: Carcasum on ${ui.remoteUrl} — the Difficulty setting " +
+            "below does not apply; no search runs on this phone."
+    }
     val d = ui.difficulty
     if (d.isTier1) return "Opponent: Tier-1 rule-based player — no search."
     val b = ui.budget
@@ -50,8 +58,11 @@ private fun homeOpponentLine(ui: GameUiState): String {
             "Opponent: $id at k${d.kDets}×${d.sims} = ${d.totalSims} sims/move."
         b != null ->
             "Opponent: $id — k${b.kDets}×${b.simsPerDet} = ${b.totalSims} sims/move."
-        ui.warmingUp -> "Opponent: champion — reading the production budget…"
-        else -> "Opponent: champion (full production budget)."
+        ui.warmingUp -> "Opponent: champion — reading this device's budget…"
+        // "this device's", not "full production": since 2026-08-25 the mobile
+        // deploy profile is not the same number as the champion of record's own
+        // budget, and `production_budget()` reports the former.
+        else -> "Opponent: champion (this device's full budget)."
     }
 }
 
@@ -92,7 +103,11 @@ fun HomeScreen(
     ) {
         Text("Carcassonne", style = MaterialTheme.typography.headlineMedium)
         Text(
-            "2-player Base + Farmers, against the production champion, on-device.",
+            if (ui.opponentMode == OpponentMode.REMOTE_CARCASUM) {
+                "2-player Base + Farmers, against Carcasum over the tailnet."
+            } else {
+                "2-player Base + Farmers, against the production champion, on-device."
+            },
             style = MaterialTheme.typography.bodySmall,
         )
 
@@ -130,14 +145,23 @@ fun HomeScreen(
                     onClick = onSettings,
                     label = {
                         Text(
-                            "${ui.difficulty.label} — ${ui.difficulty.estPerMove}/move",
+                            "${ui.difficulty.label} — ${ui.difficulty.searchLabel}",
                             fontSize = 12.sp,
                         )
                     },
                     trailingIcon = { Text("›", fontSize = 16.sp) },
                 )
                 Text(homeOpponentLine(ui), fontSize = 11.sp)
-                if (ui.difficulty.belowChampionBudget) {
+                if (ui.opponentMode == OpponentMode.REMOTE_CARCASUM) {
+                    // None of the three champion-budget lines below say anything
+                    // true about a remote game; the one thing worth saying is the
+                    // archive rule.
+                    Text(
+                        "Archived separately from the champion record.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                } else if (ui.difficulty.belowChampionBudget) {
                     Text(
                         "BELOW CHAMPION BUDGET — a weakened champion. Beating it is " +
                             "not beating the champion.",
@@ -152,7 +176,12 @@ fun HomeScreen(
                     )
                 } else {
                     Text(
-                        "Full champion budget — moves may take ~10s.",
+                        // No seconds: the app has not measured this device yet, and
+                        // the old "~10s" was a Python-era guess two engine changes
+                        // ago. The thinking banner shows a real rolling mean once
+                        // the opponent has actually moved.
+                        "Full budget for this device — a move takes as long as it " +
+                            "takes; the game screen shows a running estimate.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.primary,
                     )

@@ -154,13 +154,21 @@ Set in **Settings → Difficulty** (5-stop slider), persisted in Preferences Dat
 applied to the **next** game — a game in progress keeps the budget it was started with,
 because that budget is part of the save file.
 
-| Stop | `opponent` | `k_dets` | `sims` | total sims/move | est. phone s/move |
-|---|---|---|---|---|---|
-| Instant | `tier1` | — | — | (no search) | <0.1 |
-| Fast | `champion` | 2 | 172 | 344 | ~1–2 |
-| Medium | `champion` | 4 | 172 | 688 | ~2–4 |
-| Strong | `champion` | 4 | 344 | 1376 | ~4–8 |
-| **Champion** (default) | `champion` | *omitted* | *omitted* | from `PRODUCTION.yaml` | ~8–15 |
+| Stop | `opponent` | `k_dets` | `sims` | total sims/move |
+|---|---|---|---|---|
+| Instant | `tier1` | — | — | (no search) |
+| Fast | `champion` | 2 | 172 | 344 |
+| Medium | `champion` | 4 | 172 | 688 |
+| Strong | `champion` | 4 | 344 | 1376 |
+| **Champion** (default) | `champion` | *omitted* | *omitted* | from `PRODUCTION.yaml` |
+
+> ⚠️ **The per-move second estimates are gone (2026-09-02).** The column used to
+> read `<0.1 / ~1–2 / ~2–4 / ~4–8 / ~8–15`, which were the 2026-07 plan's guesses
+> for the **Python** search. The phone has run the Rust core since 2026-08-01 and a
+> doubled mobile budget since 2026-08-25, so every one of those figures was wrong,
+> and they were on screen in two places. `Difficulty.searchLabel` now prints the
+> exact search SIZE (derived from `kDets`/`sims`, so it cannot drift), and the
+> honest duration is the measured rolling mean the thinking banner already shows.
 
 Two rules this table encodes, both load-bearing:
 
@@ -258,7 +266,8 @@ semantics, and none is on the move-decision path.
 | `archive_record()` | the save payload + result/breakdown/`ai_elapsed`; refuses a live game | the finished-game archive (§4) |
 | `preview_meeple_slots(action_id)` | `{slots:[…]}` for a *prospective* tile action | the faint dots on the ghost |
 | `get_ownership()` | per claimed feature: `{kind, cells, owners, meeple_count_per_player, finished, points}` | the ownership overlay |
-| `get_bag()` | `{faces:[{description, image, remaining, total}], total_remaining}` | the tile-bag dialog |
+| `get_bag()` | `{faces:[{description, image, remaining, total, type_key}], total_remaining}` | the tile-bag dialog |
+| `peek_next_tile()` | `{tile, provisional, deck_remaining, peeks}`; refuses the human's own turn | the "you draw next" panel |
 | `debug_fast_forward(confirm)` | plays the game out; **debug console only** | reaching a finished state in tests |
 
 Three things worth knowing about them:
@@ -326,9 +335,10 @@ android/
     BoardGeometry.kt     board<->screen transform (unit-tested)
     GameViewModel.kt     session state machine; one op in flight; epoch guard
     PythonBridge.kt      Chaquopy call surface; one bridge thread + one poll thread
-    GameModels.kt        org.json parsers for every bridge response
+    GameModels.kt        org.json parsers for every bridge response + the bag grouping
     SaveStore.kt         the single-slot autosave
     ArchiveStore.kt      files/games/ — one file per finished game
+    ThinkingService.kt   foreground service held for the opponent's turn (§8)
   app/src/main/python/android_bridge.py    the ONLY hand-written Python here
   app/src/main/res/                        icon vectors, strings, theme
   app/src/debug/        BenchService.kt + carc_bench.py — the battery A/B bench
@@ -340,3 +350,95 @@ android/
 The launcher icon is a vector adaptive icon (`res/drawable/ic_launcher_{foreground,
 background}.xml`): a cream meeple silhouette on a two-tone green field, drawn as path
 geometry so no licensed art ends up in a launcher.
+
+---
+
+## 8. What is on screen during the opponent's turn (2026-09-02, `0.1-m3-ui`)
+
+Three things the app can do while it is not your move. **None of them is a strength
+change**: the champion, its budget, the rules profile and the tie-arbiter config are
+untouched by this build, and `Difficulty.newGameConfig` still emits the
+byte-identical champion JSON (`OpponentModeTest` pins it literally).
+
+### The opponent's tile — always on
+
+A drawn tile is face-up from the moment it is drawn. That is the retail rule, and it
+is information the fair champion's own determinizations already work from; the app
+simply had nowhere to show it, because the HUD thumbnail is gated on *your* tile
+phase. `GameScreen.OpponentTurnTiles` shows it for the whole of the opponent's turn.
+
+### Your next tile — opt-out, and **stamped**
+
+`peek_next_tile()` reports the front of the deck — the tile
+`StateUpdater.draw_tile` would pop — during the **opponent's turn only**. It is a
+peek, never an early draw: nothing is consumed, and the real draw still happens on
+your turn through the engine under this game's `draw_rule`. Under the retail redraw
+rule the opponent's move can leave nowhere to put it, in which case a different tile
+arrives — the panel is captioned "may change" rather than quietly being wrong.
+
+It is decision-neutral by construction (you have no legal action while the opponent
+is deciding), so it defaults **on** — but it changes what you *knew*, so it is
+recorded rather than inferred from a build date:
+
+| archive field | meaning |
+|---|---|
+| `preview_next_tile` | `true` iff the peek was served at least once in this game |
+| `preview_next_tile_peeks` | how many times |
+
+The count is carried through `save_game`/`restore_game`, so a Resume cannot launder
+an earlier half's peeks out of the record. Both fields are **absent** on every
+archive written before this build, which reads correctly as "no peek".
+`measurement/e4_games` analysis must condition on `preview_next_tile` exactly as it
+already conditions on `rules_profile` and the budget epoch.
+
+⚠️ `peek_next_tile` is the **only** bridge read that touches `state.deck` — `get_bag`
+documents at length why it must not. That is the point of the feature, which is why
+it is gated to the opponent's turn, opt-out in Settings, and counted.
+
+### Thinking in the background — opt-out
+
+`ThinkingService` is a `dataSync` foreground service (plus a partial wakelock) held
+for the whole opponent leg — both decisions of a champion turn, and the open HTTP
+request of a remote one. It exists so backgrounding the app does not move the process
+out of the **top-app cpuset**, which is what makes a move take many times longer on
+the little cores.
+
+It is a scheduling aid, never the correctness story: the autosave is written *before*
+every `ai_move`, so a process killed mid-search resumes from the human position that
+preceded it and the opponent thinks again — deterministically for the champion
+(`_move_idx` is re-seated by the replay) and idempotently for the remote server
+(an identical `(deck_seed, actions)` request is answered from its committed log, never
+searched twice). Manifest cost: `WAKE_LOCK`, `FOREGROUND_SERVICE`,
+`FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`. A denied `POST_NOTIFICATIONS`
+hides the notification but does not stop the service.
+
+**Manual check (cannot be unit-tested):** start a Champion game, make a move, and
+while the banner says the opponent is thinking press Home. The notification should
+read "*Champion* thinking…" (or "*Carcasum* thinking…"). Return to the app: the move
+should already have landed, or land in about the time it would have on screen. With
+the setting off, the same move typically takes noticeably longer.
+
+### The tile bag groups by what a tile DOES
+
+`get_bag()` stamps each face with `type_key` — `tile_type_key`, which canonicalises
+the engine's own tile data (outer edges, city segments, road connections, farm slots,
+pennant, cloister) over the four `Tile.turn` rotations. `groupBagFaces` collapses on
+it, so the engine's 32 art files read as the base game's **24 actual tiles**, counts
+still summing to 72. The eight collapsed pairs are exactly the `*_flowers` garden
+variants — decoration under the locked no-Abbots scope.
+
+⛔ **A pennant is never merged away**: `shield` is in the key, because a pennanted
+city tile scores differently. If Abbots ever enter scope, `flowers` must go back into
+the key too. Tapping an entry rotates it 90° clockwise, which is view state only —
+it lives in the dialog and reaches no save. Pinned by
+`tests/android/test_bridge_m3_ui.py` (the engine half) and `BagGroupingTest` (the
+phone half).
+
+### The asset loader fails loud
+
+`TileAssets.load` used to enumerate `assets/tiles/base_game/` and accept whatever was
+there; a build that copied only that directory shipped with **every meeple sprite
+missing** and nothing failed until the APK was on the phone. It now checks a named
+manifest — 24 lettered faces + 8 garden variants + 6 meeples + `Empty.png` = **39** —
+and throws with the missing filenames and the regeneration command. `TileAssetsTest`
+pins the manifest; `unzip -l app-debug.apk | grep -c assets/tiles/` must print 39.

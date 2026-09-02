@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -21,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -94,6 +96,13 @@ fun SettingsScreen(vm: GameViewModel, onBack: () -> Unit) {
             onUrl = vm::setRemoteUrl,
         )
 
+        PlayAidsCard(
+            previewNextTile = ui.previewNextTile,
+            backgroundThinking = ui.backgroundThinking,
+            onPreviewNextTile = vm::setPreviewNextTile,
+            onBackgroundThinking = vm::setBackgroundThinking,
+        )
+
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(vertical = 4.dp)) {
                 SettingsRow(
@@ -161,7 +170,15 @@ private fun DifficultyCard(
             Text(selected.label, style = MaterialTheme.typography.titleMedium)
             Text(selected.blurb, fontSize = 12.sp)
             Text(budgetLine(selected, budget), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-            Text("Estimated ${selected.estPerMove} per move on a phone.", fontSize = 11.sp)
+            // ⚠️ NOT a per-move duration. See Difficulty's kdoc: the old "~8-15s"
+            // family were the plan's Python-search guesses and survived both the
+            // Rust flip and the mobile budget doubling. The honest number is the
+            // measured rolling mean the thinking banner already shows in play.
+            Text(
+                "Search size: ${selected.searchLabel}. Time per move is measured " +
+                    "in-game, not guessed here.",
+                fontSize = 11.sp,
+            )
 
             BudgetWarning(selected, budget)
 
@@ -186,8 +203,8 @@ private fun budgetLine(d: Difficulty, budget: ProductionBudget?): String = when 
         "k${d.kDets} × ${d.sims} = ${d.totalSims} sims/move."
     budget != null ->
         "k${budget.kDets} × ${budget.simsPerDet} = ${budget.totalSims} sims/move " +
-            "(read from PRODUCTION.yaml)."
-    else -> "The full budget from PRODUCTION.yaml (reading…)."
+            "(this device's profile in PRODUCTION.yaml)."
+    else -> "This device's full budget from PRODUCTION.yaml (reading…)."
 }
 
 @Composable
@@ -218,7 +235,7 @@ private fun BudgetWarning(d: Difficulty, budget: ProductionBudget?) {
                 ?: "its full YAML budget"
             Text(
                 "BELOW CHAMPION BUDGET — running ${d.totalSims} sims/move against " +
-                    "the champion's $full. This is a WEAKENED agent; beating it is " +
+                    "this device's $full. This is a WEAKENED agent; beating it is " +
                     "not beating the champion.",
                 Modifier.padding(10.dp),
                 fontSize = 11.sp,
@@ -298,6 +315,78 @@ private fun TieArbLevelCard(
 // --------------------------------------------------------------------------- //
 
 /**
+ * The two play aids added in the 2026-09-02 UI build.
+ *
+ * Both default ON, and both say plainly what they do — including the one thing a
+ * player would reasonably want to know about the peek, which is that the app
+ * RECORDS having shown it. That is not a privacy note; it is the honest version of
+ * "this changes what you knew, and the game log says so".
+ */
+@Composable
+private fun PlayAidsCard(
+    previewNextTile: Boolean,
+    backgroundThinking: Boolean,
+    onPreviewNextTile: (Boolean) -> Unit,
+    onBackgroundThinking: (Boolean) -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("While the opponent thinks", fontWeight = FontWeight.Bold)
+
+            ToggleRow(
+                title = "Show your next tile",
+                subtitle = "During the opponent's turn only, show the tile you are " +
+                    "next in line to draw. It is a preview, not an early draw — the " +
+                    "real draw still happens on your turn, and if the opponent's " +
+                    "move leaves nowhere to put it you will draw a different one. " +
+                    "Games where it was shown are stamped in the game record.",
+                checked = previewNextTile,
+                onChange = onPreviewNextTile,
+            )
+            HorizontalDivider()
+            ToggleRow(
+                title = "Keep thinking in the background",
+                subtitle = "Show a notification while the opponent is deciding, so " +
+                    "Android keeps giving the app full CPU when you switch away. " +
+                    "Off is slower, never wrong: an interrupted turn is always " +
+                    "re-played from the autosave when you come back.",
+                checked = backgroundThinking,
+                onChange = onBackgroundThinking,
+            )
+            Text(
+                "The opponent's own drawn tile is always shown — it is face-up " +
+                    "under the rules, and the opponent's search already knows it.",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().clickable { onChange(!checked) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp, top = 4.dp, bottom = 4.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            Text(
+                subtitle,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+/**
  * WHO you play. Deliberately a two-button choice rather than another slider:
  * this is not a strength axis, it is a different opponent on a different
  * machine, and the archive is stamped differently for it.
@@ -340,10 +429,19 @@ private fun OpponentCard(
             Text(selected.blurb, fontSize = 12.sp)
 
             if (selected == OpponentMode.REMOTE_CARCASUM) {
+                // ⚠️ NO LITERAL LABEL HERE (2026-09-02 text audit). This used to
+                // print "carcasum_remote_5000ms", which is simply wrong whenever
+                // the daemon is launched in fixed-playout mode (`server.py
+                // --playouts` labels itself `carcasum_remote_p<N>`). The exclusion
+                // is what matters and it holds for every spelling — the archive
+                // label always starts `carcasum_remote`, and `e4_archives.py`
+                // counts only an exact "champion".
                 Text(
-                    "Games against Carcasum are archived as " +
-                        "\"carcasum_remote_${OpponentMode.BUDGET_MS}ms\" and are " +
-                        "NEVER counted in the champion record.",
+                    "Games against Carcasum are archived under their own " +
+                        "\"carcasum_remote…\" label and are NEVER counted in the " +
+                        "champion record. The exact label, and the budget or " +
+                        "playout count behind it, come from the server itself " +
+                        "when the game starts.",
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -519,8 +617,9 @@ private fun AboutDialog(budget: ProductionBudget?, onDismiss: () -> Unit) {
             ) {
                 Text("Carcassonne AI", fontWeight = FontWeight.Bold)
                 Text(
-                    "2-player Base + Farmers against the production champion, " +
-                        "running entirely on-device.",
+                    "2-player Base + Farmers. The champion runs entirely " +
+                        "on-device; the optional Carcasum opponent runs on another " +
+                        "machine over the tailnet and is archived separately.",
                     fontSize = 12.sp,
                 )
                 Text(
@@ -529,9 +628,16 @@ private fun AboutDialog(budget: ProductionBudget?, onDismiss: () -> Unit) {
                     fontFamily = FontFamily.Monospace,
                 )
                 budget?.let {
+                    // ⚠️ "This device runs", not "Full budget" (2026-09-02 text
+                    // audit). `production_budget()` reports what THIS PHONE
+                    // searches — the `deploy_profiles.mobile` numbers — and since
+                    // 2026-08-25 that is no longer the same as the champion of
+                    // record's own budget. Calling it "full" quietly asserted they
+                    // were equal.
                     Text(
-                        "Full budget: k${it.kDets} × ${it.simsPerDet} = ${it.totalSims} " +
-                            "sims/move.",
+                        "This device runs: k${it.kDets} × ${it.simsPerDet} = " +
+                            "${it.totalSims} sims/move (the mobile profile in " +
+                            "PRODUCTION.yaml).",
                         fontSize = 12.sp,
                     )
                 }

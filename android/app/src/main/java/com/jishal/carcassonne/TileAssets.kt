@@ -43,33 +43,97 @@ class TileAssets(
         private const val TAG = "TileAssets"
         private const val ROOT = "tiles"
 
-        private val SPRITE_FILES = listOf(
+        /**
+         * The seven sprites drawn directly out of `assets/tiles/`.
+         *
+         * All six meeple colours ship even though the 2p scope only ever draws blue
+         * and red: they are one file each, and a colour that is missing the day a
+         * third seat exists is a crash, not a design change.
+         */
+        val SPRITE_FILES: List<String> = listOf(
             "blue_meeple.png", "red_meeple.png", "green_meeple.png",
             "yellow_meeple.png", "black_meeple.png", "pink_meeple.png",
             "Empty.png",
         )
 
+        /**
+         * The 24 lettered base-game faces, `A`..`X`.
+         *
+         * Named rather than discovered, because "discover whatever is in the
+         * directory" is exactly how a build shipped with a partial asset tree — the
+         * loader listed the directory, found fewer files than it should have, and
+         * said nothing. See [load].
+         */
+        val LETTERED_TILE_FACES: List<String> =
+            ('A'..'X').map { "base_game/Base_Game_C2_Tile_$it.png" }
+
+        /**
+         * The 8 garden ("Abbot-…_Garden") art variants.
+         *
+         * They are *art* variants — under the locked 2p Base+Farmers scope a garden
+         * carries no rule at all, which is why `android_bridge.tile_type_key` merges
+         * each of these with its plain twin in the bag view. They are still separate
+         * engine faces with their own `image`, so the file must be present or those
+         * tiles draw blank.
+         */
+        val GARDEN_TILE_FACES: List<String> = listOf("E", "H", "I", "M", "N", "R", "U", "V")
+            .map { "base_game/Abbot-Base_Game_C2_Tile_${it}_Garden.png" }
+
+        /** Every tile face the bridge can name: 24 lettered + 8 garden = 32. */
+        val REQUIRED_TILE_FACES: List<String> = LETTERED_TILE_FACES + GARDEN_TILE_FACES
+
+        /** Everything that must decode for the board to render: 32 + 7 = 39. */
+        val REQUIRED_ASSETS: List<String> =
+            REQUIRED_TILE_FACES.map { "$ROOT/$it" } + SPRITE_FILES.map { "$ROOT/$it" }
+
+        /**
+         * Decode every required sprite, or THROW.
+         *
+         * ⚠️ This used to no-op on a missing decode: `decode` logged a warning and
+         * returned null, the map simply came up short, and the app launched into a
+         * board of blank squares. `assets/` is git-ignored and generated
+         * (`tools/prepare_assets.py`), so an incomplete tree is a routine mistake —
+         * on 2026-09-02 a worktree build shipped with only `base_game/` copied and
+         * every meeple sprite absent, and nothing failed until it was on the phone.
+         * The Gradle `checkTileAssets` task only counts `base_game/`, so it could
+         * not see it either.
+         *
+         * Failing here costs a crash on a build that was already broken, and buys a
+         * message that names the missing file.
+         */
         suspend fun load(context: Context): TileAssets = withContext(Dispatchers.IO) {
             val am = context.assets
             val tiles = HashMap<String, ImageBitmap>()
-            for (dir in listOf("base_game")) {
-                val names = runCatching { am.list("$ROOT/$dir") }.getOrNull().orEmpty()
-                for (name in names) {
-                    if (!name.endsWith(".png")) continue
-                    // The key is exactly what the bridge reports (os.path.join on
-                    // the device is POSIX, so always a forward slash).
-                    decode(am, "$ROOT/$dir/$name")?.let { tiles["$dir/$name"] = it }
-                }
+            val missing = ArrayList<String>()
+            for (name in REQUIRED_TILE_FACES) {
+                // The key is exactly what the bridge reports (os.path.join on
+                // the device is POSIX, so always a forward slash).
+                val bmp = decode(am, "$ROOT/$name")
+                if (bmp == null) missing += "$ROOT/$name" else tiles[name] = bmp
             }
             val sprites = HashMap<String, ImageBitmap>()
-            for (name in SPRITE_FILES) decode(am, "$ROOT/$name")?.let { sprites[name] = it }
+            for (name in SPRITE_FILES) {
+                val bmp = decode(am, "$ROOT/$name")
+                if (bmp == null) missing += "$ROOT/$name" else sprites[name] = bmp
+            }
+            if (missing.isNotEmpty()) {
+                throw IllegalStateException(
+                    "${missing.size} of ${REQUIRED_ASSETS.size} required tile assets " +
+                        "are missing or undecodable: ${missing.joinToString(", ")}. " +
+                        "assets/ is git-ignored — regenerate it with " +
+                        "`.venv/bin/python android/tools/prepare_assets.py`, and if " +
+                        "you are building in a worktree copy the WHOLE " +
+                        "android/app/src/main/assets/ tree across, not just " +
+                        "assets/tiles/base_game/."
+                )
+            }
             Log.i(TAG, "loaded ${tiles.size} tile faces, ${sprites.size} sprites")
             TileAssets(tiles, sprites)
         }
 
         private fun decode(am: AssetManager, path: String): ImageBitmap? = runCatching {
             am.open(path).use { BitmapFactory.decodeStream(it) }?.asImageBitmap()
-        }.onFailure { Log.w(TAG, "asset missing: $path", it) }.getOrNull()
+        }.onFailure { Log.e(TAG, "asset missing: $path", it) }.getOrNull()
     }
 }
 
