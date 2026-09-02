@@ -1,24 +1,24 @@
 {
- "blind_commit": "PENDING",
+ "blind_commit": "7a8356845ed2206084a4b0f41948e8ba61901364",
  "how": "A commit cannot name its own hash. The FREEZE commit lands PREREG.md, the harness, the adjudicator, the tests and the real-emitter fixtures with this field reading PENDING; a SECOND, stamping commit replaces it with the freeze commit's 40-hex sha. `launch_local.sh` REFUSES to launch while it still says PENDING.",
  "freeze_branch": "tiearb2-stage2 (worktree agent-a983a0df04e9b03fc)",
  "what_is_frozen": [
-  "PREREG.md — design, the selector, the bar, the branch map, the gates, the non-inference limits",
-  "synth_mech.py — the generator, the ply selector, the FROZEN stratifier (build_targets) and the four-arm pricer, with every constant in one block",
-  "adjudicate_synth.py — the gates and the READ_RULE executor",
-  "test_synth.py + selftest_fixture/ — the contract tests and the REAL-EMITTER fixtures",
-  "launch_local.sh — the fail-closed launcher (band + blind-commit + negctrl + smoke gates)"
+  "PREREG.md \u2014 design, the selector, the bar, the branch map, the gates, the non-inference limits",
+  "synth_mech.py \u2014 the generator, the ply selector, the FROZEN stratifier (build_targets) and the four-arm pricer, with every constant in one block",
+  "adjudicate_synth.py \u2014 the gates and the READ_RULE executor",
+  "test_synth.py + selftest_fixture/ \u2014 the contract tests and the REAL-EMITTER fixtures",
+  "launch_local.sh \u2014 the fail-closed launcher (band + blind-commit + negctrl + smoke gates)"
  ],
  "what_is_NOT_frozen_and_why": {
-  "targets_synth.jsonl": "does not exist yet — the target set is produced BY the harvest, from the frozen selector, at launch time. What is frozen is the SELECTOR and its stopping rule (PREREG 2.2, 2.3, 5.4), not a ply list. The harvest is outcome-blind: no continuation is played until the target set is final, so the adaptive stop introduces no selection bias.",
+  "targets_synth.jsonl": "does not exist yet \u2014 the target set is produced BY the harvest, from the frozen selector, at launch time. What is frozen is the SELECTOR and its stopping rule (PREREG 2.2, 2.3, 5.4), not a ply list. The harvest is outcome-blind: no continuation is played until the target set is final, so the adaptive stop introduces no selection bias.",
   "n_defense/n_control": "targets are 200 each with a hard floor of 160 (G-N); the realized n depends on the measured yield and is recorded in SELECTION.json."
  },
  "state_at_freeze": {
   "band_claimed": false,
   "real_cell_units_played": 0,
   "dry_smoke_units_played": 14,
-  "dry_smoke_disclosure": "PREREG.md §0.2 item 3 — throwaway seeds 999900000000+, OUTSIDE every registered band, on games that can never enter a frozen target set. Units kept on disk; real-emitter copies in selftest_fixture/.",
-  "pre_freeze_probe": "PREREG.md §0.2 item 2 — 32 throwaway games, 1,185 selector rows, 576 eligible plies. Priced NOTHING (no continuation played, so no delta existed for any ply in either family). Its measured covariates size the round.",
+  "dry_smoke_disclosure": "PREREG.md \u00a70.2 item 3 \u2014 throwaway seeds 999900000000+, OUTSIDE every registered band, on games that can never enter a frozen target set. Units kept on disk; real-emitter copies in selftest_fixture/.",
+  "pre_freeze_probe": "PREREG.md \u00a70.2 item 2 \u2014 32 throwaway games, 1,185 selector rows, 576 eligible plies. Priced NOTHING (no continuation played, so no delta existed for any ply in either family). Its measured covariates size the round.",
   "SYNTH_json_exists": false,
   "results_csv_rows": 0,
   "PRODUCTION_yaml_touched": false,
