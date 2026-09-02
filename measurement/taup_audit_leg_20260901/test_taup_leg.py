@@ -22,6 +22,7 @@ for exactly that reason.
 from __future__ import annotations
 
 import contextlib
+import csv
 import io
 import json
 import subprocess
@@ -367,12 +368,43 @@ def test_blind_commit_pending_blocks_a_real_launch():
     assert doc["blind_commit"] == conf["BLIND_COMMIT"]
 
 
-def test_band_is_proposed_not_claimed():
-    """⛔ This agent claimed NOTHING. The placeholder must be present and the
-    real BAND_CLAIMED absent, and the launcher must refuse without it."""
+def test_the_bands_are_claimed_or_spent():
+    """⚠️ Was `test_band_is_proposed_not_claimed`: written and frozen at BUILD
+    TIME (before this agent claimed a band), when BAND_CLAIMED had not yet been
+    written and neither band was in `governance/BAND_REGISTRY.csv`. The round
+    has since claimed — and spent — both bands, REASSIGNED from the
+    placeholder's proposed 170e9/171e9 to 171e9/172e9 at claim time (170e9 was
+    claimed the same day by `measurement/fpu_swap_cell_20260901`; see
+    `BAND_CLAIMED` for the full story), so the original "not yet claimed"
+    assertion fails permanently.
+
+    ⛔ Checked against the REASSIGNED bands (171e9/172e9) directly, NOT
+    `L.BAND_TAU3`/`L.BAND_TAU8` — those module constants are still the stale
+    pre-reassignment 170e9/171e9 (leg_lib.py was never updated after the
+    swap-cell collision; that staleness is a separate defect from this test
+    and out of scope here — flagging it, not fixing it).
+
+    House pattern (tests/test_fpu_h2h_instrument.py
+    ::test_the_bands_status_is_claimed_or_spent): relaxed to assert
+    BAND_CLAIMED now exists and the registry rows for the reassigned bands
+    exist with status claimed/spent and a label naming this round's cells,
+    while STILL asserting band identity (band number + label) so a truly
+    wrong/missing row is still caught."""
     assert (HERE / "BAND_CLAIMED.placeholder").is_file()
-    assert not (HERE / "BAND_CLAIMED").exists()
+    assert (HERE / "BAND_CLAIMED").is_file(), \
+        "BAND_CLAIMED is missing — the round never claimed its bands"
     assert "BAND_CLAIMED" in (HERE / "run_cells.sh").read_text()
+
+    with open(REPO / "governance" / "BAND_REGISTRY.csv", newline="") as f:
+        by_band = {row["band_seed_start"]: row for row in csv.DictReader(f)}
+    for band, cell in ((171_000_000_000, "CELL_TAU3"),
+                       (172_000_000_000, "CELL_TAU8")):
+        row = by_band.get(str(band))
+        assert row is not None, f"band {band} is not registered at all"
+        assert row["status"] in ("claimed", "spent"), (
+            f"band {band} status is {row['status']!r}, expected claimed or spent")
+        assert cell in row["label"], \
+            f"the registry row at band {band} is not this round's claim ({cell})"
 
 
 def test_golden_gate_verdict_is_pass():

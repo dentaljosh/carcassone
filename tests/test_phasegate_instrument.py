@@ -11,6 +11,7 @@ says so in its own README.
 """
 from __future__ import annotations
 
+import csv
 import importlib.util
 import json
 import sys
@@ -410,12 +411,35 @@ def test_governance_is_untouched_by_the_instrument():
         assert f not in src or "UNTOUCHED" in src, f"the instrument names {f}"
 
 
-def test_the_band_is_proposed_not_claimed():
-    """⛔ Build-time state: no `BAND_CLAIMED`, no `BLIND_COMMIT` file, no
-    `PINNED_SRC_REV` at the round root."""
+def test_the_band_is_claimed_or_spent():
+    """⚠️ Was `test_the_band_is_proposed_not_claimed`: written and frozen at
+    BUILD TIME (before this round launched), when BAND_CLAIMED/BLIND_COMMIT/
+    PINNED_SRC_REV correctly did not yet exist and the band was absent from
+    `governance/BAND_REGISTRY.csv`. That round launched long ago and has since
+    completed — those three files now exist and the band is `spent` in the
+    registry — so the original build-time assertion fails permanently.
+
+    House pattern (tests/test_fpu_h2h_instrument.py
+    ::test_the_bands_status_is_claimed_or_spent): relaxed to assert the
+    round-authorization files now exist and the registry row is
+    claimed/spent and names this round, while STILL asserting band identity
+    (band number + label) so a truly wrong/missing row is still caught.
+    `RUN_LIVE.json` stays a LIVE invariant, not a build-time one — a finished
+    round is not a running one, so its absence is still asserted."""
     assert L.BAND == 154_000_000_000
-    for f in ("BAND_CLAIMED", "BLIND_COMMIT", "PINNED_SRC_REV", "RUN_LIVE.json"):
-        assert not (PREP / f).exists(), f"{f} exists — the round is NOT authorized"
+    for f in ("BAND_CLAIMED", "BLIND_COMMIT", "PINNED_SRC_REV"):
+        assert (PREP / f).exists(), f"{f} is missing — the round never launched"
+    assert not (PREP / "RUN_LIVE.json").exists(), \
+        "RUN_LIVE.json exists — a round is live"
+
+    with open(REPO / "governance" / "BAND_REGISTRY.csv", newline="") as fh:
+        by_band = {row["band_seed_start"]: row for row in csv.DictReader(fh)}
+    row = by_band.get(str(L.BAND))
+    assert row is not None, f"band {L.BAND} is not registered at all"
+    assert row["status"] in ("claimed", "spent"), (
+        f"band {L.BAND} status is {row['status']!r}, expected claimed or spent")
+    assert "PHASE-GATED TIE ARBITRATION" in row["label"], \
+        "the registry row at this band number is not this round's claim"
 
 
 @pytest.mark.parametrize("doc", [DESIGN, READ_RULE])
