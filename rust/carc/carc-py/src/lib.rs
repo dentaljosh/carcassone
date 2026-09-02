@@ -1687,6 +1687,13 @@ impl PySearchConfig {
         tiearb_max_plies=carc_core::tiearb::TIEARB_MAX_PLIES,
         tiearb_threads=1,
         wc_tiebreak=false,
+        // ⭐⭐ RISK-ASYMMETRIC WORLD POOLING (GT-M1, measurement/cvar_pool_prep).
+        // APPENDED AT THE END on purpose: every historical POSITIONAL
+        // construction of SearchConfigRs keeps its meaning, and a wheel that
+        // predates this pair raises TypeError on a caller that asks for `cvar`
+        // (fail-closed loud) while serving every `mean` caller unchanged.
+        pool_mode="mean",
+        pool_alpha=None,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -1717,6 +1724,8 @@ impl PySearchConfig {
         tiearb_max_plies: usize,
         tiearb_threads: usize,
         wc_tiebreak: bool,
+        pool_mode: &str,
+        pool_alpha: Option<f64>,
     ) -> PyResult<Self> {
         let lq = match leaf_quantize {
             "float" => search::LeafQuantize::Float,
@@ -1838,6 +1847,14 @@ impl PySearchConfig {
                  experiment)",
             ));
         }
+        // ⭐⭐ THE POOLING RULE (GT-M1). Parsed fail-CLOSED and validated even at
+        // the default, exactly as the two J-rules surfaces and the arbiter are:
+        // `mean` with an alpha, `cvar` without one, and any alpha outside (0, 1]
+        // all RAISE here rather than riding as something the caller did not ask
+        // for. `fair::PoolMode::parse` is the ONE implementation (unit-tested in
+        // carc-core), so the python-facing spelling cannot drift from the rule.
+        let pmode = fair::PoolMode::parse(pool_mode, pool_alpha)
+            .map_err(pyo3::exceptions::PyValueError::new_err)?;
         Ok(PySearchConfig {
             inner: search::SearchConfig {
                 c_puct,
@@ -1868,8 +1885,31 @@ impl PySearchConfig {
                 tiearb_max_plies,
                 tiearb_threads,
                 wc_tiebreak,
+                pool_mode: pmode,
             },
         })
+    }
+
+    /// ⭐⭐ THE RESOLVED POOLING RULE (GT-M1) as the exact dict a manifest and
+    /// the launcher's plumbing probe read: `{"mode": "mean"|"cvar",
+    /// "alpha": float|None}`.
+    ///
+    /// ⛔ READ IT, NEVER `__repr__`. Rust's `Display` for f64 prints `0.5` as
+    /// `0.5` but `1.0` as `1` and `0.25` as `0.25` — a probe that regex'd the
+    /// repr would have to re-implement that, and the τ_p leg's probe already
+    /// had to parse a float back out of a repr for exactly this reason. This
+    /// getter hands the numbers over as numbers.
+    ///
+    /// Like the two J-rules surfaces and the arbiter, this knob moves NO leaf
+    /// hash, so a moved-hash gate cannot prove it live. The wiring gates are
+    /// this dict in the manifest PLUS the play-derived
+    /// `FairAgentRs.stats()["pool_pickchanges"]`.
+    #[getter]
+    fn pool<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let d = PyDict::new(py);
+        d.set_item("mode", self.inner.pool_mode.name())?;
+        d.set_item("alpha", self.inner.pool_mode.alpha())?;
+        Ok(d)
     }
 
     /// The resolved J-rules-prior knobs — what a manifest must stamp (the
@@ -1994,6 +2034,15 @@ impl PySearchConfig {
         } else {
             String::new()
         };
+        // Same rule again for the pooling knob: the suffix appears ONLY when the
+        // rule is not the deployed mean, so every champion repr is
+        // byte-identical to the pre-GT-M1 string.
+        let pm = match self.inner.pool_mode {
+            carc_core::fair::PoolMode::Mean => String::new(),
+            carc_core::fair::PoolMode::CVaR { alpha } => {
+                format!(", pool_mode=cvar, pool_alpha={alpha}")
+            }
+        };
         format!(
             "SearchConfigRs(sims={}, c_puct={}, tau_p={}, value_norm={}, \
              leaf_quantize={:?}, final_select={:?}, fpu={:?}, exp_fma={}, tanh={:?}{})",
@@ -2006,7 +2055,7 @@ impl PySearchConfig {
             i.fpu_reduction,
             i.exp_fma,
             i.tanh_flavor,
-            format!("{jr}{jf}{ta}")
+            format!("{jr}{jf}{ta}{pm}")
         )
     }
 }
@@ -2847,6 +2896,25 @@ impl PyFairAgent {
         // instead of assumed from the constructor's contract.
         d.set_item("wc_tiebreak_search", a.cfg.search.wc_tiebreak)?;
         d.set_item("min_pooled_visits", a.cfg.min_pooled_visits)?;
+        // ⭐⭐ RISK-ASYMMETRIC WORLD POOLING (GT-M1, measurement/cvar_pool_prep).
+        // The RESOLVED rule, plus the PLAY-DERIVED liveness counters.
+        //
+        // ⛔ `pool_pickchanges` IS THE WIRING GATE. This knob moves no leaf hash
+        // and the manifest can only echo what was requested; a candidate that
+        // reports `pool_cvar_plies > 0` with `pool_pickchanges == 0` never
+        // reached and its cell is champion-vs-champion. All four are 0 on the
+        // Mean-pooled champion by construction (the counters live inside the
+        // CVaR arm of the dispatch), so an UNARMED side's assertable invariant
+        // is `pool_cvar_plies == 0`.
+        d.set_item("pool_mode", a.cfg.search.pool_mode.name())?;
+        d.set_item("pool_alpha", a.cfg.search.pool_mode.alpha())?;
+        d.set_item("pool_cvar_plies", a.pool_cvar_plies)?;
+        d.set_item("pool_pickchanges", a.pool_pickchanges)?;
+        // Plies where NO action was CVaR-eligible and the champion's own pick
+        // stood. Reportable, not fatal; a large share means the rule mostly did
+        // not express, which biases any measured effect toward zero.
+        d.set_item("pool_fallbacks", a.pool_fallbacks)?;
+        d.set_item("pool_eligible_total", a.pool_eligible_total)?;
         d.set_item("last_move", self.last_move(py)?)?;
         Ok(d)
     }

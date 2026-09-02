@@ -1,0 +1,122 @@
+# BAND_CLAIMED.placeholder — measurement/cvar_pool_prep (GT-M1)
+
+⛔⛔ **THIS AGENT CLAIMED NOTHING.** The two bands below are **PROPOSED**.
+`run_cells.sh` refuses every real cell until a sibling file named exactly
+`BAND_CLAIMED` exists beside it, and only the **orchestrator** drops that file,
+and only after doing steps 1–6.
+
+    PROPOSED:  CELL_CVAR25  ->  175000000000 .. 175000000399   (400 decks)
+               CELL_CVAR50  ->  176000000000 .. 176000000399   (400 decks)
+    THROWAWAY: 175999999000 .. 175999999999   (smoke offsets +0 / +100,
+                                               golden gate +800..+811)
+                                               ⛔ NOT part of either claim.
+
+⚠️⚠️ **TREAT 175/176e9 AS PROPOSALS, NOT RESERVATIONS.** 174e9 (synth
+mechanism-corroboration) is the registry's high-water mark at this freeze, so
+these are the next two monotone free ids — but **both of this round's immediate
+predecessors had to REASSIGN their proposed bands** because another round took
+them between freeze and claim: `fpu_swap_cell` took 170e9 out from under the
+τ_p placeholder, and the 44k rung took 173e9 out from under synth-mech. If the
+sweep in step 2 finds either id in use, **reassign to the next free pair and
+update `cvar_lib.py` + `WORKERS.conf` together** (the test asserts they agree).
+
+---
+
+## What the orchestrator does, in order
+
+1. **Merge the source edits at a quiet window.** Five files:
+   `rust/carc/carc-core/src/{fair/pool.rs,fair/mod.rs,search/mod.rs}`,
+   `rust/carc/carc-py/src/lib.rs`,
+   `src/carcassonne_ai/{heuristic_prior_mcts,rust_agent,champion_factory}.py`,
+   `scripts/classical_search/eval_fair_puct.py`.
+   ⚠️ Check the freeze-latch first: no main-tree commits while any
+   `measurement/**/RUN_LIVE*.json` exists, and **none at all while a rev-PINNED
+   round is live** (the 2026-08-30 blind spot — a pinned round's launcher dies
+   on `pin != HEAD` after every cell).
+
+2. ⭐⭐ **REBUILD AND INSTALL THE WHEEL ON EVERY BOX THAT WILL PLAY.**
+   **This step has no precedent in the three predecessor rounds** — fpu,
+   c_puct and τ_p were python-only plumbing, so a bundle sync was sufficient.
+   GT-M1 changes `carc_core`, so a box with a fresh bundle and a **stale wheel**
+   is a live failure mode, and the most likely one at roll-out.
+
+   ```bash
+   export RUSTUP_TOOLCHAIN=1.96.0     # ⚠️ the pin does NOT apply from the repo
+   rustc --version                     #    root — VERIFY, never assume
+   nice -n 19 .venv/bin/maturin build --release \
+     -m /home/doctor/projects/carcassone/rust/carc/carc-py/Cargo.toml \
+     -i .venv/bin/python --out /home/doctor/carc_wheels -j 6
+   ```
+
+   Then, per box, confirm the champion is unmoved on a default-off rebuild:
+   `_leaf_hash` = `a36d2e15a3b3d71d`, `_frozen_config_hash` =
+   `158f17ff76adaa02` (meeple_k 2.0) / `6dfffd57051690f2` (meeple_k 0.0).
+   ⛔ A moved fingerprint on a default-off rebuild means the wheel is not the
+   champion's.
+
+   The launcher's probe refuses a stale wheel — but only after someone tries.
+
+3. **Re-run the tree sweep for BOTH proposed ids**, batched (`git grep` over
+   tracked + ONE filesystem pass over untracked; ⛔ never a per-band grep loop —
+   that read 278 GB beside a live round once). The registry is necessary and
+   **not sufficient**: the TREE SWEEP is the binding check.
+
+4. **Append TWO rows to `governance/BAND_REGISTRY.csv`**, one per cell, citing
+   `measurement/cvar_pool_prep/PREREG.md`.
+
+5. **Re-run the FULL golden gate** (`goldengate/run_gate.sh`, 4 legs, 12 frozen
+   seeds) **against the merged tree and the installed wheel**. The banked
+   `CVAR_BITEXACT.json` was produced on the laptop from a shipped scratch tree
+   and a `--target`-installed wheel (`DEVIATIONS.md` D-4); a post-merge re-run
+   is what certifies the *deployed* artifacts. `run_cells.sh` refuses anything
+   but a full-frozen-set PASS.
+
+6. **Stamp `BLIND_COMMIT` in BOTH `BLIND_COMMIT.json` and `WORKERS.conf`** with
+   the freeze commit's sha, in one follow-up commit that changes nothing else.
+
+7. **Drop this file's sibling `BAND_CLAIMED`** (any content; the launcher checks
+   existence).
+
+8. **Smoke each cell, read its `SMOKE_CELL_*.json`, then launch:**
+
+   ```bash
+   ssh laptop-wsl '/home/doctor/projects/carcassone/measurement/cvar_pool_prep/run_cells.sh --cell CELL_CVAR25 --smoke'
+   ssh laptop-wsl '/home/doctor/projects/carcassone/measurement/cvar_pool_prep/run_cells.sh --cell CELL_CVAR25'
+   ```
+
+   ⛔ **BY ABSOLUTE PATH, NEVER PIPED.** `run_cells.sh` resolves `WORKERS.conf`
+   from `${BASH_SOURCE[0]}`; under `bash -s` that is not a path. The script
+   detects the piped case and refuses, but the correct invocation is the one
+   above — which is also what the repo's "never rely on `cd` in an SSH command"
+   rule asks for.
+
+---
+
+## The registry row text (both cells share everything but the dose and the band)
+
+> GT-M1 RISK-ASYMMETRIC WORLD POOLING, `CELL_CVAR{25,50}`: one deck-paired cell,
+> n=800 games (400 seat-balanced decks × 2 seatings), seeds `<BAND>..<BAND+399>`.
+> CANDIDATE = the DEPLOYED production champion (fair PIMC k16×1376 = 22016 + the
+> deployed root TIE ARBITER B=64/J=4/argmax/salt `tiearb2-deploy-v1`/eps 0.0/
+> phase_gate all) with its **world-pooling rule replaced by lower-tail CVaR at
+> α = {0.25, 0.50}** on the CANDIDATE SIDE ONLY (`--cand-pool-mode cvar
+> --cand-pool-alpha`; a SEARCH-level knob that moves NO leaf hash). At k=16 that
+> is the mean of the worst {4, 8} of 16 per-world root Q's. OPPONENT = THE SAME
+> DEPLOYED AGENT pooling by the deployed visit-weighted mean, arbiter ARMED on
+> BOTH seats. Leaf `a36d2e15a3b3d71d` BOTH SIDES, `rules_profile fixed_v1` +
+> `CARCASSONNE_FIX_R9=1`, exact_k 2 marginalized, rust backend, LAPTOP W=22.
+> LICENSED BY `measurement/cl083_mech_censuses_20260830` §1 (GT-M1 NOT KILLED:
+> reach 0.340 [0.277, 0.404] at α=0.25 ≥ the 0.30 survive bar) — which
+> deliberately did NOT price the change and DEMOTED the mechanism claim (control
+> stratum 0.333 ≈ contest-exposed 0.340). ⛔ THIS IS A STRENGTH-LEVER SCREEN,
+> NOT AN OWNER-EDGE DISCRIMINATOR. BARS EFFECT-SIZED per the owner ruling
+> 2026-08-30: `P-POOLING-MOVES` needs LB95(M) > +1.0 pts/deck; `P-BOUNDED` needs
+> UB95(M) < +1.0; `P-REGRESSION` needs UB95(M) < 0. Power disclosed: at
+> se ≈ 0.68 a true null reads REGRESSION ~5% / BOUNDED ~38% / UNRESOLVED ~57% /
+> ADOPT ~0.1%, and a true +1.0 adopts only 5% — **this round can bound and can
+> detect a regression; it cannot confirm.** ⚠️ The two cells are CROSS-BAND
+> (CL-068) and their difference is NOT a measured direction on α. ⚠️ Both doses
+> confound risk aversion with equal-world-weighting (census DEVIATIONS D-1:
+> 18.1pp of the 34.0pp reach is weighting); the α=1.00 separating arm is
+> COSTED AND NOT FUNDED. `1759999990xx` is the THROWAWAY range and is NOT part
+> of the claim. Pair: `measurement/cvar_pool_prep/PREREG.md`.

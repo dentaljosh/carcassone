@@ -596,6 +596,17 @@ def resolved_manifest(mode: str, spec: ProductionSpec | None = None,
             # from the YAML; a caller that hands in a cfg WITH one is disclosed
             # here rather than hidden behind an unchanged leaf hash.
             "fpu_reduction": getattr(cfg, "fpu_reduction", None),
+            # RISK-ASYMMETRIC WORLD POOLING (GT-M1, measurement/cvar_pool_prep).
+            # "mean" == the champion == the deployed visit-weighted pooled Q, and
+            # is a POSITIVE statement rather than a missing key, exactly as
+            # `fpu_reduction: null` is above. PRODUCTION.yaml carries no pooling
+            # knob, so this reads "mean"/null for every champion built from the
+            # YAML; a caller that hands in a cfg with a CVaR rule is disclosed
+            # here rather than hidden behind an unchanged leaf hash (this knob
+            # deliberately moves none).
+            "pool_mode": str(getattr(cfg, "pool_mode", "mean")),
+            "pool_alpha": (None if getattr(cfg, "pool_alpha", None) is None
+                           else float(cfg.pool_alpha)),
             "config_hash": _config_hash(cfg.as_manifest()),
         },
         "fair_deploy": {

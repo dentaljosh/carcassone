@@ -1069,6 +1069,14 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
     # `tau_p=None` is "unset" in the SAME sense as `c_puct=None`: it falls
     # through to the shared `--tau-p` (production 5.0), so a tau-free cell is
     # byte-identical to every historical one.
+    #
+    # ⭐⭐ `pool_mode` / `pool_alpha` — RISK-ASYMMETRIC WORLD POOLING (GT-M1,
+    # `measurement/cvar_pool_prep`) — are the FOURTH member of this family, and
+    # they are the first that has NO shared counterpart at all: there is no
+    # `--pool-mode`, deliberately, because a two-sided pooling change is a
+    # different champion rather than a cell. Absent (`"mean"`) leaves this
+    # function byte-identical to the pre-GT-M1 version, and `"mean"` reaching
+    # `HeuristicPriorConfig` is also its field default, so the two coincide.
     _cs = {}
     if cand_search is not None:
         if cand_search.get("c_puct") is not None:
@@ -1077,6 +1085,15 @@ def _build_champ_cfg(c_puct, tau_p, leaf_quantize, final_select, value_norm,
             tau_p = float(cand_search["tau_p"])
         if cand_search.get("fpu_reduction") is not None:
             _cs["fpu_reduction"] = float(cand_search["fpu_reduction"])
+        # ⚠️ Passed as a PAIR or not at all. `pool_mode='cvar'` without an alpha
+        # and `pool_mode='mean'` with one are both REFUSED by
+        # `HeuristicPriorConfig.__post_init__` (and again by the rust
+        # `PoolMode::parse`), so a half-specified request dies at construction
+        # rather than resolving to something nobody asked for.
+        if str(cand_search.get("pool_mode", "mean")) != "mean":
+            _cs["pool_mode"] = str(cand_search["pool_mode"])
+            _cs["pool_alpha"] = (None if cand_search.get("pool_alpha") is None
+                                 else float(cand_search["pool_alpha"]))
     return HeuristicPriorConfig(
         c_puct=c_puct, tau_p=tau_p, leaf_quantize=leaf_quantize,
         final_select=final_select, value_norm=value_norm,
@@ -1818,6 +1835,24 @@ class GameResult:
     # False) so an old saved record with neither key still loads via GameResult(**d).
     wc_tiebreak: bool = False
     wc_tie_resolved: bool = False
+    # ⭐⭐ RISK-ASYMMETRIC WORLD POOLING (GT-M1, measurement/cvar_pool_prep) — the
+    # PLAY-DERIVED liveness read, per side: {"mode", "alpha", "cvar_plies",
+    # "pickchanges", "fallbacks", "eligible_total"} off `FairAgentRs.stats()` at
+    # game end.
+    #
+    # ⛔ WHY BOTH SIDES ARE ALWAYS STAMPED ON A RUST FAIR CELL, armed or not.
+    # This knob moves no leaf hash and its manifest entry can only echo what was
+    # typed, so `pickchanges` is the ONLY witness that the rule reached play —
+    # and the OPPONENT's block is the ZERO CONTROL that makes the candidate's
+    # readable: `opp_pool.mode == "mean"` and `opp_pool.cvar_plies == 0`, derived
+    # from the opponent's OWN agent rather than from the absence of a flag, is
+    # what proves the cell was one-sided. That is the two-sided proposition
+    # `--cand-tau-p`'s G-TAUP had to read off a config; here it is read off PLAY.
+    #
+    # None on every record written before this field existed and on any cell
+    # whose seat is not a rust fair agent (there is nothing to read).
+    cand_pool: dict | None = None
+    opp_pool: dict | None = None
 
 
 # Track-F Gate A oracle-prior cost fields — OMITTED from the serialized per-game JSON for
@@ -2463,6 +2498,12 @@ def _play_one_inner(out: Path, seed: int, a_seat: int, p: Path) -> GameResult:
             armed=_W.get("cand_jrules_prior") is not None),
         opp_jr_expansions=_jr_expansions_telemetry(
             rung, side="opponent", armed=False),
+        # ⭐⭐ GT-M1 — the play-derived pooling witness, BOTH sides. The
+        # opponent's block is the ZERO CONTROL (`mode == "mean"`,
+        # `cvar_plies == 0`) that makes the candidate's `pickchanges` readable as
+        # a one-sided effect rather than an unwitnessed claim.
+        cand_pool=_cand_pool_telemetry(champ),
+        opp_pool=_opp_pool_telemetry(rung),
         opponent=_W.get("opponent", "h800"), **_opp_stats(rung),
         # Track-F Gate A: candidate oracle cost telemetry (empty {} for non-oracle cells,
         # so the fields stay at their dataclass-default zeros and _save omits them).
@@ -2598,6 +2639,72 @@ def _opp_tiearb_telemetry(rung) -> dict | None:
             "tiearb_enabled=False — the knob was dropped between main() and the "
             "rust config (a STALE carc_rs wheel is the usual cause)")
     return _tiearb_stats_block(s)
+
+
+def _pool_stats_block(s) -> dict:
+    """The six pooling keys off one `FairAgentRs.stats()` dict.
+
+    ⛔ SUBSCRIPTED, NOT `.get()`: an ABSENT key means a carc_rs wheel that
+    PREDATES `measurement/cvar_pool_prep`, i.e. a seat whose pooling rule could
+    not have been expressed at all. Failing loud here is the whole point — a
+    `.get(..., 0)` would stamp a perfectly plausible all-zero block and the cell
+    would read as "risk-averse pooling changes nothing"."""
+    return {
+        "mode": str(s["pool_mode"]),
+        "alpha": (None if s["pool_alpha"] is None else float(s["pool_alpha"])),
+        # The denominator: PIMC decisions the CVaR rule actually decided.
+        "cvar_plies": int(s["pool_cvar_plies"]),
+        # ⭐⭐ THE WIRING GATE. `cvar_plies > 0` with `pickchanges == 0` is a
+        # candidate that never reached — champion-vs-champion wearing this
+        # round's name. It is `reach`, measured in PLAY rather than in the free
+        # census (which measured k=8 on a fixed E4 crux corpus; this is k=16 over
+        # whole self-played games, so the two are comparable in KIND, not VALUE).
+        "pickchanges": int(s["pool_pickchanges"]),
+        # Plies where NO action was CVaR-eligible and the champion's own pick
+        # stood (carc_core::fair::pool::cvar_argmax's fallback contract).
+        # Reportable, not fatal; a large share means the rule mostly did not
+        # express, which biases any measured effect toward zero.
+        "fallbacks": int(s["pool_fallbacks"]),
+        "eligible_total": int(s["pool_eligible_total"]),
+    }
+
+
+def _cand_pool_telemetry(champ) -> dict | None:
+    """GT-M1 per-game pooling read, CANDIDATE side.
+
+    ⚠️ Stamped on EVERY rust fair candidate, armed or not — unlike
+    `_cand_tiearb_telemetry`, which returns None when unarmed. The unarmed block
+    (`mode: "mean"`, all counters 0) is not noise: it is the statement that this
+    seat pooled by the deployed rule, and the adjudicator's `G-POOL` reads it
+    fail-closed on BOTH the armed and the control cells.
+
+    ⛔ An ARMED cell whose candidate is not a `RustFairAgent` RAISES: pooling is
+    rust-only and a silent None there is exactly the J13 failure mode."""
+    rs = getattr(champ, "_rs", None)
+    if rs is None:
+        cs = _W.get("cand_search") or {}
+        if str(cs.get("pool_mode", "mean")) != "mean":
+            raise RuntimeError(
+                "cand_search requests CVaR pooling but the candidate has no "
+                "FairAgentRs (GT-M1 is rust-only; carc_core::fair::pool) — it "
+                "cannot have run")
+        return None
+    return _pool_stats_block(rs.stats())
+
+
+def _opp_pool_telemetry(rung) -> dict | None:
+    """GT-M1 per-game pooling read, OPPONENT side — THE ZERO CONTROL.
+
+    The opponent is reached through `_MarginalizedHandoff`, so its rust agent
+    lives at `._prefix` (hence `_fair_rs`, not `rung._rs`) — the same address
+    `_opp_tiearb_telemetry` uses. There is no `--opp-pool-mode` flag by design,
+    so a nonzero `cvar_plies` here can only be a LEAK, and the adjudicator's
+    `G-POOL` treats it as a void. None when the opponent is not a rust fair
+    agent (e.g. an h800 rung), where the proposition is vacuous."""
+    rs = _fair_rs(rung)
+    if rs is None:
+        return None
+    return _pool_stats_block(rs.stats())
 
 
 def _cand_tiearb_telemetry(champ) -> dict | None:
@@ -2922,6 +3029,56 @@ def _jr_expansions_sum(results, field: str) -> dict:
         d = getattr(r, field, None) or {}
         for k in _JR_KEYS:
             out[k] += int(d.get(k, 0))
+    return out
+
+
+#: GT-M1 per-side pooling aggregate keys. `mode`/`alpha` are RESOLVED VALUES,
+#: not sums, so they are carried as the sorted SET of what the cell's games
+#: actually played — a cell whose games disagree is a mixed-rev cell and the
+#: list makes that visible instead of averaging it away.
+_POOL_SUM_KEYS = ("cvar_plies", "pickchanges", "fallbacks", "eligible_total")
+
+
+def _pool_side_sum(results, field: str) -> dict:
+    """Sum one side's per-game GT-M1 pooling blocks over the cell.
+
+    Missing/None records contribute zeros and are COUNTED (`games_missing`): a
+    legacy record predates the field entirely, and a cell where most games are
+    missing it is a cell whose wiring gate is not readable. ⛔ `mode` is
+    reported as the observed set, never collapsed — two modes in one cell means
+    the box changed source mid-cell (the cross-rev-split trap) and that must
+    void, not average."""
+    out = {k: 0 for k in _POOL_SUM_KEYS}
+    modes, alphas, missing, seen = set(), set(), 0, 0
+    for r in results:
+        d = getattr(r, field, None)
+        if not d:
+            missing += 1
+            continue
+        seen += 1
+        modes.add(str(d.get("mode")))
+        alphas.add(None if d.get("alpha") is None else float(d["alpha"]))
+        for k in _POOL_SUM_KEYS:
+            out[k] += int(d.get(k, 0))
+    out["games"] = seen
+    out["games_missing"] = missing
+    # The single resolved value when the cell is homogeneous (the normal case),
+    # and the flag `modes_disagree` when it is not.
+    out["mode"] = (next(iter(modes)) if len(modes) == 1
+                   else ("MISSING" if not modes else "MIXED"))
+    out["alpha"] = (next(iter(alphas)) if len(alphas) == 1 else None)
+    out["modes_observed"] = sorted(m for m in modes)
+    out["alphas_observed"] = sorted(a for a in alphas if a is not None)
+    out["modes_disagree"] = len(modes) > 1 or len(alphas) > 1
+    # `reach` measured in PLAY — the pick-change rate over CVaR-decided plies.
+    # 0.0 (not NaN) on a mean-pooled side, where the denominator is 0 by
+    # construction and the quantity is simply not defined.
+    out["reach_in_play"] = (out["pickchanges"] / out["cvar_plies"]
+                            if out["cvar_plies"] else 0.0)
+    out["fallback_rate"] = (out["fallbacks"] / out["cvar_plies"]
+                            if out["cvar_plies"] else 0.0)
+    out["mean_eligible"] = (out["eligible_total"] / out["cvar_plies"]
+                            if out["cvar_plies"] else 0.0)
     return out
 
 
@@ -3372,6 +3529,48 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
     # opponent side is the zero control (no --opp-jrules-prior knob exists), and
     # an unarmed side reads all-zero because the counters live inside the dose
     # branch: assert `boosted == 0` on it, never `total > 0`.
+    # ⭐⭐ GT-M1 — RISK-ASYMMETRIC WORLD POOLING, per side, summed over the cell.
+    # UNCONDITIONALLY present, on the SAME 3-state "absent is unknown-not-zero"
+    # convention: a cell that never armed the rule says so with `mode: "mean"`
+    # and zeros, and an ABSENT block means a harness predating
+    # `measurement/cvar_pool_prep` — never "the rule changed nothing".
+    #
+    # ⛔ READING IT. `pool.candidate.pickchanges` is the WIRING GATE and it is
+    # derived from PLAY: a candidate with `cvar_plies > 0` and
+    # `pickchanges == 0` never reached, and its cell is champion-vs-champion.
+    # `pool.opponent` is the ZERO CONTROL — `mode == "mean"`, `cvar_plies == 0`,
+    # read off the OPPONENT'S OWN AGENT rather than from the absence of a flag.
+    # `reach_in_play` is the realized pick-change RATE; it is COMPARABLE IN KIND
+    # to the census's `reach(alpha)` (0.340 at alpha=0.25) but NOT in value —
+    # the census measured k=8 worlds on a fixed E4 crux corpus and this counts
+    # k=16 worlds over whole self-played games, non-crux plies included. ⛔ Do
+    # not read a gap between the two as a finding.
+    _pool_cand = _pool_side_sum(results, "cand_pool")
+    _pool_opp = _pool_side_sum(results, "opp_pool")
+    pool_summary = {
+        "pool": {"candidate": _pool_cand, "opponent": _pool_opp},
+        "cand_pool": _pool_cand,
+        "opp_pool": _pool_opp,
+    }
+    if _pool_cand["cvar_plies"] or _pool_opp["cvar_plies"]:
+        print(f"GT-M1 world pooling ({n} games): candidate mode="
+              f"{_pool_cand['mode']} alpha={_pool_cand['alpha']} — "
+              f"{_pool_cand['pickchanges']} pick changes over "
+              f"{_pool_cand['cvar_plies']} CVaR plies "
+              f"(reach_in_play {_pool_cand['reach_in_play']:.4f}), "
+              f"{_pool_cand['fallbacks']} fallbacks; opponent mode="
+              f"{_pool_opp['mode']} cvar_plies={_pool_opp['cvar_plies']}",
+              flush=True)
+        if _pool_cand["cvar_plies"] and not _pool_cand["pickchanges"]:
+            print("⛔⛔ GT-M1 DID NOT REACH: the CVaR rule decided "
+                  f"{_pool_cand['cvar_plies']} plies and changed the pick on "
+                  "ZERO of them. This cell is champion-vs-champion wearing the "
+                  "round's name — it must VOID, not read.", flush=True)
+        if _pool_opp["cvar_plies"]:
+            print("⛔⛔ GT-M1 LEAKED ONTO THE OPPONENT: there is no "
+                  "--opp-pool-mode flag, so a nonzero opponent cvar_plies is a "
+                  "wiring defect. Both seats are risk-averse and the cell "
+                  "measures nothing.", flush=True)
     _jr_cand = _jr_expansions_sum(results, "cand_jr_expansions")
     _jr_opp = _jr_expansions_sum(results, "opp_jr_expansions")
     jr_summary = {
@@ -3419,6 +3618,7 @@ def _summary(results, info, exact_k, k_dets, sims, rung_sims, opponent="h800",
         **oracle_summary,
         **tiearb_summary,
         **jr_summary,
+        **pool_summary,
         **wc_summary,
     }
 
@@ -3455,7 +3655,9 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                            tiearb=cand_tiearb, cand_search=cand_search)
     if cand_search is not None and (cand_search.get("fpu_reduction") is not None
                                     or cand_search.get("c_puct") is not None
-                                    or cand_search.get("tau_p") is not None):
+                                    or cand_search.get("tau_p") is not None
+                                    or str(cand_search.get("pool_mode", "mean"))
+                                    != "mean"):
         print(f"[smoke] CANDIDATE-ONLY PUCT KNOBS LIVE: {cand_search} — resolved "
               f"cfg carries fpu={cfg.fpu_reduction!r} c_puct={cfg.c_puct!r} "
               f"tau_p={cfg.tau_p!r} "
@@ -3490,7 +3692,22 @@ def _smoke(args, cand_leaf_cfg=None, rep=None, opp_leaf_cfg=None, opp_rep=None,
                       # ABSENT-is-FAIL exception. ⚠️ INERT for construction:
                       # `_cfg_from_dict` reads five keys by name and ignores the rest,
                       # so the candidate-only override still rides `cand_search` alone.
-                      "fpu_reduction": None}
+                      "fpu_reduction": None,
+                      # ⭐⭐ measurement/cvar_pool_prep (GT-M1): the IDENTICAL
+                      # move, for the identical reason, and the build-time dry
+                      # cell is what proved it necessary. `config.opponent.
+                      # champ_cfg` is the FIVE-KNOB SHARED dict, NOT a resolved
+                      # `as_manifest()`, so `G-POOL`'s opponent address returned
+                      # MISSING until these two keys existed — and a gate that
+                      # failed OPEN would have passed that cell vacuously.
+                      # ⛔ ALWAYS "mean"/None, and that is not a placeholder: it
+                      # is the POSITIVE statement that the opponent pools by the
+                      # deployed visit-weighted rule. There is no shared
+                      # --pool-mode flag, so these can never legitimately be
+                      # anything else, and a manifest that says otherwise is a
+                      # LEAK. ⚠️ INERT for construction (`_cfg_from_dict` reads
+                      # five keys by name and ignores the rest).
+                      "pool_mode": "mean", "pool_alpha": None}
     # opponent side: `fair-champion` is net-free; `net` loads its OWN checkpoint at
     # its OWN rep (never the candidate's).
     smoke_opp_net = None
@@ -4214,6 +4431,42 @@ def main(argv=None) -> int:
                          "candidate-side tau_p cell had ever been EXPRESSIBLE on the "
                          "classical champion. See measurement/taup_audit_leg_20260901 "
                          "and fpu_resurrection_prep/screen_lib.py TAU_PAIR_SPEC.")
+    # --- RISK-ASYMMETRIC WORLD POOLING (GT-M1, measurement/cvar_pool_prep) ----
+    ap.add_argument("--cand-pool-mode", choices=("mean", "cvar"), default="mean",
+                    help="HOW THE CANDIDATE'S k PIMC DETERMINIZATION WORLDS "
+                         "BECOME ONE MOVE. 'mean' (default) == the deployed "
+                         "champion, bit-for-bit: the visit-weighted pooled "
+                         "Q = sum(W)/sum(N) over all k worlds "
+                         "(carc_core::fair::pooled_q_argmax). 'cvar' scores each "
+                         "root action by the mean of its PER-WORLD Q over the "
+                         "ceil(--cand-pool-alpha * k) worlds where it does WORST "
+                         "— the risk-averse / adversarial-world reading. "
+                         "⭐ LICENSED BY measurement/cl083_mech_censuses_20260830 "
+                         "READOUT §1 (GT-M1 NOT KILLED: the rule changes the "
+                         "champion's pick on 34.0%% of contest-exposed plies at "
+                         "alpha=0.25, so it is NOT arithmetically inert) — but "
+                         "that census says NOTHING about whether the CVaR pick is "
+                         "BETTER, and it demoted the mechanism claim (control "
+                         "plies read 0.333, indistinguishable). ⛔ CANDIDATE ONLY, "
+                         "by construction: there is NO shared --pool-mode, because "
+                         "a two-sided pooling change is a different CHAMPION, not "
+                         "a cell. ⚠️ RUST-ONLY (--backend rust); the python search "
+                         "path refuses it loudly rather than pooling by the mean "
+                         "behind your back.")
+    ap.add_argument("--cand-pool-alpha", type=float, default=None,
+                    help="The lower-tail fraction for --cand-pool-mode cvar: "
+                         "ceil(alpha * k_dets) worlds enter the mean, so at the "
+                         "deployed k=16 alpha 0.25 -> the worst 4 worlds and "
+                         "0.50 -> the worst 8. Must be finite and in (0, 1]; "
+                         "there is NO default (a defaulted alpha is a different "
+                         "experiment wearing this cell's name). "
+                         "⚠️⚠️ alpha=1.0 IS NOT AN IDENTITY CONTROL FOR 'mean'. "
+                         "It is the EQUAL-WEIGHT-per-world mean; the deployed "
+                         "rule is VISIT-weighted, and the census measured the two "
+                         "disagreeing on 18.1%% of contest-exposed plies "
+                         "(cl083_mech_censuses_20260830/DEVIATIONS.md D-1). Run "
+                         "alpha=1.0 as the WEIGHTING control arm — never as a "
+                         "no-op.")
     # --- THE PHASE FIRE-GATE (measurement/phasegate_prep) --------------------
     ap.add_argument("--cand-tiearb-phase-gate",
                     choices=("all", "early", "mid", "late", "none"), default="all",
@@ -4902,15 +5155,62 @@ def main(argv=None) -> int:
         # unaffected — and a newer gate reading an OLDER manifest correctly sees
         # MISSING, which those libraries deliberately distinguish from None.
         shared_tau_p=float(args.tau_p),
+        # ⭐⭐ RISK-ASYMMETRIC WORLD POOLING (GT-M1, measurement/cvar_pool_prep),
+        # under the SAME always-present convention: `pool_mode: "mean"` is the
+        # POSITIVE statement "the deployed visit-weighted pool", never a missing
+        # key, and `pool_alpha: null` positively says "mean pooling takes no
+        # alpha". ⚠️ ADDITIVE, like `tau_p`/`shared_tau_p` before it: every
+        # banked adjudicator digs `cand_search` BY KEY NAME, so an older gate
+        # reading a newer manifest is unaffected, and a newer gate reading an
+        # OLDER manifest correctly sees MISSING (which those libraries
+        # deliberately distinguish from a resolved value).
+        # ⛔ THERE IS NO `shared_pool_mode`, because there is no shared flag:
+        # pooling is candidate-only by construction. The OPPONENT's rule is
+        # asserted from its OWN resolved config below, not restated here.
+        pool_mode=str(args.cand_pool_mode),
+        pool_alpha=(None if args.cand_pool_alpha is None
+                    else float(args.cand_pool_alpha)),
     )
     _fpu_live = _cand_search["fpu_reduction"] is not None
     _cpuct_live = _cand_search["c_puct"] is not None
     _taup_live = _cand_search["tau_p"] is not None
-    if _fpu_live or _cpuct_live or _taup_live:
+    _pool_live = _cand_search["pool_mode"] != "mean"
+    # ⛔ ARGUMENT-SHAPE REFUSALS, before anything else. These fire even on an
+    # otherwise-champion cell, because both mistakes are silent: an alpha with
+    # no mode is a caller who believes they dosed the rule and did not, and a
+    # mode with no alpha has no defensible default.
+    if _pool_live and args.cand_pool_alpha is None:
+        ap.error("--cand-pool-mode cvar requires --cand-pool-alpha in (0, 1] "
+                 "(0.25 == the worst quarter of worlds). There is NO default: a "
+                 "defaulted alpha is a different experiment wearing this cell's "
+                 "name.")
+    if not _pool_live and args.cand_pool_alpha is not None:
+        ap.error(f"--cand-pool-alpha {args.cand_pool_alpha!r} was given without "
+                 "--cand-pool-mode cvar — the alpha would be INERT and the cell "
+                 "would silently be the unmodified champion.")
+    if _fpu_live or _cpuct_live or _taup_live or _pool_live:
         if args.info != "fair":
-            ap.error("--cand-fpu-reduction / --cand-c-puct / --cand-tau-p apply "
-                     "to the FAIR candidate (--info fair); got --info "
-                     f"{args.info}")
+            ap.error("--cand-fpu-reduction / --cand-c-puct / --cand-tau-p / "
+                     "--cand-pool-mode apply to the FAIR candidate (--info "
+                     f"fair); got --info {args.info}")
+        # ⛔ GT-M1 IS RUST-ONLY. The python fair path pools by the
+        # visit-weighted mean unconditionally, and `make_heuristic_prior_
+        # evaluator` refuses the knob — but it refuses inside a WORKER, after
+        # the run has started. Refuse at LAUNCH instead.
+        if _pool_live and _backend != "rust":
+            ap.error(f"--cand-pool-mode cvar needs --backend rust (got "
+                     f"{_backend!r}): risk-asymmetric world pooling binds at the "
+                     "pooled-argmax dispatch in "
+                     "carc_core::fair::FairAgent::pimc_move and has NO python "
+                     "implementation. A python-backend cvar cell would be "
+                     "champion-vs-champion.")
+        if _pool_live and not (math.isfinite(_cand_search["pool_alpha"])
+                               and 0.0 < _cand_search["pool_alpha"] <= 1.0):
+            ap.error(f"--cand-pool-alpha {args.cand_pool_alpha!r} must be finite "
+                     "and in (0, 1]: alpha <= 0 selects zero worlds (the "
+                     "ceil()'s max(1,..) would silently make it 'the single "
+                     "worst world', a DIFFERENT rule) and alpha > 1 selects more "
+                     "worlds than exist.")
         if _fpu_live and not math.isfinite(_cand_search["fpu_reduction"]):
             ap.error(f"--cand-fpu-reduction {args.cand_fpu_reduction!r} is not "
                      "finite (unset == the champion's legacy optimistic q=0)")
@@ -4935,6 +5235,7 @@ def main(argv=None) -> int:
         _want_fpu = _cand_search["fpu_reduction"]
         _want_c = (_cand_search["c_puct"] if _cpuct_live else float(args.c_puct))
         _want_tau = (_cand_search["tau_p"] if _taup_live else float(args.tau_p))
+        _want_pool = (_cand_search["pool_mode"], _cand_search["pool_alpha"])
         if (_probe_cfg_f.fpu_reduction != _want_fpu
                 or _probe_cfg_f.c_puct != _want_c
                 or _probe_cfg_f.tau_p != _want_tau):
@@ -4942,6 +5243,14 @@ def main(argv=None) -> int:
                      f"{_probe_cfg_f.fpu_reduction!r} c_puct={_probe_cfg_f.c_puct!r} "
                      f"tau_p={_probe_cfg_f.tau_p!r}, not the requested "
                      f"fpu={_want_fpu!r} c_puct={_want_c!r} tau_p={_want_tau!r}")
+        if (str(getattr(_probe_cfg_f, "pool_mode", "mean")),
+                getattr(_probe_cfg_f, "pool_alpha", None)) != _want_pool:
+            ap.error(f"⛔ the resolved HeuristicPriorConfig carries pooling "
+                     f"({getattr(_probe_cfg_f, 'pool_mode', None)!r}, "
+                     f"{getattr(_probe_cfg_f, 'pool_alpha', None)!r}), not the "
+                     f"requested {_want_pool!r}. A src/ tree predating "
+                     "measurement/cvar_pool_prep drops the pair on the floor and "
+                     "the cell would be champion-vs-champion.")
         # ⭐⭐ THE TWO-SIDED CHECK, DONE AT LAUNCH RATHER THAN LEFT TO THE
         # ADJUDICATOR. `champ_cfg_dict` is what `_make_opponent` builds the
         # OPPONENT from; a candidate-only knob that leaked into it would produce
@@ -4958,6 +5267,18 @@ def main(argv=None) -> int:
                      f"c_puct={_probe_opp.c_puct!r} tau_p={_probe_opp.tau_p!r} "
                      f"fpu={_probe_opp.fpu_reduction!r} — a candidate-only knob "
                      "has LEAKED into the shared build path")
+        # ⭐⭐ THE POOLING HALF OF THE TWO-SIDED CHECK, and the one this round
+        # turns on. GT-M1 has NO shared flag by design, so the ONLY way the
+        # opponent could pool by CVaR is a leak — which would make the cell a
+        # two-sided pooling change (i.e. a different champion) wearing a
+        # candidate-only cell's name, and every other gate would pass it.
+        if (str(getattr(_probe_opp, "pool_mode", "mean")) != "mean"
+                or getattr(_probe_opp, "pool_alpha", None) is not None):
+            ap.error("⛔⛔ the OPPONENT-dialect config (cand_search=None) resolved "
+                     f"to pooling ({getattr(_probe_opp, 'pool_mode', None)!r}, "
+                     f"{getattr(_probe_opp, 'pool_alpha', None)!r}) — the pooling "
+                     "rule has LEAKED onto the opponent. Both seats would be "
+                     "risk-averse and the cell would measure nothing.")
         if _backend == "rust":
             from carcassonne_ai.rust_agent import search_config_rs as _sc_rs_f
             _probe_sc_f = _sc_rs_f(_probe_cfg_f, 8)
@@ -5000,6 +5321,29 @@ def main(argv=None) -> int:
             if _mt is None or float(_mt.group(1)) != _want_tau:
                 ap.error(f"⛔ the rust SearchConfigRs resolved a tau_p other than "
                          f"the requested {_want_tau!r}. repr: {_rep}")
+            # ⭐⭐ THE POOLING READBACK — and, unlike the three above, it is read
+            # off a real GETTER rather than parsed out of a repr. `SearchConfigRs.
+            # pool` returns {"mode": str, "alpha": float|None} as NUMBERS, which
+            # is what the three repr-regex readbacks above wish they had (rust's
+            # Display prints 1.0 as "1", which is why each of them has to parse
+            # numerically and say so). An AttributeError here is the STALE-WHEEL
+            # signal and it is fatal on purpose — a wheel predating
+            # measurement/cvar_pool_prep cannot express the rule and would serve
+            # a mean-pooled candidate under this cell's name.
+            _got_pool = getattr(_probe_sc_f, "pool", None)
+            if _got_pool is None:
+                ap.error("⛔⛔ the installed carc_rs SearchConfigRs has NO `pool` "
+                         "getter — this wheel PREDATES measurement/cvar_pool_prep. "
+                         "It cannot express risk-asymmetric pooling, and a cell "
+                         "run on it would be champion-vs-champion with a healthy "
+                         "leaf hash and a perfectly plausible dirname. Rebuild "
+                         "and reinstall carc_rs.")
+            _got_pool = (str(dict(_got_pool).get("mode")),
+                         (None if dict(_got_pool).get("alpha") is None
+                          else float(dict(_got_pool)["alpha"])))
+            if _got_pool != _want_pool:
+                ap.error(f"⛔ the rust SearchConfigRs resolved pooling {_got_pool!r}, "
+                         f"not the requested {_want_pool!r} — refusing to launch.")
         print(f"[cand-search] CANDIDATE-ONLY PUCT KNOBS LIVE: {_cand_search} "
               f"(leaf hash does NOT move; the wiring gate is the manifest's "
               f"config.cand_search — G-FPU / G-CPUCT)", flush=True)
@@ -5202,7 +5546,22 @@ def main(argv=None) -> int:
                       # ABSENT-is-FAIL exception. ⚠️ INERT for construction:
                       # `_cfg_from_dict` reads five keys by name and ignores the rest,
                       # so the candidate-only override still rides `cand_search` alone.
-                      "fpu_reduction": None}
+                      "fpu_reduction": None,
+                      # ⭐⭐ measurement/cvar_pool_prep (GT-M1): the IDENTICAL
+                      # move, for the identical reason, and the build-time dry
+                      # cell is what proved it necessary. `config.opponent.
+                      # champ_cfg` is the FIVE-KNOB SHARED dict, NOT a resolved
+                      # `as_manifest()`, so `G-POOL`'s opponent address returned
+                      # MISSING until these two keys existed — and a gate that
+                      # failed OPEN would have passed that cell vacuously.
+                      # ⛔ ALWAYS "mean"/None, and that is not a placeholder: it
+                      # is the POSITIVE statement that the opponent pools by the
+                      # deployed visit-weighted rule. There is no shared
+                      # --pool-mode flag, so these can never legitimately be
+                      # anything else, and a manifest that says otherwise is a
+                      # LEAK. ⚠️ INERT for construction (`_cfg_from_dict` reads
+                      # five keys by name and ignores the rest).
+                      "pool_mode": "mean", "pool_alpha": None}
 
     # the `_vs_h{rung_sims}` segment is the OPPONENT identity; a head-to-head must NEVER
     # land in the same auto out-dir as the h800 cell at the same knobs (Trap 1). The
@@ -5246,6 +5605,15 @@ def main(argv=None) -> int:
     # dirname is exactly the Trap-1 confusion this suffix exists to prevent.
     _cand_oracle += ("" if args.cand_tau_p is None
                      else f"-candtau{args.cand_tau_p:g}")
+    # ⭐ GT-M1: the pooling rule rides the CANDIDATE segment for the identical
+    # Trap-1 reason — a cvar0.25 cell and the unmodified champion at the same
+    # shared knobs would otherwise share an auto out-dir and one cell's cached
+    # per-game .json could be served to the other. ⚠️ The ALPHA is in the tag,
+    # not just the mode: the two funded doses differ ONLY in alpha, so a tag
+    # that carried `-cvar` alone would collide them with each other, which is
+    # strictly worse than colliding with the champion.
+    _cand_oracle += ("" if args.cand_pool_mode == "mean"
+                     else f"-cvar{args.cand_pool_alpha:g}")
     tag = (f"fair_{args.info}_c{args.c_puct:g}_tau{args.tau_p:g}_{args.leaf_quantize}"
            f"_kd{args.k_dets}_s{args.sims}{_cand_oracle}_{_vs}_k{args.exact_k}")
     if cand_leaf_cfg is not None:

@@ -40,6 +40,7 @@
 //! to the fair PIMC move for THAT decision only; the agent stays latched.
 
 pub mod jrules_filter;
+pub mod pool;
 pub mod solver;
 
 use std::collections::HashMap;
@@ -54,6 +55,7 @@ pub use jrules_filter::{
     jrules_root_filter, FilterOutcome, JF_ALL, JF_CURRENT, JF_END, JF_FILTER_NAMES, JF_J10,
     JF_J3, JF_J9,
 };
+pub use pool::{cvar_argmax, CvarPick, PoolMode};
 pub use solver::{ChanceDrop, SolveError, SolveResult, SolverConfig};
 
 /// `fair_agent.DEFAULT_MIN_POOLED_VISITS`.
@@ -345,6 +347,20 @@ pub struct MoveInfo {
     pub tiearb_playouts: usize,
     /// Wall-clock the arbiter added to this decision.
     pub tiearb_secs: f64,
+    /// GT-M1: the champion's own visit-weighted `pooled_q_argmax` pick at this
+    /// decision, computed on the CVaR arm ONLY so the pick-change is
+    /// observable per ply. `0` (the `Default`) on every Mean-pooled agent —
+    /// read it only alongside a nonzero `pool_n_eligible`.
+    pub pool_mean_pick: i32,
+    /// GT-M1: the CVaR pick at this decision differs from [`Self::pool_mean_pick`].
+    pub pool_pickchange: bool,
+    /// GT-M1: how many actions were CVaR-eligible here (present with
+    /// `N_i >= min_pooled_visits` in ALL k worlds). `0` on the Mean arm AND on
+    /// a CVaR ply that fell back.
+    pub pool_n_eligible: usize,
+    /// GT-M1: `max(1, ceil(alpha * k))` — how many worst-case worlds entered the
+    /// lower-tail mean. `0` on the Mean arm.
+    pub pool_j_worlds: usize,
 }
 
 /// `FairHeuristicPriorAgent`.
@@ -450,6 +466,34 @@ pub struct FairAgent {
     /// ARB-vs-RND comparison, and nothing else in the run would show it.
     /// **Non-zero (or absent) ⇒ `U-UNREADABLE`.**
     pub tiearb_partial_argmax: u64,
+    // --- RISK-ASYMMETRIC WORLD POOLING (GT-M1) cumulative counters. ALL ZERO
+    // whenever `cfg.search.pool_mode == PoolMode::Mean` (the champion) — they
+    // live inside the CVaR arm of the dispatch, so an unarmed side's assertable
+    // invariant is `pool_cvar_plies == 0`, and a candidate's is `> 0`.
+    /// PIMC decisions the CVaR rule actually DECIDED (the denominator of
+    /// `reach` in play). 0 on every Mean-pooled agent.
+    pub pool_cvar_plies: u64,
+    /// ⭐⭐ Decisions where the CVaR pick DIFFERS from the champion's own
+    /// visit-weighted `pooled_q_argmax` pick — `reach`, measured in PLAY.
+    ///
+    /// ⛔ THE ONLY WIRING GATE DERIVED FROM PLAY. This knob moves NO leaf hash,
+    /// so a moved-hash check proves nothing and a manifest echo proves only that
+    /// the flag was typed. A cell whose candidate reports `pool_cvar_plies > 0`
+    /// and `pool_pickchanges == 0` is a champion-vs-champion null wearing this
+    /// round's name, and it must VOID rather than read.
+    ///
+    /// ⚠️ Comparable to the census's `reach(α)` in KIND but not in VALUE: the
+    /// census measured k=8 worlds on a fixed E4 crux corpus, this counts k=16
+    /// worlds over whole self-played games including non-crux plies.
+    pub pool_pickchanges: u64,
+    /// Decisions where NO action was CVaR-eligible and the champion's own pick
+    /// stood (`pool::cvar_argmax`'s fallback contract). Nonzero is REPORTABLE,
+    /// not fatal — but a large share means the rule is mostly not expressing.
+    pub pool_fallbacks: u64,
+    /// Σ over CVaR-decided plies of the CVaR-eligible action count — divided by
+    /// [`Self::pool_cvar_plies`] it is the mean eligible-set size, the census's
+    /// `mean_cvar_eligible`.
+    pub pool_eligible_total: u64,
 }
 
 impl FairAgent {
@@ -485,6 +529,10 @@ impl FairAgent {
             tiearb_errors: 0,
             tiearb_first_error: None,
             tiearb_partial_argmax: 0,
+            pool_cvar_plies: 0,
+            pool_pickchanges: 0,
+            pool_fallbacks: 0,
+            pool_eligible_total: 0,
         }
     }
 
@@ -686,8 +734,59 @@ impl FairAgent {
             .iter()
             .map(|&a| (a, pool.n[&a], pool.w[&a]))
             .collect();
-        let champ_pick =
-            pooled_q_argmax(&pool, self.cfg.min_pooled_visits).expect("pool is non-empty");
+        // ⭐⭐ THE POOLING RULE (GT-M1, `measurement/cvar_pool_prep/`). The
+        // `Mean` arm is the DEFAULT and the CHAMPION: it is the identical
+        // `pooled_q_argmax` call this line has always been, reached through one
+        // `match` on a `Copy` enum. `crate::fair::pool` is never constructed,
+        // allocated or read on it — the same byte-identity discipline
+        // `tiearb_enabled == false` follows two blocks down.
+        //
+        // ⚠️ `stats` (the PER-WORLD root statistics) is still alive here; the
+        // CVaR arm needs it because a lower-tail rule cannot be computed from
+        // the summed pool. Nothing about the merge above changed.
+        let champ_pick = match self.cfg.search.pool_mode {
+            PoolMode::Mean => {
+                pooled_q_argmax(&pool, self.cfg.min_pooled_visits).expect("pool is non-empty")
+            }
+            PoolMode::CVaR { alpha } => {
+                // ⭐⭐ THE PLAY-DERIVED LIVENESS WITNESS. The mean pick is
+                // computed on this arm TOO, purely so `pool_pickchanges` can
+                // exist: a manifest echo proves the knob was REQUESTED and
+                // nothing more, and this program has twice banked a cell whose
+                // knob never bound (the FPU knob, the phasegate smoke). It is
+                // the exact analogue of `tiearb_champ_pick`/`tiearb_pickchanges`
+                // and it is what makes `reach` measurable IN PLAY rather than
+                // only in the free census. Cost: one O(|legal|) pass per ply,
+                // on the CANDIDATE arm only.
+                let mean_pick =
+                    pooled_q_argmax(&pool, self.cfg.min_pooled_visits).expect("pool is non-empty");
+                let p = pool::cvar_argmax(&stats, alpha, self.cfg.min_pooled_visits);
+                self.pool_cvar_plies += 1;
+                self.pool_eligible_total += p.n_eligible as u64;
+                info.pool_j_worlds = p.j_worlds;
+                info.pool_n_eligible = p.n_eligible;
+                info.pool_mean_pick = mean_pick;
+                match p.action {
+                    Some(a) => {
+                        if a != mean_pick {
+                            self.pool_pickchanges += 1;
+                            info.pool_pickchange = true;
+                        }
+                        a
+                    }
+                    None => {
+                        // ⛔ THE FALLBACK CONTRACT (`pool::cvar_argmax` doc): no
+                        // action is CVaR-eligible, so the rule cannot express
+                        // this ply. A player cannot decline to move, so the
+                        // CHAMPION's own pick stands and the event is COUNTED —
+                        // never silent. It biases the measured effect toward
+                        // zero rather than in an unknown direction.
+                        self.pool_fallbacks += 1;
+                        mean_pick
+                    }
+                }
+            }
+        };
 
         // TIE ARBITRATION (tiearb2 Stage 2 Phase B) — the root hook, placed
         // AFTER `pooled_q_argmax` because the champion's own pick is an INPUT
@@ -911,6 +1010,140 @@ mod tests {
             g.advance(legal[legal.len() / 2]).unwrap();
         }
         g
+    }
+
+    // ===================================================================== //
+    // GT-M1 — RISK-ASYMMETRIC WORLD POOLING, at the AGENT level.            //
+    // (`fair::pool::tests` pins the arithmetic on hand-built world matrices; //
+    //  these pin the DISPATCH, the counters and the byte-identity premise.)  //
+    // ===================================================================== //
+
+    fn pool_cfg(k: usize, sims: usize, mode: PoolMode) -> FairConfig {
+        FairConfig {
+            search: SearchConfig {
+                simulations: sims,
+                pool_mode: mode,
+                ..SearchConfig::default()
+            },
+            k_dets: k,
+            seed: 101,
+            threads: 1,
+            ..FairConfig::default()
+        }
+    }
+
+    /// ⭐ THE DEFAULT IS THE CHAMPION. `SearchConfig::default()` pools by the
+    /// deployed visit-weighted mean, and a `Mean` agent's pooling counters are
+    /// all zero — the assertable invariant of an UNARMED side.
+    #[test]
+    fn pool_mode_defaults_to_mean_and_leaves_every_counter_at_zero() {
+        assert_eq!(SearchConfig::default().pool_mode, PoolMode::Mean);
+        let g = midgame("28000000000", 40);
+        let mut a = FairAgent::new(pool_cfg(8, 64, PoolMode::Mean));
+        let act = a.choose_action(&g, Some(7)).unwrap();
+        // the untouched incumbent's answer
+        let mut b = FairAgent::new(cfg(8, 64, 1));
+        assert_eq!(act, b.choose_action(&g, Some(7)).unwrap());
+        assert_eq!(
+            (a.pool_cvar_plies, a.pool_pickchanges, a.pool_fallbacks, a.pool_eligible_total),
+            (0, 0, 0, 0),
+            "the Mean arm must never touch fair::pool"
+        );
+        assert_eq!(a.last_move.pool_j_worlds, 0);
+        assert_eq!(a.last_move.pool_n_eligible, 0);
+        assert!(!a.last_move.pool_pickchange);
+    }
+
+    /// ⭐⭐ THE POSITIVE CONTROL, IN-CRATE: at the deployed width the CVaR rule
+    /// decides every ply, and it reaches — it changes the champion's pick on at
+    /// least one of them over a played game. A knob that parsed and then never
+    /// bound would show `pool_cvar_plies > 0, pool_pickchanges == 0` here.
+    #[test]
+    fn cvar_pooling_binds_and_reaches_over_a_played_game() {
+        let mut g = midgame("28000000000", 20);
+        let mut a = FairAgent::new(pool_cfg(16, 48, PoolMode::CVaR { alpha: 0.25 }));
+        let mut mean = FairAgent::new(pool_cfg(16, 48, PoolMode::Mean));
+        let mut diverged = false;
+        for i in 0..24 {
+            if g.legal_actions().len() < 2 {
+                break;
+            }
+            let ca = a.choose_action(&g, Some(i)).unwrap();
+            let ma = mean.choose_action(&g, Some(i)).unwrap();
+            if ca != ma {
+                diverged = true;
+            }
+            g.advance(ca).unwrap();
+        }
+        assert!(a.pool_cvar_plies > 0, "the CVaR arm never ran");
+        assert_eq!(mean.pool_cvar_plies, 0, "the Mean arm must not count");
+        assert!(
+            a.pool_pickchanges > 0,
+            "⛔ the knob did not REACH: {} CVaR plies, 0 pick changes. A cell in \
+             this state is champion-vs-champion wearing the round's name.",
+            a.pool_cvar_plies
+        );
+        assert!(diverged, "play never diverged from the Mean-pooled champion");
+        // the eligible set is non-degenerate (the census's mean_cvar_eligible)
+        assert!(a.pool_eligible_total >= a.pool_cvar_plies);
+        // alpha=0.25 at k=16 selects the worst FOUR worlds
+        assert_eq!(a.last_move.pool_j_worlds, 4);
+    }
+
+    /// ⚠️⚠️ THE DISCLOSED CENSUS FINDING, AT THE AGENT LEVEL: α = 1.0 is the
+    /// EQUAL-WEIGHT-world mean, **not** the deployed visit-weighted pool, so it
+    /// is NOT an identity control and it is expected to move play.
+    /// `measurement/cl083_mech_censuses_20260830/DEVIATIONS.md` D-1 measured
+    /// that move at 18.1% of contest-exposed plies. This test exists so a future
+    /// reader who "fixes" α=1.0 into an identity has to delete an assertion that
+    /// names the artefact.
+    #[test]
+    fn alpha_one_is_the_equal_weight_mean_not_the_deployed_pool() {
+        let mut g = midgame("28000000000", 20);
+        let mut a = FairAgent::new(pool_cfg(16, 48, PoolMode::CVaR { alpha: 1.0 }));
+        let mut mean = FairAgent::new(pool_cfg(16, 48, PoolMode::Mean));
+        let mut n_diff = 0;
+        for i in 0..24 {
+            if g.legal_actions().len() < 2 {
+                break;
+            }
+            let ca = a.choose_action(&g, Some(i)).unwrap();
+            let ma = mean.choose_action(&g, Some(i)).unwrap();
+            if ca != ma {
+                n_diff += 1;
+            }
+            g.advance(ma).unwrap(); // walk the CHAMPION's line, compare per ply
+        }
+        assert_eq!(a.last_move.pool_j_worlds, 16, "alpha=1.0 takes ALL k worlds");
+        assert!(
+            n_diff > 0,
+            "alpha=1.0 agreed with the deployed pool on every ply of this game. \
+             That is not an ERROR (they agree ~82% of the time per census §1), \
+             but this fixture was chosen to exhibit the disagreement — if it \
+             stops doing so, pick another seed rather than concluding alpha=1.0 \
+             is an identity control. It is NOT: the deployed rule is SUM(W)/SUM(N) \
+             (visit-weighted); alpha=1.0 weights worlds EQUALLY."
+        );
+    }
+
+    /// The pooling knob is orthogonal to threading: the k worlds are still
+    /// merged in world order and the CVaR score reads the same per-world stats,
+    /// so the answer is bit-identical at any thread count — the same property
+    /// [`thread_count_invariance`] pins for the champion.
+    #[test]
+    fn cvar_pooling_is_thread_count_invariant() {
+        let g = midgame("28000000000", 40);
+        let mut want = None;
+        for t in [1usize, 4, 8] {
+            let mut c = pool_cfg(8, 64, PoolMode::CVaR { alpha: 0.5 });
+            c.threads = t;
+            let mut a = FairAgent::new(c);
+            let act = a.choose_action(&g, Some(7)).unwrap();
+            match want {
+                None => want = Some((act, a.pool_pickchanges)),
+                Some(w) => assert_eq!((act, a.pool_pickchanges), w, "threads={t}"),
+            }
+        }
     }
 
     /// The gate's thread-invariance leg, in-crate: bit-identical pooled floats
