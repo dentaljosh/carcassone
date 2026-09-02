@@ -148,7 +148,52 @@ class HudTextTest {
     fun `the opponent short name drops the budget parenthetical`() {
         assertEquals("Champion", MoveText.shortOpponent("Champion(weakened k4x172)"))
         assertEquals("Tier-1", MoveText.shortOpponent("Tier-1"))
-        assertEquals("Champion", MoveText.shortOpponent(""))
+        // The remote opponent names itself the same way, so the same cut has to
+        // leave an identity short enough for the 14-char HUD chip.
+        assertEquals("Carcasum", MoveText.shortOpponent("Carcasum(103.5k playouts)"))
+    }
+
+    /**
+     * ⛔ The empty-name fallback is "Opponent", NOT "Champion" (2026-09-02 text
+     * audit). It is reached only when the bridge supplied no name — the first
+     * frames of a session, or a failed start — and in a remote game calling the
+     * opponent "Champion" there is exactly the class of stale copy this build was
+     * asked to remove. No word in the app may name the opponent from a constant.
+     */
+    @Test
+    fun `an unnamed opponent is never called the champion`() {
+        assertEquals("Opponent", MoveText.shortOpponent(""))
+        assertEquals("Opponent", MoveText.shortOpponent("   "))
+    }
+
+    // -- tile descriptions ---------------------------------------------------
+
+    @Test
+    fun `tile descriptions lose the engine underscores`() {
+        assertEquals("city bottom road", MoveText.tileDescription("city_bottom_road"))
+        assertEquals("straight road", MoveText.tileDescription("straight_road"))
+    }
+
+    /** A pennant is a scoring fact, so it is named rather than left as "shield". */
+    @Test
+    fun `a shield reads as a pennant`() {
+        assertEquals(
+            "city bottom road · pennant",
+            MoveText.tileDescription("city_bottom_road_shield"),
+        )
+    }
+
+    /**
+     * A garden carries no rule at all in the locked 2p Base+Farmers scope, which
+     * is exactly why the bag groups a garden face with its plain twin. The wording
+     * has to agree with the grouping, or the same tile reads as two things.
+     */
+    @Test
+    fun `a garden is dropped, matching the bag grouping`() {
+        assertEquals(
+            MoveText.tileDescription("straight_road"),
+            MoveText.tileDescription("straight_road_flowers"),
+        )
     }
 
     @Test

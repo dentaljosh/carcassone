@@ -16,6 +16,24 @@
     -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!--
+      BACKGROUND THINKING (2026-09-02). ThinkingService is a foreground service
+      held for the duration of the opponent's turn so the process keeps its
+      top-app cpuset (and stops being a memory-pressure candidate) when the app
+      is backgrounded mid-search. See ThinkingService's kdoc for why the type is
+      `dataSync` rather than `shortService`, and for why none of this is the
+      correctness story — a killed process still resumes from the autosave.
+
+      POST_NOTIFICATIONS is a runtime permission on API 33+. A DENIED grant hides
+      the notification but does NOT stop the service, so nothing is gated on it.
+      WAKE_LOCK keeps the CPU up with the screen off; the debug-sourceset
+      BenchService already declares the same three for the battery bench.
+    -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".CarcApplication"
         android:usesCleartextTraffic="true"
@@ -37,6 +55,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Not exported: started only by this app's own ViewModel, never by adb
+             or another app (unlike the debug BenchService, which the host bench
+             driver has to reach). -->
+        <service
+            android:name=".ThinkingService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
     </application>
 
 </manifest>

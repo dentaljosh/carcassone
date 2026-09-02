@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -347,6 +349,14 @@ fun GameScreen(vm: GameViewModel, onExit: () -> Unit) {
                     ) {
                         if (ui.lastEvents.isNotEmpty()) {
                             LastMoveChip(ui.lastEvents, vm::dismissEvents, Modifier)
+                        }
+                        // Its own card rather than a row inside ThinkingBanner: the
+                        // banner is keyed on `ui.thinking`, which goes false in the
+                        // gap between the opponent's tile decision and its meeple
+                        // decision, and a tile panel that blinks out mid-turn is
+                        // worse than no panel. This one is up for the whole turn.
+                        if (!state.isHumanTurn && !state.isTerminated && assets != null) {
+                            OpponentTurnTiles(ui, state, assets!!, Modifier)
                         }
                         if (ui.thinking) ThinkingBanner(ui, state, Modifier)
                         ui.error?.let { err -> ErrorBanner(err, vm::clearError, Modifier) }
@@ -771,6 +781,104 @@ private fun NextTileThumb(
     }
 }
 
+/**
+ * What is on the table while the OPPONENT is deciding: its drawn tile, and
+ * optionally the tile you are next in line to draw.
+ *
+ * ## Why "their tile" is not a leak
+ *
+ * A drawn tile is face-up from the moment it is drawn — that is the retail rule,
+ * and it is the information the fair champion's own determinizations already work
+ * from. The app simply never had anywhere to show it, because the HUD thumbnail is
+ * gated on the human's tile phase. Nothing here reads anything the player is not
+ * entitled to see.
+ *
+ * ## Why "next" IS a change, and is labelled and stamped as one
+ *
+ * The upcoming draw is the top of the shuffled deck and is NOT public. It is shown
+ * only while it is the opponent's turn — a window in which the human has no legal
+ * action, so it cannot change a decision being made — it is opt-out in Settings,
+ * and every game in which it was served at least once is stamped
+ * `preview_next_tile: true` in the archive so the E4 ledger can condition on it.
+ * See `android_bridge.peek_next_tile`.
+ *
+ * It is a PEEK, never an early draw: the real draw still happens at the human's
+ * turn, through the engine, under this game's `draw_rule`. Under the retail redraw
+ * rule the opponent's move can make this face unplaceable, in which case it is set
+ * aside and a different tile arrives — which is exactly what the "may change"
+ * caption says instead of quietly being wrong.
+ */
+@Composable
+private fun OpponentTurnTiles(
+    ui: GameUiState,
+    state: GameState,
+    assets: TileAssets,
+    modifier: Modifier,
+) {
+    val theirs = assets.tile(state.nextTile?.image)
+    val peek = ui.nextPeek
+    val mine = peek?.let { assets.tile(it.tile.image) }
+    if (theirs == null && mine == null) return
+    val who = MoveText.shortOpponent(state.opponentName)
+    Card(modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+        Row(
+            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            if (theirs != null) {
+                LabelledTile(
+                    bmp = theirs,
+                    // The tile the opponent is placing, at its drawn orientation —
+                    // the rotation it ends up at is its decision, not information
+                    // to pre-empt, so this is never spun to match the move.
+                    caption = "$who has",
+                    hint = state.nextTile?.description
+                        ?.takeIf { it.isNotEmpty() }?.let(MoveText::tileDescription),
+                    accent = CarcColors.Ai,
+                )
+            }
+            if (mine != null && peek != null) {
+                LabelledTile(
+                    bmp = mine,
+                    caption = "you draw next",
+                    hint = if (peek.provisional) "may change" else null,
+                    accent = CarcColors.Human,
+                )
+            }
+        }
+    }
+}
+
+/** A small tile thumbnail with a caption underneath. */
+@Composable
+private fun LabelledTile(
+    bmp: ImageBitmap,
+    caption: String,
+    hint: String?,
+    accent: Color,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Canvas(Modifier.size(46.dp)) {
+            drawImage(
+                image = bmp,
+                dstOffset = IntOffset.Zero,
+                dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+            )
+        }
+        Spacer(Modifier.height(3.dp))
+        Text(caption, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = accent,
+            maxLines = 1, softWrap = false)
+        if (hint != null) {
+            Text(
+                hint, fontSize = 9.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1, softWrap = false,
+            )
+        }
+    }
+}
+
 // --------------------------------------------------------------------------- //
 // Overlays                                                                     //
 // --------------------------------------------------------------------------- //
@@ -884,7 +992,13 @@ private fun LoadingPane(ui: GameUiState) {
         CircularProgressIndicator()
         Spacer(Modifier.height(12.dp))
         Text(
-            ui.error?.toString() ?: "Starting the champion…",
+            // Named from the SELECTED opponent, not from a constant: this pane is
+            // up for the whole of a remote game's start (the `/health` ping runs
+            // here), and it said "Starting the champion…" over it.
+            ui.error?.toString() ?: when (ui.opponentMode) {
+                OpponentMode.REMOTE_CARCASUM -> "Reaching the Carcasum server…"
+                OpponentMode.CHAMPION -> "Starting the ${ui.difficulty.label.lowercase(Locale.US)} opponent…"
+            },
             style = MaterialTheme.typography.bodyMedium,
         )
     }
@@ -1236,10 +1350,21 @@ private fun BagDialog(bag: BagInfo?, assets: TileAssets?, onClose: () -> Unit) {
                     Text("Counting the bag…", fontSize = 13.sp)
                 }
             } else {
+                // One entry per FUNCTIONAL tile type, so the 32 art files read as
+                // the base game's 24 actual tiles. See `groupBagFaces` and
+                // `android_bridge.tile_type_key`; the grouping is the engine's own
+                // tile data canonicalised over rotation, never a hand-written table.
+                val groups = bag.groups
+                // Rotation is per ENTRY and lives here, not in the ViewModel: it is
+                // a way of looking at the dialog, not game state, so it resets when
+                // the dialog closes and never reaches a save.
+                val turns = remember(groups) { mutableStateMapOf<String, Int>() }
                 Column {
                     Text(
                         "Unseen tiles — not on the board and not the one in hand. " +
-                            "Public information; the deck order is never read.",
+                            "Public information; the deck order is never read. " +
+                            "Tiles that play identically share one entry; tap to " +
+                            "rotate 90°.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1250,8 +1375,14 @@ private fun BagDialog(bag: BagInfo?, assets: TileAssets?, onClose: () -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        items(bag.faces.size) { i ->
-                            BagFaceCell(bag.faces[i], assets)
+                        items(groups.size) { i ->
+                            val g = groups[i]
+                            BagFaceCell(
+                                group = g,
+                                assets = assets,
+                                turns = turns[g.key] ?: 0,
+                                onRotate = { turns[g.key] = ((turns[g.key] ?: 0) + 1) % 4 },
+                            )
                         }
                     }
                 }
@@ -1261,32 +1392,49 @@ private fun BagDialog(bag: BagInfo?, assets: TileAssets?, onClose: () -> Unit) {
     )
 }
 
+/**
+ * One functional tile type in the bag.
+ *
+ * The whole cell is the rotate control — a separate button beside a 52dp thumbnail
+ * would be a smaller target than the thumbnail itself, on a grid that already fits
+ * five columns on a 360dp phone. [turns] is quarter-turns CLOCKWISE, the same
+ * convention `drawTileArt` uses for the board, so a tile spun here and the same
+ * tile placed on the board agree.
+ */
 @Composable
-private fun BagFaceCell(face: BagFace, assets: TileAssets?) {
-    val gone = face.remaining == 0
+private fun BagFaceCell(
+    group: BagGroup,
+    assets: TileAssets?,
+    turns: Int,
+    onRotate: () -> Unit,
+) {
+    val gone = group.remaining == 0
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        val bmp = assets?.tile(face.image)
+        val bmp = assets?.tile(group.art)
         Box(
             Modifier
                 .size(52.dp)
                 .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable(onClick = onRotate),
             contentAlignment = Alignment.Center,
         ) {
             if (bmp != null) {
                 Canvas(Modifier.size(52.dp)) {
-                    drawImage(
-                        image = bmp,
-                        dstOffset = IntOffset.Zero,
-                        dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
-                        // Exhausted faces stay in place but recede.
-                        alpha = if (gone) 0.22f else 1f,
-                    )
+                    rotate(90f * turns, pivot = Offset(size.width / 2f, size.height / 2f)) {
+                        drawImage(
+                            image = bmp,
+                            dstOffset = IntOffset.Zero,
+                            dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                            // Exhausted types stay in place but recede.
+                            alpha = if (gone) 0.22f else 1f,
+                        )
+                    }
                 }
             }
         }
         Text(
-            "×${face.remaining}",
+            "×${group.remaining}",
             fontSize = 11.sp,
             fontWeight = if (gone) FontWeight.Normal else FontWeight.Bold,
             color = if (gone) MaterialTheme.colorScheme.onSurfaceVariant
@@ -1294,6 +1442,18 @@ private fun BagFaceCell(face: BagFace, assets: TileAssets?) {
             maxLines = 1,
             softWrap = false,
         )
+        // Said out loud rather than silently hidden: this entry stands for more
+        // than one art file, and a player counting tiles deserves to know the
+        // difference between them is decoration, not rules.
+        if (group.variants > 1) {
+            Text(
+                "${group.variants} arts",
+                fontSize = 8.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
     }
 }
 

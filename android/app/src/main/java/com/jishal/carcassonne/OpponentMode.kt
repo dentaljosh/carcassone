@@ -49,8 +49,15 @@ enum class OpponentMode(
     REMOTE_CARCASUM(
         id = "remote_carcasum",
         label = "Remote Carcasum",
+        // ⚠️ NO PER-MOVE NUMBER (2026-09-02 text audit). This said "~5s per move",
+        // which stopped being true the moment the server grew a fixed-PLAYOUT mode
+        // — there `budget_ms` is null on its side and the phone's 5000 default
+        // describes nothing. The server self-describes at `/health`, the bridge
+        // renders that into `opponent_name`, and the app shows THAT once a game
+        // starts. Nothing here may name a budget.
         blurb = "Carcasum (2014 MCTS, out of lineage) running on the laptop, " +
-            "reached over the tailnet. ~5s per move. Archived separately — " +
+            "reached over the tailnet. Its search budget is whatever the server " +
+            "was started with — the game screen names it. Archived separately — " +
             "NEVER counted in the champion record.",
     ),
     ;

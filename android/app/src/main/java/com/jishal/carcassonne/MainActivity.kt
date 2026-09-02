@@ -1,11 +1,14 @@
 package com.jishal.carcassonne
 
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,9 +40,33 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  */
 private enum class Screen { HOME, GAME, SETTINGS, DEBUG, PAST_GAMES }
 
+/** Spelled out rather than referencing Manifest.permission, which is API 33+. */
+private const val NOTIFICATION_PERMISSION = "android.permission.POST_NOTIFICATIONS"
+
 class MainActivity : ComponentActivity() {
+
+    /**
+     * The API 33+ runtime grant for [ThinkingService]'s notification.
+     *
+     * ⚠️ NOTHING IS GATED ON THE ANSWER. A denied grant hides the notification but
+     * does not stop the foreground service, so the CPU/cpuset benefit — the actual
+     * point of the feature — survives a "no". The result is therefore not even
+     * read: asking once is the whole contract, and Android itself will not re-ask
+     * after a denial.
+     */
+    private val notificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Asked at launch rather than at the first opponent turn: a permission
+        // sheet appearing over the board the instant the human commits a move is
+        // exactly the moment they are least willing to read it.
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(NOTIFICATION_PERMISSION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            runCatching { notificationPermission.launch(NOTIFICATION_PERMISSION) }
+        }
         enableEdgeToEdge()
         setContent {
             CarcTheme {

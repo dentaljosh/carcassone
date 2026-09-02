@@ -367,8 +367,20 @@ android {
         // `opponent` label. The champion path is byte-identical (OpponentModeTest
         // pins the `new_game` JSON literally), so an E4 game played on this build
         // is the same measurement as one played on versionCode 2.
-        versionCode = 3
-        versionName = "0.1-m2-remoteopp"
+        // Bumped 3 -> 4 for the M3 UI build (2026-09-02). ⛔ NOT A PLAY EPOCH.
+        // The champion, its budget, the rules profile and the tie-arbiter config
+        // are untouched: `newGameConfig` still emits the byte-identical champion
+        // JSON (OpponentModeTest pins it literally), and no file under src/,
+        // engine/, rust/ or governance/ changed. What changed is the screen — the
+        // opponent's face-up tile and an opt-in next-tile peek during its turn, a
+        // foreground service so the turn keeps full CPU when backgrounded, tile-bag
+        // grouping by the engine's own tile identity, a fail-loud asset loader, and
+        // a copy audit. An E4 game played on this build is the same measurement as
+        // one played on versionCode 3 EXCEPT for the peek, which is why a game that
+        // used it is stamped `preview_next_tile: true` in the archive rather than
+        // left to be inferred from a build date.
+        versionCode = 4
+        versionName = "0.1-m3-ui"
 
         // Instrumented tests are the ONLY surface that can run code inside the
         // app's Chaquopy environment (numpy + the carc_rs wheel as pip resolved

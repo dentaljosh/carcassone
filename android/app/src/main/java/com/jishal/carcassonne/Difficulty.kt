@@ -3,6 +3,7 @@ package com.jishal.carcassonne
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -30,8 +31,14 @@ import java.io.IOException
  *    null here rather than 688/4: a strength knob is never hardcoded in the app,
  *    it is read back for display via `production_budget()`.
  *
- * The per-move estimates are the plan's phone figures, not measurements; the HUD
- * shows a measured rolling mean once the champion has actually moved.
+ * ⚠️ NO PER-MOVE SECONDS LIVE HERE ANY MORE (2026-09-02 text audit). The old
+ * `estPerMove` strings ("~8-15s") were the 2026-07 PLAN's guesses for the Python
+ * search; the phone has run the Rust core since 2026-08-01 and, since 2026-08-25,
+ * a doubled mobile budget — so every one of those figures was wrong in both
+ * directions at once, on the Home chip and in Settings. What replaces them is the
+ * one thing this file can state exactly: the SEARCH SIZE, computed from the same
+ * numbers that are sent to the bridge. Actual seconds are MEASURED in play and
+ * shown as a rolling mean in the thinking banner.
  */
 enum class Difficulty(
     /** Stable id for the DataStore record — never renumber or reuse. */
@@ -43,7 +50,6 @@ enum class Difficulty(
     val kDets: Int?,
     /** Sims per determinization, or null to inherit the YAML budget. */
     val sims: Int?,
-    val estPerMove: String,
     val blurb: String,
 ) {
     INSTANT(
@@ -52,7 +58,6 @@ enum class Difficulty(
         opponent = "tier1",
         kDets = null,
         sims = null,
-        estPerMove = "<0.1s",
         blurb = "Tier-1 rule-based player — a different, much weaker opponent. " +
             "No search at all.",
     ),
@@ -62,9 +67,8 @@ enum class Difficulty(
         opponent = "champion",
         kDets = 2,
         sims = 172,
-        estPerMove = "~1–2s",
-        blurb = "The champion on a quarter of its determinizations and a quarter of " +
-            "its sims.",
+        blurb = "The champion on a small fraction of its search — the narrowest and " +
+            "shallowest stop that is still the champion.",
     ),
     MEDIUM(
         id = "medium",
@@ -72,8 +76,7 @@ enum class Difficulty(
         opponent = "champion",
         kDets = 4,
         sims = 172,
-        estPerMove = "~2–4s",
-        blurb = "Full determinizations, a quarter of the sims each.",
+        blurb = "Twice Fast's determinizations, at the same depth each.",
     ),
     STRONG(
         id = "strong",
@@ -81,8 +84,7 @@ enum class Difficulty(
         opponent = "champion",
         kDets = 4,
         sims = 344,
-        estPerMove = "~4–8s",
-        blurb = "Full determinizations, half the sims each.",
+        blurb = "Medium's determinizations, at twice the depth each.",
     ),
     CHAMPION(
         id = "champion",
@@ -90,11 +92,25 @@ enum class Difficulty(
         opponent = "champion",
         kDets = null,
         sims = null,
-        estPerMove = "~8–15s",
-        blurb = "The production champion at its full fair budget, exactly as it is " +
-            "measured in the repo. The only setting where a win is a real win.",
+        blurb = "The champion at the full budget this device is configured for " +
+            "(PRODUCTION.yaml decides it, not the app). The only setting where " +
+            "a win is a win against the champion.",
     ),
     ;
+
+    /**
+     * How big this stop's search is, in the units the bridge is actually given.
+     *
+     * DERIVED from [kDets]/[sims], so it cannot drift from what `newGameConfig`
+     * sends — and deliberately not a duration. See the class kdoc for why the old
+     * per-move second estimates were removed rather than re-guessed.
+     */
+    val searchLabel: String
+        get() = when {
+            isTier1 -> "no search"
+            kDets != null && sims != null -> "k$kDets × $sims = $totalSims sims/move"
+            else -> "this device's full budget"
+        }
 
     /** True when this stop weakens the champion (and so must be labelled as such). */
     val belowChampionBudget: Boolean
@@ -212,10 +228,44 @@ class SettingsStore(context: Context) {
         store.edit { it[KEY_REMOTE_URL] = url.trim() }
     }
 
+    /**
+     * Show the human's UPCOMING tile during the opponent's turn (the "next" panel).
+     *
+     * DEFAULT ON. The human has no legal action while the opponent is thinking, so
+     * the panel cannot change a decision that is being made — but it does change
+     * what the player KNOWS, so it is stamped into the archive
+     * (`preview_next_tile`) rather than assumed invisible. Off is honoured
+     * immediately: the panel disappears and the bridge is not asked again.
+     */
+    val previewNextTile: Flow<Boolean> = store.data
+        .catch { t -> if (t is IOException) emit(emptyPreferences()) else throw t }
+        .map { prefs -> prefs[KEY_PREVIEW_NEXT_TILE] ?: true }
+
+    suspend fun setPreviewNextTile(on: Boolean) {
+        store.edit { it[KEY_PREVIEW_NEXT_TILE] = on }
+    }
+
+    /**
+     * Hold the process in the foreground while the opponent thinks (see
+     * [ThinkingService]).
+     *
+     * DEFAULT ON. Purely a scheduling/notification setting — a move is never lost
+     * either way, because the autosave is written before every search.
+     */
+    val backgroundThinking: Flow<Boolean> = store.data
+        .catch { t -> if (t is IOException) emit(emptyPreferences()) else throw t }
+        .map { prefs -> prefs[KEY_BACKGROUND_THINKING] ?: true }
+
+    suspend fun setBackgroundThinking(on: Boolean) {
+        store.edit { it[KEY_BACKGROUND_THINKING] = on }
+    }
+
     private companion object {
         val KEY_DIFFICULTY = stringPreferencesKey("difficulty")
         val KEY_TIE_ARB_LEVEL = stringPreferencesKey("tie_arb_level")
         val KEY_OPPONENT_MODE = stringPreferencesKey("opponent_mode")
         val KEY_REMOTE_URL = stringPreferencesKey("remote_url")
+        val KEY_PREVIEW_NEXT_TILE = booleanPreferencesKey("preview_next_tile")
+        val KEY_BACKGROUND_THINKING = booleanPreferencesKey("background_thinking")
     }
 }

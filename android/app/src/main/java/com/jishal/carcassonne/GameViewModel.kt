@@ -113,6 +113,19 @@ data class GameUiState(
     val opponentMode: OpponentMode = OpponentMode.DEFAULT,
     /** The persisted remote-opponent server address. */
     val remoteUrl: String = OpponentMode.DEFAULT_URL,
+    /** Show the human's upcoming tile during the opponent's turn (Settings). */
+    val previewNextTile: Boolean = true,
+    /** Hold the process foreground while the opponent thinks (Settings). */
+    val backgroundThinking: Boolean = true,
+    /**
+     * The tile the human is next in line to draw, fetched once per opponent
+     * decision and shown only while it is the opponent's turn.
+     *
+     * Null whenever the panel must not be up: the human's own turn, the setting
+     * off, an empty deck, or a bridge that refused. It is never derived from the
+     * board — it is `state.deck[0]`, which only `peek_next_tile` may read.
+     */
+    val nextPeek: NextTilePeek? = null,
     /**
      * Rolling mean of the last [GameViewModel.ETA_WINDOW] AI move durations **for
      * the decision now in flight**, in seconds — `null` until there is a usable
@@ -296,6 +309,38 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             settings.remoteUrl.collect { u -> _ui.update { it.copy(remoteUrl = u) } }
         }
+        viewModelScope.launch {
+            settings.previewNextTile.collect { on ->
+                // Turning it OFF must take the panel down NOW, not at the next
+                // turn: the whole point of the toggle is that some players do not
+                // want to see it, and leaving a stale peek on screen would ignore
+                // that for the rest of the opponent's think.
+                _ui.update { if (on) it.copy(previewNextTile = true)
+                             else it.copy(previewNextTile = false, nextPeek = null) }
+            }
+        }
+        viewModelScope.launch {
+            settings.backgroundThinking.collect { on ->
+                _ui.update { it.copy(backgroundThinking = on) }
+                if (!on) ThinkingService.stop(getApplication())
+            }
+        }
+    }
+
+    /** Persist the next-tile peek toggle. Applies immediately, not next game. */
+    fun setPreviewNextTile(on: Boolean) {
+        viewModelScope.launch {
+            runCatching { settings.setPreviewNextTile(on) }
+                .onFailure { Log.w(TAG, "preview_next_tile write failed", it) }
+        }
+    }
+
+    /** Persist the background-thinking toggle. Applies from the next turn. */
+    fun setBackgroundThinking(on: Boolean) {
+        viewModelScope.launch {
+            runCatching { settings.setBackgroundThinking(on) }
+                .onFailure { Log.w(TAG, "background_thinking write failed", it) }
+        }
     }
 
     /** Persist the opponent. The change applies to the NEXT game, not this one. */
@@ -413,6 +458,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 budget = it.budget, busy = true, hasSave = false,
                 difficulty = difficulty, tieArbLevel = tieArbLevel, archiveCount = it.archiveCount,
                 opponentMode = opponentMode, remoteUrl = remoteUrl,
+                // Carried, not re-defaulted: the settings flows only re-emit on a
+                // CHANGE, so a rebuilt state that dropped these would silently
+                // turn a user's "off" back on for the rest of the process.
+                previewNextTile = it.previewNextTile,
+                backgroundThinking = it.backgroundThinking,
             )
         }
         // The preset owns the whole opponent/budget decision, including the choice
@@ -574,6 +624,38 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // --------------------------------------------------- the next-tile peek
+
+    /**
+     * Refresh [GameUiState.nextPeek] for the opponent decision about to be made.
+     *
+     * A plain suspend call on the bridge dispatcher rather than a side job,
+     * because the ORDER matters: it has to land before `ai_move` takes the bridge
+     * thread (see the call site). It is one dict build in Python, so the cost is
+     * noise against a multi-second search.
+     *
+     * Failures are silent and leave the panel empty — including the bridge's own
+     * `not_opponent_turn` refusal, which is the correct answer to a race where the
+     * turn flipped between the check and the call.
+     */
+    private suspend fun syncNextPeek(e: Int) {
+        if (!_ui.value.previewNextTile) {
+            if (isCurrent(e)) _ui.update { it.copy(nextPeek = null) }
+            return
+        }
+        val raw = try {
+            PythonBridge.peekNextTile()
+        } catch (c: CancellationException) {
+            throw c
+        } catch (t: Throwable) {
+            Log.w(TAG, "peek_next_tile failed", t)
+            return
+        }
+        if (!isCurrent(e)) return
+        val peek = BridgeJson.parseOrError(raw).getOrNull()?.let(BridgeJson::nextTilePeek)
+        _ui.update { it.copy(nextPeek = peek) }
+    }
+
     // -------------------------------------------------------- the tile bag
 
     fun openBag() {
@@ -728,6 +810,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 difficulty = it.difficulty, tieArbLevel = it.tieArbLevel,
                 opponentMode = it.opponentMode, remoteUrl = it.remoteUrl,
                 archiveCount = it.archiveCount,
+                previewNextTile = it.previewNextTile,
+                backgroundThinking = it.backgroundThinking,
             )
         }
     }
@@ -943,17 +1027,52 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
      */
     private suspend fun runAiTurns(e: Int) {
         currentCoroutineContext().ensureActive()
+        // HOLD THE PROCESS FOR THE WHOLE OPPONENT LEG, not per `ai_move`: the
+        // champion's turn is a tile decision plus a meeple decision, and stopping
+        // the service between them would drop the app back to the background
+        // cpuset in the gap. Named with the LIVE opponent, so the notification
+        // says "Carcasum thinking…" for a remote game.
+        val holdProcess = _ui.value.backgroundThinking
+        if (holdProcess) {
+            ThinkingService.start(
+                getApplication(),
+                MoveText.shortOpponent(_ui.value.state?.opponentName.orEmpty()),
+            )
+        }
+        try {
+            runAiTurnsInner(e)
+        } finally {
+            // In a `finally` so every exit — the turn ending, an error, the human
+            // leaving mid-search, cancellation — takes the notification down.
+            ThinkingService.stop(getApplication())
+            if (isCurrent(e)) _ui.update { it.copy(nextPeek = null) }
+        }
+    }
+
+    private suspend fun runAiTurnsInner(e: Int) {
         var guard = 0
         while (true) {
             if (!isCurrent(e)) return
             val st = _ui.value.state ?: return
             if (st.isTerminated || st.isHumanTurn) return
+            // THE PEEK, refreshed per opponent DECISION rather than per turn. Under
+            // the `redraw` rule an unplaceable opponent draw is set aside and it
+            // draws again — which pops the very tile this panel is naming — so one
+            // fetch per turn could leave a tile on screen that is no longer next.
+            // Fetched HERE, before the bridge thread is handed to `ai_move`: the
+            // bridge is single-threaded, so a peek asked during the search would
+            // answer only after the move had landed.
+            syncNextPeek(e)
             if (guard++ > MAX_AI_STEPS) {
                 Log.e(TAG, "AI loop guard tripped at $guard steps")
+                // Names the LIVE opponent: this fires for a remote Carcasum game
+                // just as readily as a champion one, and "The champion did not
+                // yield the turn" was simply false there.
+                val who = MoveText.shortOpponent(st.opponentName)
                 _ui.update {
                     it.copy(
                         aiFailed = true,
-                        error = BridgeError("ai_loop", "The champion did not yield the turn."),
+                        error = BridgeError("ai_loop", "$who did not yield the turn."),
                     )
                 }
                 return
@@ -1110,6 +1229,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        // The ViewModel going away means nothing is left to consume a move, so the
+        // notification must not outlive it. (The autosave is already on disk, so a
+        // search that is still unwinding on the bridge thread costs nothing.)
+        ThinkingService.stop(getApplication())
         phaseLockJob?.cancel()
         previewJob?.cancel()
         ownershipJob?.cancel()

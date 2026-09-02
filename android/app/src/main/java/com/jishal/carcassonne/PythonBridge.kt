@@ -124,6 +124,21 @@ object PythonBridge {
     suspend fun getBag(): String = call("get_bag")
 
     /**
+     * PEEK at the tile the human is next in line to draw (the "next" panel).
+     *
+     * Read-only, and on the bridge dispatcher because it reads the live session.
+     * ⚠️ Therefore it MUST be called while the bridge thread is free — the caller
+     * ([GameViewModel.runAiTurns]) asks once at the top of each opponent decision,
+     * BEFORE handing the thread to `ai_move`. Asking during a search would simply
+     * queue behind it and answer after the move had already landed.
+     *
+     * The bridge refuses it on the human's own turn; see
+     * `android_bridge.peek_next_tile` for why the gate is part of the contract
+     * rather than a UI convention.
+     */
+    suspend fun peekNextTile(): String = call("peek_next_tile")
+
+    /**
      * DEBUG SCREEN ONLY. Plays the current game out so a finished state (and its
      * archive entry) can be reached without ~150 taps. The confirm token is the
      * bridge's own guard; keeping the single call site in [DebugScreen] is ours.

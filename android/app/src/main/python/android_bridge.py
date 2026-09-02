@@ -37,6 +37,7 @@ ints only and is safe to poll from the UI thread while ``ai_move`` blocks.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import platform
@@ -559,6 +560,45 @@ def remote_opponent_label(budget_ms: int) -> str:
     return f"{REMOTE_OPPONENT_PREFIX}_{int(budget_ms)}ms"
 
 
+def humanise_playouts(n: int) -> str:
+    """`103500` -> `"103.5k"`, `2000` -> `"2k"`, `900` -> `"900"`."""
+    n = int(n)
+    if n < 1000:
+        return str(n)
+    k = n / 1000.0
+    return (f"{k:.1f}".rstrip("0").rstrip(".") if n % 1000 else f"{n // 1000}") + "k"
+
+
+def remote_display_name(health: dict | None, budget_ms: int | None) -> str:
+    """The SHORT, player-facing name of the remote opponent — from the SERVER.
+
+    ⚠️ Why this is not `f"Carcasum {budget_ms // 1000}s"` any more (2026-09-02
+    text audit): the server grew a fixed-PLAYOUT mode (`server.py --playouts`),
+    and in that mode `budget_ms` is *None* on its side while the phone still
+    carries the 5000 ms default it was configured with. The old string therefore
+    printed "Carcasum 5s" over an opponent that was not running on a time budget
+    at all. The server already self-describes — `/health` returns
+    `opponent_label` (e.g. ``carcasum_remote_p103500``) and an `opponent` dict —
+    so the display name is DERIVED from what it says, and only falls back to the
+    locally-configured budget when the health ping told us nothing.
+
+    Shape is `Name(detail)` on purpose: `MoveText.shortOpponent` cuts at the
+    parenthesis, so the HUD chip reads "Carcasum" while the status bar and the
+    end-of-game dialog keep the detail.
+    """
+    opp = (health or {}).get("opponent") or {}
+    playouts = opp.get("playouts")
+    ms = opp.get("budget_ms", budget_ms)
+    if playouts:
+        return f"Carcasum({humanise_playouts(playouts)} playouts)"
+    if ms:
+        ms = int(ms)
+        secs = f"{ms / 1000:g}"
+        return f"Carcasum({secs}s/turn)"
+    label = str((health or {}).get("opponent_label") or "").strip()
+    return f"Carcasum({label})" if label else "Carcasum"
+
+
 def is_remote_opponent(kind: str) -> bool:
     """True for every remote-opponent spelling, labelled or bare.
 
@@ -692,6 +732,14 @@ class RemoteOpponent:
         return {
             "url": self.url,
             "budget_ms": self.budget_ms,
+            # THE SERVER'S OWN LABEL (added 2026-09-02). `budget_ms` above and the
+            # session's `opponent_kind` are both derived from OUR config, which is
+            # stale the moment the daemon is launched in fixed-playout mode
+            # (`server.py --playouts` sets `OPPONENT_LABEL` to
+            # `carcasum_remote_p<N>` and nulls `budget_ms` on its side). This is
+            # what the server says it is, so an archive is auditable without
+            # trusting the phone's copy of the launch flags.
+            "opponent_label": (self.health or {}).get("opponent_label"),
             "opponent": (self.health or {}).get("opponent"),
             "binary_sha256": gate.get("sha256"),
             "binary_gate": gate.get("state"),
@@ -1501,6 +1549,16 @@ class _Session:
         # record is the only reader.
         self.ai_elapsed: list[dict] = []
 
+        # HOW MANY TIMES THE NEXT-TILE PEEK WAS SERVED in this game (the M3 UI
+        # feature "let me see my next one also"). Counted rather than flagged so
+        # the stamp cannot be a claim about a setting that was toggled off before
+        # it was ever used: `preview_next_tile` in the archive is exactly
+        # `peek_count > 0`, i.e. "the human was shown the upcoming tile at least
+        # once in this game". Carried across a restore through the save payload,
+        # so resuming does not launder the peek out of the record. The E4 ledger
+        # conditions on the archive field; nothing on the DECISION path reads this.
+        self.peek_count: int = 0
+
         # The position BEFORE the most recent action, kept solely so the end-of-game
         # breakdown can be reconstructed (see `_final_breakdown`). Free: the engine's
         # `get_next_state` already deepcopies, so the previous Board was going to be
@@ -1588,8 +1646,21 @@ class _Session:
             self.agent = remote
             self.pick = lambda board: int(remote.choose_action(board))
             self.manifest = None
-            self.opponent_name = f"Carcasum {self.remote_budget_ms // 1000}s"
-            self.budget_note = None
+            # NAMED BY THE SERVER, not by our copy of its config — see
+            # `remote_display_name`. `check_health` has already run, so
+            # `remote.health` is the daemon's own self-description.
+            self.opponent_name = remote_display_name(remote.health,
+                                                     self.remote_budget_ms)
+            # The remote opponent is OUT OF LINEAGE, and the app renders
+            # `budget_note` wherever it needs to warn about what is playing. It was
+            # None, which left every remote game presenting itself with no caveat
+            # at all in the status bar, the end-of-game dialog and Past games.
+            self.budget_note = (
+                f"REMOTE OPPONENT — {self.opponent_name} is Carcasum (2014 MCTS), "
+                f"running on another machine and reached over the network. It is "
+                f"NOT the champion and NOT in its lineage; this game is archived "
+                f"as {self.opponent_kind!r} and is deliberately excluded from the "
+                f"champion record.")
             self.eff_sims = 0
             self.eff_k_dets = 0
             return
@@ -2580,7 +2651,10 @@ def new_game(config_json: str = "{}") -> str:
                       move. "rust" mirrors the game into `carc_rs.FairAgentRs`;
                       the Python engine stays authoritative for legality, UI,
                       scoring and the save record either way. Opt-in (P7).
-        tiearb_level  "b32"|"b16"|"b8"|"off", default "b32" — the Settings-screen
+        tiearb_level  "b64"|"b32"|"b16"|"b8"|"off", default TIEARB_LEVEL_DEFAULT
+                      ("b64" since 2026-08-29; "b32" is still ACCEPTED so an older
+                      save resumes at the level it was played at, but the Settings
+                      menu no longer offers it) — the Settings-screen
                       tie-arbiter tier (see TIEARB_LEVELS). RUST-ONLY: on a
                       "python"-resolved backend this is fail-closed to no
                       arbiter, never an error. An unknown value is refused.
@@ -2861,14 +2935,22 @@ def _save_payload(s: _Session) -> dict:
         "backend": s.backend,
         "sims_effective": s.eff_sims,
         "k_dets_effective": s.eff_k_dets,
-        # THE TIE-ARBITER LEVEL REQUESTED at session start ("b32"/"b16"/"b8"/"off",
-        # see TIEARB_LEVELS). Carried forward on restore so a RESUMED unfinished
+        # THE TIE-ARBITER LEVEL REQUESTED at session start (one of TIEARB_LEVELS —
+        # "b64"/"b32"/"b16"/"b8"/"off"; the menu offers b64/b16/b8/off and "b32" is
+        # retained only so a pre-2026-08-29 save resumes at its own level). Carried forward on restore so a RESUMED unfinished
         # game continues at the level it was SAVED with — the same per-game-
         # invariant contract as the five rule fields above, not the current
         # ambient Settings value (which only takes effect at the next `new_game`).
         # Absent on any save written before this feature shipped == TIEARB_LEVEL_LEGACY
         # ("off") — a pre-arbiter save resumes without the arbiter, never a guess.
         "tiearb_level": s.tiearb_level,
+        # HOW MANY TIMES THE NEXT-TILE PEEK WAS SERVED (see `_Session.peek_count`).
+        # Purely a record of what the HUMAN was shown; it is not a replay input and
+        # nothing reads it back as authority. Carried in the save so a resumed game
+        # cannot launder an earlier half's peeks out of the archive. Absent on any
+        # save written before the feature shipped == 0, which is literally true of
+        # every one of those games.
+        "preview_next_tile_peeks": int(s.peek_count),
     }
     out.update(_spec_fingerprint())
     return out
@@ -2972,6 +3054,18 @@ def archive_record() -> str:
                                         if s.played_k_dets is not None
                                         else s.eff_k_dets),
             "resume_note": s.resume_note,
+            # ⛔ THE PEEK STAMP (M3 UI build, 2026-09-02). True iff the human was
+            # shown the upcoming tile at least once in this game — the "next"
+            # panel that appears during the opponent's turn only. It is a pure
+            # INFORMATION change (the deck is not touched, the real draw still
+            # happens at the human's turn under the `draw_rule` of record, and the
+            # champion never sees it), but it is still a change to what the human
+            # knew, so the E4 ledger must be able to condition on it rather than
+            # infer it from a build date. `preview_next_tile_peeks` is the count
+            # behind the flag. ABSENT on every archive written before this build,
+            # which reads correctly as "no peek".
+            "preview_next_tile": bool(s.peek_count > 0),
+            "preview_next_tile_peeks": int(s.peek_count),
             "result": st.get("result"),
             "scores": st["scores"],
             "n_actions": len(s.action_log),
@@ -3320,6 +3414,13 @@ def restore_game(json_str: str) -> str:
             s.rs.set_move_idx(ai_decisions)
             s.rs.set_latched(latched)
 
+        # The peek record is carried across the rebuild for the same reason
+        # `ai_elapsed` is (see `undo_last_tile`): no decision was removed, so the
+        # earlier half's peeks still describe the game that is being resumed, and
+        # dropping them would let a Resume launder the stamp out of the archive.
+        # Absent field == a save written before the peek shipped == 0.
+        s.peek_count = int(blob.get("preview_next_tile_peeks", 0) or 0)
+
         _S = s
         _agent_ref = s.agent
         _prog_leaf_calls = 0
@@ -3569,6 +3670,71 @@ def get_ownership() -> str:
         return _jni_err(exc)
 
 
+def _oriented_tile_key(tile) -> tuple:
+    """One ORIENTATION's full functional identity, read off the engine's own data.
+
+    Everything that decides what a tile DOES, and nothing that decides what it
+    looks like:
+
+    ``edges``   the four outer ``TerrainType`` values (``Tile.get_type``), which is
+                what ``TilePositionFinder`` matches on;
+    ``city``    which sides belong to one city segment (``Tile.city``) — a tile with
+                two city edges plays completely differently joined vs split;
+    ``road``    the road ``Connection`` pairs (``Tile.road``);
+    ``farms``   each ``FarmerConnection``'s slots / tile connections / city sides,
+                as a SET — the same data ``game_wrapper._farm_slot_signature``
+                folds into the legal-cache key;
+    ``shield``  ⛔ NEVER dropped: a pennant is +1 point per tile in that city, so a
+                pennanted and an unpennanted face are different tiles;
+    ``chapel``  the monastery.
+
+    ⚠️ ``flowers`` is deliberately NOT in the key. A "garden" is decorative under
+    the LOCKED SCOPE (2p Base + Farmers, no Abbots — see CLAUDE.md): nothing in the
+    engine's scoring or legality reads it, so ``straight_road_flowers`` is the same
+    tile as ``straight_road`` with a flowerbed drawn on it. If Abbots ever enter
+    scope, ``flowers`` must be added back to this key and the bag will split again.
+
+    ``farms`` is a SET rather than a sequence on purpose. ``Tile.turn`` permutes
+    each connection's ``farmer_positions`` list, so two genuinely identical faces
+    (``city_left_right`` and a 90-degree-rotated ``city_top_bottom``) differ only in
+    slot ORDER — an action-emission detail, not a functional one.
+    """
+    from wingedsheep.carcassonne.objects.side import Side
+
+    def sv(s):
+        return getattr(s, "value", str(s))
+
+    edges = tuple(tile.get_type(s).value
+                  for s in (Side.TOP, Side.RIGHT, Side.BOTTOM, Side.LEFT))
+    city = tuple(sorted(tuple(sorted(sv(x) for x in grp))
+                        for grp in (tile.city or ())))
+    road = tuple(sorted(tuple(sorted((sv(c.a), sv(c.b))))
+                        for c in (tile.road or ())))
+    farms = tuple(sorted(
+        (tuple(sorted(sv(x) for x in fc.farmer_positions)),
+         tuple(sorted(sv(x) for x in fc.tile_connections)),
+         tuple(sorted(sv(x) for x in fc.city_sides)))
+        for fc in (tile.farms or ())))
+    return (edges, city, road, farms, bool(tile.shield), bool(tile.chapel))
+
+
+def tile_type_key(tile) -> str:
+    """A stable, ROTATION-INVARIANT id for a tile's functional type.
+
+    The canonical form is the smallest ``_oriented_tile_key`` over the tile's own
+    four rotations — rotated by ``Tile.turn``, the ENGINE's rotation, so no edge or
+    farm-slot permutation is hand-written here. Hashed to 12 hex chars because the
+    only consumer is a grouping key crossing the JNI boundary as JSON.
+
+    Over the base deck this collapses the engine's 32 tile DESCRIPTIONS to the 24
+    distinct types of the retail base game (the 8 collapsed pairs are exactly the
+    8 ``*_flowers`` garden variants), with the counts still summing to 72 and every
+    shielded face still on its own. ``tests/android/test_bridge.py`` pins that.
+    """
+    canon = min(_oriented_tile_key(tile.turn(n)) for n in range(4))
+    return hashlib.sha256(repr(canon).encode()).hexdigest()[:12]
+
+
 def get_bag() -> str:
     """What is still UNSEEN, per tile face — the bag viewer's data.
 
@@ -3635,12 +3801,83 @@ def get_bag() -> str:
                 "image": getattr(proto, "image", None),
                 "remaining": left,
                 "total": int(total),
+                # FUNCTIONAL identity (see `tile_type_key`). Faces sharing this
+                # are the same tile with different art, and the bag view collapses
+                # them into one entry. Additive: every pre-existing field above is
+                # untouched, and a reader that ignores this key sees the old
+                # per-DESCRIPTION list exactly as before.
+                "type_key": (tile_type_key(proto) if proto is not None else desc),
             })
 
         return _ok({"ok": True, "generation": s.generation, "faces": faces,
                     "total_remaining": total_remaining,
                     "in_hand": in_hand,
                     "deck_remaining": int(len(state.deck))})
+    except BaseException as exc:                  # noqa: BLE001 — see _jni_err
+        return _jni_err(exc)
+
+
+def peek_next_tile() -> str:
+    """PEEK at the tile the human is next in line to draw — never a draw.
+
+    The M3 "let me see my next one also" feature. It reports ``state.deck[0]`` —
+    the front of the deck, which is exactly what ``StateUpdater.draw_tile`` pops —
+    and it does not touch the deck, the board, the action log or the agent. The
+    REAL draw still happens where it always did: at the end of the opponent's
+    meeple sub-phase, through the engine, under this session's ``draw_rule``.
+
+    ## Three deliberate constraints
+
+    **Opponent's turn only.** Refused on the human's own turn (there is nothing to
+    peek at then — the tile is already in hand — and answering would hand over the
+    draw *after* the one being played, which is a different and much larger
+    information change). Refused at a terminated state.
+
+    **Decision-neutral by construction.** The human has no legal action while it is
+    the opponent's turn, so nothing they can do with this before their own turn
+    starts differs from what they could do without it. What it DOES change is how
+    early they can start planning, which is why it is stamped rather than assumed
+    invisible: see ``preview_next_tile`` in ``archive_record``.
+
+    **Provisional, and says so.** Under ``draw_rule == "redraw"`` (the ``fixed_v1``
+    profile the app plays) an unplaceable draw is set aside and the player redraws.
+    The opponent is still to move, so its tile can close the board against this
+    face and make the real draw a different one. ``provisional`` is therefore True
+    whenever the redraw rule is live; the UI labels the panel accordingly.
+
+    ⚠️ This is the ONE bridge read that looks at ``state.deck`` — ``get_bag``
+    documents at length why it must not. The difference is the point of the
+    feature: the bag is public information, this is not, so it is (a) gated to the
+    opponent's turn, (b) opt-in from Settings, and (c) counted into the archive.
+    Nothing here reaches the champion: the agent's determinizations are built from
+    its own ``ai_game``/board and never call this.
+    """
+    try:
+        s = _require_session()
+        state = s.board.state
+        if state.is_terminated():
+            return _err("game_over", "the game has ended")
+        if int(state.current_player) == int(s.human_player):
+            return _err("not_opponent_turn",
+                        "the next-tile peek is only served during the "
+                        "opponent's turn")
+        deck = state.deck
+        if not deck:
+            return _ok({"ok": True, "generation": s.generation, "tile": None,
+                        "provisional": False, "deck_remaining": 0,
+                        "draw_rule": s.draw_rule, "peeks": int(s.peek_count)})
+        s.peek_count += 1
+        return _ok({
+            "ok": True,
+            "generation": s.generation,
+            "tile": _tile_json(deck[0]),
+            # True == "the opponent's move may make this unplaceable, in which case
+            # the retail rule sets it aside and you draw again".
+            "provisional": (s.draw_rule == DRAW_RULE_REDRAW),
+            "deck_remaining": int(len(deck)),
+            "draw_rule": s.draw_rule,
+            "peeks": int(s.peek_count),
+        })
     except BaseException as exc:                  # noqa: BLE001 — see _jni_err
         return _jni_err(exc)
 

@@ -128,7 +128,8 @@ class _BenchSession(B._Session):
         self._bench_tiearb = _resolve_tiearb(bench_tiearb)
         # ⚠️ THE BASE SESSION MUST NOT ARM ITS OWN ARBITER (added 2026-08-24 with
         # the mobile Settings-screen tiearb feature). `_Session` now defaults
-        # `tiearb_level` to the app's own B32-on-by-default — exactly what would
+        # `tiearb_level` to the app's own arbiter-on-by-default
+        # (TIEARB_LEVEL_DEFAULT — B64 since 2026-08-29, B32 before it) — exactly what would
         # make the "control" arm above indistinguishable from an armed one, since
         # THIS class's own arming is a separate mechanism (the `SearchConfigRs`
         # monkeypatch in `_start_rust_mirror` below) driven by `bench_tiearb`, not
