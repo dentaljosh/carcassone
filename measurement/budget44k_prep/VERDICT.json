@@ -1,0 +1,3679 @@
+{
+  "round": "budget44k (2 cells, ONE band, common deployed opponent) \u2014 does the post-wheel budget doubling 22016 -> 44032 pay, and at which allocation?",
+  "pair": [
+    "measurement/budget44k_prep/PREREG.md"
+  ],
+  "owner_funding": "Joshua, 2026-09-01, verbatim: \"fund 44k at w30.\" LOCAL box, W=30 (explicit override of the W=32 logical-threads default; throughput-only).",
+  "opponent": {
+    "k_dets": 16,
+    "sims_per_det": 1376,
+    "total_sims": 22016,
+    "source": "governance/PRODUCTION.yaml champion.fair_deploy"
+  },
+  "bar_M": 0.8,
+  "bar_derivation": "decay-anchored: r x D_prev = 0.675 x 1.2293 = 0.8298 -> +0.80 pts/deck. NOT 2*sigma-hat (owner ruling 2026-08-30).",
+  "branch_z": 2.0,
+  "planning": {
+    "SE_primary_n800decks": 0.48825723240931107,
+    "SE_screen_n400decks": 0.6905,
+    "MDE80_primary": 1.3874421190598438,
+    "MDE80_screen": 1.9621394617820975,
+    "priors": {
+      "A-upper: no decay (r4>=1, the rung repeats)": 1.2293,
+      "A-central: decay RATE family (r x D_prev)": 0.8297775000000001,
+      "A-lower: rate family, Type-M discounted": 0.5004855,
+      "B: measured-PRICE family (g_next, the CURRENT bound)": 0.1837,
+      "exact null": 0.0,
+      "mild regression (-1.0)": -1.0,
+      "CL-054-scale width regression (-3.0)": -3.0
+    },
+    "power_primary": {
+      "A-upper: no decay (r4>=1, the rung repeats)": {
+        "p_adopt": 0.6976767525484171,
+        "p_regression": 3.1253022528265895e-06,
+        "p_null_bounded": 0.0019899879303879042,
+        "p_unresolved": 0.30033013421894217,
+        "adopt_threshold_pts_per_deck": 0.9765144648186221,
+        "null_bounded_threshold_pts_per_deck": -0.1765144648186221,
+        "regression_threshold_pts_per_deck": -0.9765144648186221,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "A-central: decay RATE family (r x D_prev)": {
+        "p_adopt": 0.3818856626975561,
+        "p_regression": 0.00010802597595727104,
+        "p_null_bounded": 0.01954409893254988,
+        "p_unresolved": 0.5984622123939367,
+        "adopt_threshold_pts_per_deck": 0.9765144648186221,
+        "null_bounded_threshold_pts_per_deck": -0.1765144648186221,
+        "regression_threshold_pts_per_deck": -0.9765144648186221,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "A-lower: rate family, Type-M discounted": {
+        "p_adopt": 0.1647912225933058,
+        "p_regression": 0.001242981818811495,
+        "p_null_bounded": 0.08154437437406287,
+        "p_unresolved": 0.7524214212138198,
+        "adopt_threshold_pts_per_deck": 0.9765144648186221,
+        "null_bounded_threshold_pts_per_deck": -0.1765144648186221,
+        "regression_threshold_pts_per_deck": -0.9765144648186221,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "B: measured-PRICE family (g_next, the CURRENT bound)": {
+        "p_adopt": 0.05221310435955839,
+        "p_regression": 0.008745133597331145,
+        "p_null_bounded": 0.22158638221168092,
+        "p_unresolved": 0.7174553798314295,
+        "adopt_threshold_pts_per_deck": 0.9765144648186221,
+        "null_bounded_threshold_pts_per_deck": -0.1765144648186221,
+        "regression_threshold_pts_per_deck": -0.9765144648186221,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "exact null": {
+        "p_adopt": 0.02275013194817921,
+        "p_regression": 0.02275013194817921,
+        "p_null_bounded": 0.3361054682442648,
+        "p_unresolved": 0.6183942678593768,
+        "adopt_threshold_pts_per_deck": 0.9765144648186221,
+        "null_bounded_threshold_pts_per_deck": -0.1765144648186221,
+        "regression_threshold_pts_per_deck": -0.9765144648186221,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "mild regression (-1.0)": {
+        "p_adopt": 2.5817461246413487e-05,
+        "p_regression": 0.5191820225820942,
+        "p_null_bounded": 0.43497603575440014,
+        "p_unresolved": 0.04581612420225922,
+        "adopt_threshold_pts_per_deck": 0.9765144648186221,
+        "null_bounded_threshold_pts_per_deck": -0.1765144648186221,
+        "regression_threshold_pts_per_deck": -0.9765144648186221,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "CL-054-scale width regression (-3.0)": {
+        "p_adopt": 2.220446049250313e-16,
+        "p_regression": 0.999982957501248,
+        "p_null_bounded": 1.7038825007142933e-05,
+        "p_unresolved": 3.6737446418300124e-09,
+        "adopt_threshold_pts_per_deck": 0.9765144648186221,
+        "null_bounded_threshold_pts_per_deck": -0.1765144648186221,
+        "regression_threshold_pts_per_deck": -0.9765144648186221,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      }
+    },
+    "power_screen": {
+      "A-upper: no decay (r4>=1, the rung repeats)": {
+        "p_adopt": 0.41305400968176487,
+        "p_regression": 7.831845349104416e-05,
+        "p_null_bounded": 0.004296001844372732,
+        "p_unresolved": 0.5825716700203714,
+        "adopt_threshold_pts_per_deck": 1.381,
+        "null_bounded_threshold_pts_per_deck": -0.581,
+        "regression_threshold_pts_per_deck": -1.381,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "A-central: decay RATE family (r x D_prev)": {
+        "p_adopt": 0.2123497424226477,
+        "p_regression": 0.0006830834601242453,
+        "p_null_bounded": 0.01983697178171645,
+        "p_unresolved": 0.7671302023355115,
+        "adopt_threshold_pts_per_deck": 1.381,
+        "null_bounded_threshold_pts_per_deck": -0.581,
+        "regression_threshold_pts_per_deck": -1.381,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "A-lower: rate family, Type-M discounted": {
+        "p_adopt": 0.10112207487741731,
+        "p_regression": 0.0032168658044933185,
+        "p_null_bounded": 0.055429900652228026,
+        "p_unresolved": 0.8402311586658613,
+        "adopt_threshold_pts_per_deck": 1.381,
+        "null_bounded_threshold_pts_per_deck": -0.581,
+        "regression_threshold_pts_per_deck": -1.381,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "B: measured-PRICE family (g_next, the CURRENT bound)": {
+        "p_adopt": 0.041462510678411446,
+        "p_regression": 0.01172449462713987,
+        "p_null_bounded": 0.12232340755099175,
+        "p_unresolved": 0.824489587143457,
+        "adopt_threshold_pts_per_deck": 1.381,
+        "null_bounded_threshold_pts_per_deck": -0.581,
+        "regression_threshold_pts_per_deck": -1.381,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "exact null": {
+        "p_adopt": 0.02275013194817921,
+        "p_regression": 0.02275013194817921,
+        "p_null_bounded": 0.17730641737360203,
+        "p_unresolved": 0.7771933187300395,
+        "adopt_threshold_pts_per_deck": 1.381,
+        "null_bounded_threshold_pts_per_deck": -0.581,
+        "regression_threshold_pts_per_deck": -1.381,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "mild regression (-1.0)": {
+        "p_adopt": 0.0002821409150882692,
+        "p_regression": 0.2905515751139836,
+        "p_null_bounded": 0.43745881160928085,
+        "p_unresolved": 0.2717074723616472,
+        "adopt_threshold_pts_per_deck": 1.381,
+        "null_bounded_threshold_pts_per_deck": -0.581,
+        "regression_threshold_pts_per_deck": -1.381,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      },
+      "CL-054-scale width regression (-3.0)": {
+        "p_adopt": 1.1144574152410769e-10,
+        "p_regression": 0.9904782350779049,
+        "p_null_bounded": 0.009291963327803798,
+        "p_unresolved": 0.00022980148284557078,
+        "adopt_threshold_pts_per_deck": 1.381,
+        "null_bounded_threshold_pts_per_deck": -0.581,
+        "regression_threshold_pts_per_deck": -1.381,
+        "binding_adopt_condition": "the 2-sigma condition binds"
+      }
+    }
+  },
+  "eta_at_W30": {
+    "g_per_h_44k_model": 111.89382540809083,
+    "cost_ratio_vs_22016_game": 1.4478010686395397,
+    "hours_primary": 14.29926981372385,
+    "hours_screen": 7.149634906861925,
+    "hours_round": 21.448904720585777,
+    "note": "MODEL. Re-derive from the round's own first completed chunk (feedback_eta_before_launch); the launcher prints that re-derivation."
+  },
+  "results": {
+    "CELL_K32": {
+      "cell": "CELL_K32",
+      "role": "PRIMARY (powered)",
+      "allocation": {
+        "k_dets": 32,
+        "sims_per_det": 1376,
+        "total_sims": 44032,
+        "shape": "double WIDTH at the deployed depth"
+      },
+      "opponent": {
+        "k_dets": 16,
+        "sims_per_det": 1376,
+        "total_sims": 22016
+      },
+      "per_chunk_gates": [
+        {
+          "chunk": "CELL_K32__c1",
+          "gates": [
+            {
+              "gate": "G-BUDGET",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "k_dets": 32,
+                  "sims_per_det": 1376,
+                  "total_sims": 44032,
+                  "expected": [
+                    32,
+                    1376,
+                    44032
+                  ]
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016,
+                  "expected": [
+                    16,
+                    1376,
+                    22016
+                  ]
+                },
+                "summary_witness": {
+                  "candidate": {
+                    "candidate_k_dets": 32,
+                    "candidate_sims": 1376,
+                    "candidate_total_sims": 44032
+                  },
+                  "opponent": {
+                    "opp_k_dets": 16,
+                    "opp_sims": 1376,
+                    "opp_total_sims": 22016
+                  }
+                },
+                "asymmetric_budgets": true
+              },
+              "address": "summary:asymmetric_budgets",
+              "why": "CELL_K32: candidate k32 x 1376 = 44032, opponent k16 x 1376 = 22016, manifest and summary agreeing"
+            },
+            {
+              "gate": "G-BUDGET-RATIO",
+              "ok": true,
+              "detail": {
+                "candidate": [
+                  32,
+                  1376,
+                  44032
+                ],
+                "opponent": [
+                  16,
+                  1376,
+                  22016
+                ],
+                "cell": "CELL_K32",
+                "shape": "double WIDTH at the deployed depth"
+              },
+              "address": "manifest:config.opponent.k_dets",
+              "why": "CELL_K32: candidate total is exactly 2x the opponent's, allocated as 'double WIDTH at the deployed depth'"
+            },
+            {
+              "gate": "G-TIEARB-SIDES",
+              "ok": true,
+              "detail": {
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ]
+              },
+              "address": "manifest cand_tiearb / opp_tiearb (see tiearb_gates.py)",
+              "why": "BOTH seats ARMED at the deployed B=64 spec \u2014 the budget is the only variable"
+            },
+            {
+              "gate": "G-TIEARB-FIRED",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "games": 400,
+                  "phi": 17.3075,
+                  "fired_plies": 6923,
+                  "pickchanges": 3900,
+                  "G_FIRE_fired": false
+                },
+                "opponent": {
+                  "games": 400,
+                  "phi": 17.5375,
+                  "fired_plies": 7015,
+                  "pickchanges": 4085,
+                  "G_FIRE_fired": false
+                }
+              },
+              "address": "summary.json tiearb_* / opp_tiearb_* (tiearb_sides_summary)",
+              "why": "BOTH seats' arbiters fired on a nonzero count of tied plies \u2014 the both-armed positive control"
+            },
+            {
+              "gate": "G-EXACT",
+              "ok": true,
+              "detail": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "address": "manifest:config.endgame.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-RULES",
+              "ok": true,
+              "detail": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+              "why": "ok"
+            },
+            {
+              "gate": "G-BACKEND",
+              "ok": true,
+              "detail": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest:config.backend.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-WHEEL",
+              "ok": true,
+              "detail": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+5f5dd9fa22f8+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a61d0d303e7f1639",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest \u2014 carc_rs_version is a constant, not a discriminator",
+              "why": "ok"
+            },
+            {
+              "gate": "G-LEAF",
+              "ok": true,
+              "detail": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d"
+              },
+              "address": "manifest:config.cand_leaf_hash",
+              "why": "both sides carry the frozen leaf"
+            },
+            {
+              "gate": "G-HOST",
+              "ok": true,
+              "detail": {
+                "host": "Doctor",
+                "frozen_role": "local",
+                "frozen_W": 30
+              },
+              "address": "manifest:host",
+              "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+            },
+            {
+              "gate": "RECON",
+              "ok": true,
+              "detail": {
+                "paired_mean_margin": {
+                  "witness": 0.6325,
+                  "summary": 0.6325,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 0.7263533192427466,
+                  "summary": 0.7263533192427466,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 200,
+                  "summary": 200,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.51375,
+                  "summary": 0.51375,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 9.556888220144605,
+                  "summary": 9.556888220144605,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "address": "summary.json vs the raw records",
+              "why": "the fsum witness agrees on all five statistics"
+            },
+            {
+              "gate": "G-REV",
+              "ok": true,
+              "detail": {
+                "code_rev": "5f5dd9fa",
+                "PINNED_SRC_REV": "5f5dd9fa22f858a9b9b4a27018080229d264b33e"
+              },
+              "address": "manifest:code_rev",
+              "why": "code_rev '5f5dd9fa' names PINNED_SRC_REV '5f5dd9fa22f858a9b9b4a27018080229d264b33e'"
+            },
+            {
+              "gate": "G-BLIND",
+              "ok": true,
+              "detail": {
+                "BLIND_COMMIT": "56d5e3c5ca17a846fc710eb6217f52c8290c8a63"
+              },
+              "address": "manifest:BLIND_COMMIT",
+              "why": "a single 40-hex BLIND_COMMIT is stamped into the manifest \u2014 a read that was not blind is not a read"
+            }
+          ],
+          "failed_gates": [],
+          "ok": true
+        },
+        {
+          "chunk": "CELL_K32__c2",
+          "gates": [
+            {
+              "gate": "G-BUDGET",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "k_dets": 32,
+                  "sims_per_det": 1376,
+                  "total_sims": 44032,
+                  "expected": [
+                    32,
+                    1376,
+                    44032
+                  ]
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016,
+                  "expected": [
+                    16,
+                    1376,
+                    22016
+                  ]
+                },
+                "summary_witness": {
+                  "candidate": {
+                    "candidate_k_dets": 32,
+                    "candidate_sims": 1376,
+                    "candidate_total_sims": 44032
+                  },
+                  "opponent": {
+                    "opp_k_dets": 16,
+                    "opp_sims": 1376,
+                    "opp_total_sims": 22016
+                  }
+                },
+                "asymmetric_budgets": true
+              },
+              "address": "summary:asymmetric_budgets",
+              "why": "CELL_K32: candidate k32 x 1376 = 44032, opponent k16 x 1376 = 22016, manifest and summary agreeing"
+            },
+            {
+              "gate": "G-BUDGET-RATIO",
+              "ok": true,
+              "detail": {
+                "candidate": [
+                  32,
+                  1376,
+                  44032
+                ],
+                "opponent": [
+                  16,
+                  1376,
+                  22016
+                ],
+                "cell": "CELL_K32",
+                "shape": "double WIDTH at the deployed depth"
+              },
+              "address": "manifest:config.opponent.k_dets",
+              "why": "CELL_K32: candidate total is exactly 2x the opponent's, allocated as 'double WIDTH at the deployed depth'"
+            },
+            {
+              "gate": "G-TIEARB-SIDES",
+              "ok": true,
+              "detail": {
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ]
+              },
+              "address": "manifest cand_tiearb / opp_tiearb (see tiearb_gates.py)",
+              "why": "BOTH seats ARMED at the deployed B=64 spec \u2014 the budget is the only variable"
+            },
+            {
+              "gate": "G-TIEARB-FIRED",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "games": 400,
+                  "phi": 17.5225,
+                  "fired_plies": 7009,
+                  "pickchanges": 3962,
+                  "G_FIRE_fired": false
+                },
+                "opponent": {
+                  "games": 400,
+                  "phi": 17.5025,
+                  "fired_plies": 7001,
+                  "pickchanges": 4020,
+                  "G_FIRE_fired": false
+                }
+              },
+              "address": "summary.json tiearb_* / opp_tiearb_* (tiearb_sides_summary)",
+              "why": "BOTH seats' arbiters fired on a nonzero count of tied plies \u2014 the both-armed positive control"
+            },
+            {
+              "gate": "G-EXACT",
+              "ok": true,
+              "detail": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "address": "manifest:config.endgame.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-RULES",
+              "ok": true,
+              "detail": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+              "why": "ok"
+            },
+            {
+              "gate": "G-BACKEND",
+              "ok": true,
+              "detail": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest:config.backend.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-WHEEL",
+              "ok": true,
+              "detail": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+5f5dd9fa22f8+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a61d0d303e7f1639",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest \u2014 carc_rs_version is a constant, not a discriminator",
+              "why": "ok"
+            },
+            {
+              "gate": "G-LEAF",
+              "ok": true,
+              "detail": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d"
+              },
+              "address": "manifest:config.cand_leaf_hash",
+              "why": "both sides carry the frozen leaf"
+            },
+            {
+              "gate": "G-HOST",
+              "ok": true,
+              "detail": {
+                "host": "Doctor",
+                "frozen_role": "local",
+                "frozen_W": 30
+              },
+              "address": "manifest:host",
+              "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+            },
+            {
+              "gate": "RECON",
+              "ok": true,
+              "detail": {
+                "paired_mean_margin": {
+                  "witness": -0.68,
+                  "summary": -0.68,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": -0.8091545100022373,
+                  "summary": -0.8091545100022373,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 200,
+                  "summary": 200,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.475,
+                  "summary": 0.475,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": -17.386277512436145,
+                  "summary": -17.386277512436145,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "address": "summary.json vs the raw records",
+              "why": "the fsum witness agrees on all five statistics"
+            },
+            {
+              "gate": "G-REV",
+              "ok": true,
+              "detail": {
+                "code_rev": "5f5dd9fa",
+                "PINNED_SRC_REV": "5f5dd9fa22f858a9b9b4a27018080229d264b33e"
+              },
+              "address": "manifest:code_rev",
+              "why": "code_rev '5f5dd9fa' names PINNED_SRC_REV '5f5dd9fa22f858a9b9b4a27018080229d264b33e'"
+            },
+            {
+              "gate": "G-BLIND",
+              "ok": true,
+              "detail": {
+                "BLIND_COMMIT": "56d5e3c5ca17a846fc710eb6217f52c8290c8a63"
+              },
+              "address": "manifest:BLIND_COMMIT",
+              "why": "a single 40-hex BLIND_COMMIT is stamped into the manifest \u2014 a read that was not blind is not a read"
+            }
+          ],
+          "failed_gates": [],
+          "ok": true
+        },
+        {
+          "chunk": "CELL_K32__c3",
+          "gates": [
+            {
+              "gate": "G-BUDGET",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "k_dets": 32,
+                  "sims_per_det": 1376,
+                  "total_sims": 44032,
+                  "expected": [
+                    32,
+                    1376,
+                    44032
+                  ]
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016,
+                  "expected": [
+                    16,
+                    1376,
+                    22016
+                  ]
+                },
+                "summary_witness": {
+                  "candidate": {
+                    "candidate_k_dets": 32,
+                    "candidate_sims": 1376,
+                    "candidate_total_sims": 44032
+                  },
+                  "opponent": {
+                    "opp_k_dets": 16,
+                    "opp_sims": 1376,
+                    "opp_total_sims": 22016
+                  }
+                },
+                "asymmetric_budgets": true
+              },
+              "address": "summary:asymmetric_budgets",
+              "why": "CELL_K32: candidate k32 x 1376 = 44032, opponent k16 x 1376 = 22016, manifest and summary agreeing"
+            },
+            {
+              "gate": "G-BUDGET-RATIO",
+              "ok": true,
+              "detail": {
+                "candidate": [
+                  32,
+                  1376,
+                  44032
+                ],
+                "opponent": [
+                  16,
+                  1376,
+                  22016
+                ],
+                "cell": "CELL_K32",
+                "shape": "double WIDTH at the deployed depth"
+              },
+              "address": "manifest:config.opponent.k_dets",
+              "why": "CELL_K32: candidate total is exactly 2x the opponent's, allocated as 'double WIDTH at the deployed depth'"
+            },
+            {
+              "gate": "G-TIEARB-SIDES",
+              "ok": true,
+              "detail": {
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ]
+              },
+              "address": "manifest cand_tiearb / opp_tiearb (see tiearb_gates.py)",
+              "why": "BOTH seats ARMED at the deployed B=64 spec \u2014 the budget is the only variable"
+            },
+            {
+              "gate": "G-TIEARB-FIRED",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "games": 400,
+                  "phi": 17.585,
+                  "fired_plies": 7034,
+                  "pickchanges": 4068,
+                  "G_FIRE_fired": false
+                },
+                "opponent": {
+                  "games": 400,
+                  "phi": 17.4175,
+                  "fired_plies": 6967,
+                  "pickchanges": 4025,
+                  "G_FIRE_fired": false
+                }
+              },
+              "address": "summary.json tiearb_* / opp_tiearb_* (tiearb_sides_summary)",
+              "why": "BOTH seats' arbiters fired on a nonzero count of tied plies \u2014 the both-armed positive control"
+            },
+            {
+              "gate": "G-EXACT",
+              "ok": true,
+              "detail": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "address": "manifest:config.endgame.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-RULES",
+              "ok": true,
+              "detail": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+              "why": "ok"
+            },
+            {
+              "gate": "G-BACKEND",
+              "ok": true,
+              "detail": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest:config.backend.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-WHEEL",
+              "ok": true,
+              "detail": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+5f5dd9fa22f8+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a61d0d303e7f1639",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest \u2014 carc_rs_version is a constant, not a discriminator",
+              "why": "ok"
+            },
+            {
+              "gate": "G-LEAF",
+              "ok": true,
+              "detail": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d"
+              },
+              "address": "manifest:config.cand_leaf_hash",
+              "why": "both sides carry the frozen leaf"
+            },
+            {
+              "gate": "G-HOST",
+              "ok": true,
+              "detail": {
+                "host": "Doctor",
+                "frozen_role": "local",
+                "frozen_W": 30
+              },
+              "address": "manifest:host",
+              "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+            },
+            {
+              "gate": "RECON",
+              "ok": true,
+              "detail": {
+                "paired_mean_margin": {
+                  "witness": 0.7,
+                  "summary": 0.7,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 0.8414227421670526,
+                  "summary": 0.8414227421670526,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 200,
+                  "summary": 200,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.52625,
+                  "summary": 0.52625,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 18.257154347038387,
+                  "summary": 18.257154347038387,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "address": "summary.json vs the raw records",
+              "why": "the fsum witness agrees on all five statistics"
+            },
+            {
+              "gate": "G-REV",
+              "ok": true,
+              "detail": {
+                "code_rev": "5f5dd9fa",
+                "PINNED_SRC_REV": "5f5dd9fa22f858a9b9b4a27018080229d264b33e"
+              },
+              "address": "manifest:code_rev",
+              "why": "code_rev '5f5dd9fa' names PINNED_SRC_REV '5f5dd9fa22f858a9b9b4a27018080229d264b33e'"
+            },
+            {
+              "gate": "G-BLIND",
+              "ok": true,
+              "detail": {
+                "BLIND_COMMIT": "56d5e3c5ca17a846fc710eb6217f52c8290c8a63"
+              },
+              "address": "manifest:BLIND_COMMIT",
+              "why": "a single 40-hex BLIND_COMMIT is stamped into the manifest \u2014 a read that was not blind is not a read"
+            }
+          ],
+          "failed_gates": [],
+          "ok": true
+        },
+        {
+          "chunk": "CELL_K32__c4",
+          "gates": [
+            {
+              "gate": "G-BUDGET",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "k_dets": 32,
+                  "sims_per_det": 1376,
+                  "total_sims": 44032,
+                  "expected": [
+                    32,
+                    1376,
+                    44032
+                  ]
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016,
+                  "expected": [
+                    16,
+                    1376,
+                    22016
+                  ]
+                },
+                "summary_witness": {
+                  "candidate": {
+                    "candidate_k_dets": 32,
+                    "candidate_sims": 1376,
+                    "candidate_total_sims": 44032
+                  },
+                  "opponent": {
+                    "opp_k_dets": 16,
+                    "opp_sims": 1376,
+                    "opp_total_sims": 22016
+                  }
+                },
+                "asymmetric_budgets": true
+              },
+              "address": "summary:asymmetric_budgets",
+              "why": "CELL_K32: candidate k32 x 1376 = 44032, opponent k16 x 1376 = 22016, manifest and summary agreeing"
+            },
+            {
+              "gate": "G-BUDGET-RATIO",
+              "ok": true,
+              "detail": {
+                "candidate": [
+                  32,
+                  1376,
+                  44032
+                ],
+                "opponent": [
+                  16,
+                  1376,
+                  22016
+                ],
+                "cell": "CELL_K32",
+                "shape": "double WIDTH at the deployed depth"
+              },
+              "address": "manifest:config.opponent.k_dets",
+              "why": "CELL_K32: candidate total is exactly 2x the opponent's, allocated as 'double WIDTH at the deployed depth'"
+            },
+            {
+              "gate": "G-TIEARB-SIDES",
+              "ok": true,
+              "detail": {
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ]
+              },
+              "address": "manifest cand_tiearb / opp_tiearb (see tiearb_gates.py)",
+              "why": "BOTH seats ARMED at the deployed B=64 spec \u2014 the budget is the only variable"
+            },
+            {
+              "gate": "G-TIEARB-FIRED",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "games": 400,
+                  "phi": 17.555,
+                  "fired_plies": 7022,
+                  "pickchanges": 4078,
+                  "G_FIRE_fired": false
+                },
+                "opponent": {
+                  "games": 400,
+                  "phi": 17.51,
+                  "fired_plies": 7004,
+                  "pickchanges": 4084,
+                  "G_FIRE_fired": false
+                }
+              },
+              "address": "summary.json tiearb_* / opp_tiearb_* (tiearb_sides_summary)",
+              "why": "BOTH seats' arbiters fired on a nonzero count of tied plies \u2014 the both-armed positive control"
+            },
+            {
+              "gate": "G-EXACT",
+              "ok": true,
+              "detail": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "address": "manifest:config.endgame.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-RULES",
+              "ok": true,
+              "detail": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+              "why": "ok"
+            },
+            {
+              "gate": "G-BACKEND",
+              "ok": true,
+              "detail": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest:config.backend.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-WHEEL",
+              "ok": true,
+              "detail": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+5f5dd9fa22f8+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a61d0d303e7f1639",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest \u2014 carc_rs_version is a constant, not a discriminator",
+              "why": "ok"
+            },
+            {
+              "gate": "G-LEAF",
+              "ok": true,
+              "detail": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d"
+              },
+              "address": "manifest:config.cand_leaf_hash",
+              "why": "both sides carry the frozen leaf"
+            },
+            {
+              "gate": "G-HOST",
+              "ok": true,
+              "detail": {
+                "host": "Doctor",
+                "frozen_role": "local",
+                "frozen_W": 30
+              },
+              "address": "manifest:host",
+              "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+            },
+            {
+              "gate": "RECON",
+              "ok": true,
+              "detail": {
+                "paired_mean_margin": {
+                  "witness": 0.7675,
+                  "summary": 0.7675,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 0.8302960233817429,
+                  "summary": 0.8302960233817429,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 200,
+                  "summary": 200,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.54,
+                  "summary": 0.54,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 27.854371256557787,
+                  "summary": 27.854371256557787,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "address": "summary.json vs the raw records",
+              "why": "the fsum witness agrees on all five statistics"
+            },
+            {
+              "gate": "G-REV",
+              "ok": true,
+              "detail": {
+                "code_rev": "5f5dd9fa",
+                "PINNED_SRC_REV": "5f5dd9fa22f858a9b9b4a27018080229d264b33e"
+              },
+              "address": "manifest:code_rev",
+              "why": "code_rev '5f5dd9fa' names PINNED_SRC_REV '5f5dd9fa22f858a9b9b4a27018080229d264b33e'"
+            },
+            {
+              "gate": "G-BLIND",
+              "ok": true,
+              "detail": {
+                "BLIND_COMMIT": "56d5e3c5ca17a846fc710eb6217f52c8290c8a63"
+              },
+              "address": "manifest:BLIND_COMMIT",
+              "why": "a single 40-hex BLIND_COMMIT is stamped into the manifest \u2014 a read that was not blind is not a read"
+            }
+          ],
+          "failed_gates": [],
+          "ok": true
+        }
+      ],
+      "pool_gates": [
+        {
+          "gate": "G-CHUNKS",
+          "ok": true,
+          "detail": {
+            "planned": 4,
+            "found": 4,
+            "names": [
+              "CELL_K32__c1",
+              "CELL_K32__c2",
+              "CELL_K32__c3",
+              "CELL_K32__c4"
+            ],
+            "done": [
+              true,
+              true,
+              true,
+              true
+            ]
+          },
+          "address": "the chunk dirs themselves",
+          "why": "all 4 chunks present, documented and DONE"
+        },
+        {
+          "gate": "G-SHARD-IDENT",
+          "ok": true,
+          "detail": {
+            "wheel sha": {
+              "\"a61d0d303e7f1639\"": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "cand leaf": {
+              "\"a36d2e15a3b3d71d\"": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "opp leaf": {
+              "\"a36d2e15a3b3d71d\"": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "cand total_sims": {
+              "44032": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "cand k_dets": {
+              "32": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "opp total_sims": {
+              "22016": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "opp k_dets": {
+              "16": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "rules profile": {
+              "\"fixed_v1\"": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "code_rev": {
+              "\"5f5dd9fa\"": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            },
+            "BLIND_COMMIT": {
+              "\"56d5e3c5ca17a846fc710eb6217f52c8290c8a63\"": [
+                "CELL_K32__c1",
+                "CELL_K32__c2",
+                "CELL_K32__c3",
+                "CELL_K32__c4"
+              ]
+            }
+          },
+          "address": "every chunk's manifest.json",
+          "why": "every chunk resolved the same two agents, the same wheel and the same pinned rev"
+        },
+        {
+          "gate": "G-NODUP",
+          "ok": true,
+          "detail": {
+            "chunk_seed_ranges": {
+              "CELL_K32__c1": [
+                173000000000,
+                173000000199
+              ],
+              "CELL_K32__c2": [
+                173000000200,
+                173000000399
+              ],
+              "CELL_K32__c3": [
+                173000000400,
+                173000000599
+              ],
+              "CELL_K32__c4": [
+                173000000600,
+                173000000799
+              ]
+            },
+            "duplicated": {}
+          },
+          "address": "raw seed*_a*.json across the chunk pool",
+          "why": "chunk ranges disjoint, every (deck,seat) exactly once"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "pooled_games": 1600,
+            "frozen_games": 1600,
+            "pooled_n_failed": 0,
+            "failure_rate": 0.0,
+            "n_common": 800,
+            "n_common_floor": 640.0,
+            "frozen_decks": 800,
+            "notes": []
+          },
+          "address": "the pooled records + each chunk's summary.json",
+          "why": "pooled n, n_failed and n_common at the frozen plan"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "claimed_band": 173000000000,
+            "chunks": {
+              "CELL_K32__c1": {
+                "band_seed_start": 173000000000,
+                "expected": 173000000000,
+                "address": "manifest:config.band_seed_start"
+              },
+              "CELL_K32__c2": {
+                "band_seed_start": 173000000200,
+                "expected": 173000000200,
+                "address": "manifest:config.band_seed_start"
+              },
+              "CELL_K32__c3": {
+                "band_seed_start": 173000000400,
+                "expected": 173000000400,
+                "address": "manifest:config.band_seed_start"
+              },
+              "CELL_K32__c4": {
+                "band_seed_start": 173000000600,
+                "expected": 173000000600,
+                "address": "manifest:config.band_seed_start"
+              }
+            },
+            "deck_window": [
+              173000000000,
+              173000000799
+            ]
+          },
+          "address": "manifest:config.band_seed_start per chunk",
+          "why": "every chunk starts at its planned offset inside the claimed band"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "n_seeds": 800,
+            "n_common": 800,
+            "frozen_decks": 800,
+            "half_played_decks": [],
+            "out_of_range": []
+          },
+          "address": "raw seed*_a*.json across the chunk pool",
+          "why": "every seed inside the window, both seatings present, n_common == 800"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.51375,
+            "band": [
+              0.35,
+              0.65
+            ],
+            "W": 804,
+            "D": 36,
+            "L": 760
+          },
+          "address": "recomputed from the pooled raw records",
+          "why": "inside the rail"
+        }
+      ],
+      "gates_ok": true,
+      "chunk_gates_ok": true,
+      "pool_gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "branch_z": 2.0,
+        "bar_M": 0.8,
+        "margin": {
+          "M": 0.355,
+          "se_realized": 0.4335149365942457,
+          "z": 0.8188875861785291,
+          "n_paired": 800,
+          "LB95": -0.5120298731884915,
+          "UB95": 1.2220298731884913,
+          "adopt_condition": false,
+          "regression_condition": false,
+          "null_bounded_condition": false
+        },
+        "elo_coread": {
+          "elo": 9.556888220144605,
+          "footing": "deck-paired",
+          "se_realized": 6.144175169358357,
+          "se_planning_wr05": 6.141851463713754,
+          "LB95": -2.731462118572109,
+          "UB95": 21.84523855886132,
+          "winrate": 0.51375,
+          "W": 804,
+          "D": 36,
+          "L": 760,
+          "note": "\u26d4 REPORTED, NEVER A BRANCH INPUT. The deck-paired margin is the single PRIMARY statistic (PREREG \u00a74.1): at these n the margin leg is ~1.5x better powered than elo, so adding elo as a co-primary would cost a multiplicity correction and buy nothing. Elo is here because it is the deployment-relevant currency and because a sign disagreement with the margin is a hand-review trigger."
+        }
+      },
+      "coherence": {
+        "margin_sign": 1,
+        "elo_sign": 1,
+        "agree": true,
+        "note": "a margin/elo SIGN DISAGREEMENT is a hand-review trigger before any branch is acted on \u2014 it is not a gate and does not change the branch label."
+      },
+      "type_m": {
+        "mde80_planning": 1.3874421190598438,
+        "realized_below_own_mde": true,
+        "note": "\u26a0\ufe0f if `realized_below_own_mde` is true the MAGNITUDE is biased UPWARD (winner's curse); the SIGN is the reliable part. This is the same rider the 11008->22016 row carries and it must be propagated, not laundered."
+      },
+      "se_anomaly_margin": {
+        "realized": 0.4335149365942457,
+        "modelled": 0.48825723240931107,
+        "ratio": 0.8878822633206295,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "se_anomaly_elo": {
+        "realized": 6.144175169358357,
+        "modelled": 6.141851463713754,
+        "ratio": 1.0003783396030224,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "ELO-DOMAIN DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "power_at_realized_se": {
+        "A-upper: no decay (r4>=1, the rung repeats)": {
+          "p_adopt": 0.7983262715633654,
+          "p_regression": 6.635303350654986e-07,
+          "p_null_bounded": 0.0013929579242875079,
+          "p_unresolved": 0.20028010698201199,
+          "adopt_threshold_pts_per_deck": 0.8670298731884915,
+          "null_bounded_threshold_pts_per_deck": -0.0670298731884914,
+          "regression_threshold_pts_per_deck": -0.8670298731884915,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "A-central: decay RATE family (r x D_prev)": {
+          "p_adopt": 0.4657606330308397,
+          "p_regression": 4.5376842205624435e-05,
+          "p_null_bounded": 0.019242285679754556,
+          "p_unresolved": 0.5149517044472001,
+          "adopt_threshold_pts_per_deck": 0.8670298731884915,
+          "null_bounded_threshold_pts_per_deck": -0.0670298731884914,
+          "regression_threshold_pts_per_deck": -0.8670298731884915,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "A-lower: rate family, Type-M discounted": {
+          "p_adopt": 0.1989110423992888,
+          "p_regression": 0.0008039145178030394,
+          "p_null_bounded": 0.09444594632203063,
+          "p_unresolved": 0.7058390967608775,
+          "adopt_threshold_pts_per_deck": 0.8670298731884915,
+          "null_bounded_threshold_pts_per_deck": -0.0670298731884914,
+          "regression_threshold_pts_per_deck": -0.8670298731884915,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "B: measured-PRICE family (g_next, the CURRENT bound)": {
+          "p_adopt": 0.057483580545431234,
+          "p_regression": 0.0076806834250044975,
+          "p_null_bounded": 0.27382817055211434,
+          "p_unresolved": 0.6610075654774499,
+          "adopt_threshold_pts_per_deck": 0.8670298731884915,
+          "null_bounded_threshold_pts_per_deck": -0.0670298731884914,
+          "regression_threshold_pts_per_deck": -0.8670298731884915,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "exact null": {
+          "p_adopt": 0.02275013194817921,
+          "p_regression": 0.02275013194817921,
+          "p_null_bounded": 0.4158105066000365,
+          "p_unresolved": 0.5386892295036051,
+          "adopt_threshold_pts_per_deck": 0.8670298731884915,
+          "null_bounded_threshold_pts_per_deck": -0.0670298731884914,
+          "regression_threshold_pts_per_deck": -0.8670298731884915,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "mild regression (-1.0)": {
+          "p_adopt": 8.284447030271203e-06,
+          "p_regression": 0.6204738768217296,
+          "p_null_bounded": 0.36383162261397506,
+          "p_unresolved": 0.01568621611726506,
+          "adopt_threshold_pts_per_deck": 0.8670298731884915,
+          "null_bounded_threshold_pts_per_deck": -0.0670298731884914,
+          "regression_threshold_pts_per_deck": -0.8670298731884915,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "CL-054-scale width regression (-3.0)": {
+          "p_adopt": 0.0,
+          "p_regression": 0.9999995676696105,
+          "p_null_bounded": 4.3232374968837917e-07,
+          "p_unresolved": 6.639799821073211e-12,
+          "adopt_threshold_pts_per_deck": 0.8670298731884915,
+          "null_bounded_threshold_pts_per_deck": -0.0670298731884914,
+          "regression_threshold_pts_per_deck": -0.8670298731884915,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        }
+      },
+      "branch": "B-UNRESOLVED",
+      "riders": [
+        "\u26d4 SELF-ANCHORED: every statistic here is THIS candidate/opponent pair on THIS band, not absolute strength. No prior or later round is pooled.",
+        "\u26d4 THIS ROUND MAKES NO SOURCE CHANGE AND CHANGES NO GOVERNANCE FILE ON ANY BRANCH. `B-ADOPT` licenses exactly two things: (1) PROPOSING a `governance/PRODUCTION.yaml` `champion.fair_deploy` budget flip to 44032 at the adopting allocation, for a separate OWNER RULING, and (2) funding an out-of-family external Carcasum corroboration step. Neither is automatic (`feedback_evloss_grader`'s F4 lesson: judge-free game outcomes outrank any single-family number, and a promotion of this size should carry an independent-engine cross-check the way the arbiter fold did).",
+        "\u26d4 MOBILE / PHONE BUDGET IS OUT OF SCOPE ON EVERY BRANCH. `deploy_profiles.mobile` stays k16x1376=22016. A desktop flip would BREAK desktop-mobile budget parity and open a new E4 archive epoch; that is a consequence to PRICE in the flip proposal, never a change this round propagates.",
+        "\u26d4 CL-070: the RoD-v2 anchor CANNOT price budgets above 2752. It is not used here (this is deployed-vs-deployed direct play) and must not be reached for when re-reading this round.",
+        "\u26a0\ufe0f TYPE-M TRAVELS. The `+1.2293` prior from the 11008->22016 rung sits BELOW that cell's own 80%-power MDE (+/-1.55), so its magnitude is biased UPWARD. Any effect measured here that lands near its own MDE inherits the same caveat and must be reported with it, not propagated as calibrated.",
+        "\u26a0\ufe0f THE TWO CELLS SHARE ONE BAND AND THE SCREEN'S DECKS ARE A SUBSET OF THE PRIMARY'S. They are NOT independent replications: a pathological deck draw moves both the same way. This is deliberate (it makes the \u00a74.5 width contrast a within-band deck-matched read, the robust class), and it is the reason no cross-cell pooling of any kind is permitted.",
+        "\u26a0\ufe0f AT THE PRIMARY'S n=800 DECKS A TRUE NULL READS UNRESOLVED ROUGHLY 60% OF THE TIME \u2014 this is stated up front in `PREREG.md` \u00a74.4, not discovered afterwards. An UNRESOLVED read is therefore only weak evidence about the world; it is mostly evidence about the affordable n. Do NOT read it as 'the doubling does nothing'.",
+        "An extension to larger n is a NAMED, SEPARATELY FUNDED re-open (the `fpu_h2h` -> `fpu_h2h_r2` posture), never an automatic continuation of this round. Adding n after seeing this round's numbers and re-reading at the same bars is peeking; a re-open is a fresh round with its own band and its own freeze."
+      ],
+      "_per_deck_margins": {
+        "173000000000": 0.5,
+        "173000000001": 24.5,
+        "173000000002": 10.0,
+        "173000000003": -6.5,
+        "173000000004": -20.0,
+        "173000000005": -19.0,
+        "173000000006": -17.5,
+        "173000000007": -25.0,
+        "173000000008": -4.5,
+        "173000000009": -5.5,
+        "173000000010": -15.5,
+        "173000000011": 7.5,
+        "173000000012": 6.5,
+        "173000000013": -5.5,
+        "173000000014": -27.5,
+        "173000000015": 9.0,
+        "173000000016": 6.0,
+        "173000000017": 8.5,
+        "173000000018": 5.5,
+        "173000000019": 6.0,
+        "173000000020": -1.5,
+        "173000000021": -10.5,
+        "173000000022": 21.0,
+        "173000000023": 37.0,
+        "173000000024": -7.5,
+        "173000000025": -5.5,
+        "173000000026": 14.0,
+        "173000000027": -10.0,
+        "173000000028": 6.0,
+        "173000000029": -5.0,
+        "173000000030": 1.0,
+        "173000000031": -1.0,
+        "173000000032": 15.0,
+        "173000000033": 35.0,
+        "173000000034": 4.5,
+        "173000000035": 4.0,
+        "173000000036": -1.5,
+        "173000000037": 1.5,
+        "173000000038": 3.0,
+        "173000000039": 5.0,
+        "173000000040": -11.5,
+        "173000000041": -6.0,
+        "173000000042": 1.0,
+        "173000000043": -1.5,
+        "173000000044": -13.5,
+        "173000000045": 19.0,
+        "173000000046": -18.5,
+        "173000000047": 5.5,
+        "173000000048": -15.5,
+        "173000000049": -15.5,
+        "173000000050": 5.5,
+        "173000000051": 18.0,
+        "173000000052": -1.5,
+        "173000000053": 18.5,
+        "173000000054": 2.5,
+        "173000000055": -10.0,
+        "173000000056": 10.0,
+        "173000000057": -25.5,
+        "173000000058": 11.5,
+        "173000000059": 12.0,
+        "173000000060": -5.5,
+        "173000000061": -2.0,
+        "173000000062": 14.5,
+        "173000000063": -1.5,
+        "173000000064": -27.5,
+        "173000000065": 0.0,
+        "173000000066": -2.5,
+        "173000000067": 10.5,
+        "173000000068": 0.5,
+        "173000000069": -10.0,
+        "173000000070": -13.0,
+        "173000000071": 7.5,
+        "173000000072": 2.0,
+        "173000000073": 8.0,
+        "173000000074": -5.0,
+        "173000000075": 12.0,
+        "173000000076": 18.5,
+        "173000000077": -1.5,
+        "173000000078": -1.0,
+        "173000000079": -4.5,
+        "173000000080": -20.5,
+        "173000000081": 15.0,
+        "173000000082": -1.0,
+        "173000000083": 14.5,
+        "173000000084": -1.5,
+        "173000000085": 10.5,
+        "173000000086": -4.0,
+        "173000000087": 4.0,
+        "173000000088": 6.0,
+        "173000000089": -4.0,
+        "173000000090": 9.0,
+        "173000000091": 4.0,
+        "173000000092": -23.5,
+        "173000000093": -17.5,
+        "173000000094": 9.0,
+        "173000000095": 14.0,
+        "173000000096": -3.5,
+        "173000000097": -10.0,
+        "173000000098": 4.0,
+        "173000000099": 7.5,
+        "173000000100": -7.5,
+        "173000000101": -2.5,
+        "173000000102": 1.0,
+        "173000000103": -6.5,
+        "173000000104": 9.5,
+        "173000000105": -1.0,
+        "173000000106": 11.5,
+        "173000000107": -1.0,
+        "173000000108": -0.5,
+        "173000000109": -2.5,
+        "173000000110": -10.5,
+        "173000000111": 6.5,
+        "173000000112": -6.5,
+        "173000000113": -12.5,
+        "173000000114": 11.5,
+        "173000000115": -25.0,
+        "173000000116": -4.0,
+        "173000000117": 2.5,
+        "173000000118": 7.5,
+        "173000000119": -4.0,
+        "173000000120": 7.5,
+        "173000000121": -10.5,
+        "173000000122": -4.5,
+        "173000000123": -6.0,
+        "173000000124": -9.5,
+        "173000000125": -5.0,
+        "173000000126": -4.0,
+        "173000000127": 2.0,
+        "173000000128": 12.0,
+        "173000000129": -7.0,
+        "173000000130": 33.5,
+        "173000000131": 6.0,
+        "173000000132": -3.0,
+        "173000000133": 11.0,
+        "173000000134": 1.0,
+        "173000000135": -1.0,
+        "173000000136": 6.0,
+        "173000000137": -8.0,
+        "173000000138": 9.5,
+        "173000000139": 15.5,
+        "173000000140": 0.0,
+        "173000000141": 2.5,
+        "173000000142": 3.0,
+        "173000000143": -25.0,
+        "173000000144": 10.0,
+        "173000000145": -5.5,
+        "173000000146": 15.0,
+        "173000000147": 0.0,
+        "173000000148": 0.0,
+        "173000000149": 12.5,
+        "173000000150": -13.0,
+        "173000000151": 5.5,
+        "173000000152": -4.0,
+        "173000000153": 0.5,
+        "173000000154": -15.0,
+        "173000000155": 0.0,
+        "173000000156": 20.0,
+        "173000000157": 3.5,
+        "173000000158": -4.0,
+        "173000000159": -11.5,
+        "173000000160": 22.0,
+        "173000000161": -7.5,
+        "173000000162": -8.0,
+        "173000000163": -3.0,
+        "173000000164": 18.5,
+        "173000000165": 9.0,
+        "173000000166": 32.0,
+        "173000000167": 27.5,
+        "173000000168": -24.5,
+        "173000000169": 24.5,
+        "173000000170": -7.0,
+        "173000000171": -18.0,
+        "173000000172": -9.5,
+        "173000000173": -19.5,
+        "173000000174": 15.0,
+        "173000000175": -4.0,
+        "173000000176": -22.0,
+        "173000000177": 0.5,
+        "173000000178": 0.0,
+        "173000000179": -7.5,
+        "173000000180": -0.5,
+        "173000000181": 26.0,
+        "173000000182": 17.0,
+        "173000000183": 1.5,
+        "173000000184": -3.5,
+        "173000000185": 6.0,
+        "173000000186": -6.5,
+        "173000000187": -5.0,
+        "173000000188": -9.5,
+        "173000000189": 0.5,
+        "173000000190": 15.5,
+        "173000000191": 29.0,
+        "173000000192": 6.5,
+        "173000000193": -14.0,
+        "173000000194": 0.5,
+        "173000000195": 15.5,
+        "173000000196": -9.0,
+        "173000000197": 5.5,
+        "173000000198": -11.5,
+        "173000000199": 0.0,
+        "173000000200": 20.0,
+        "173000000201": -15.5,
+        "173000000202": -3.5,
+        "173000000203": 10.0,
+        "173000000204": 7.0,
+        "173000000205": -2.5,
+        "173000000206": 13.0,
+        "173000000207": 1.0,
+        "173000000208": -7.5,
+        "173000000209": -13.0,
+        "173000000210": -11.5,
+        "173000000211": 1.0,
+        "173000000212": -29.5,
+        "173000000213": 26.5,
+        "173000000214": -7.5,
+        "173000000215": -6.5,
+        "173000000216": 0.5,
+        "173000000217": 13.5,
+        "173000000218": 5.0,
+        "173000000219": -6.0,
+        "173000000220": -2.0,
+        "173000000221": 4.0,
+        "173000000222": 14.5,
+        "173000000223": 16.5,
+        "173000000224": 12.0,
+        "173000000225": -13.0,
+        "173000000226": 7.5,
+        "173000000227": -3.5,
+        "173000000228": -1.5,
+        "173000000229": -3.5,
+        "173000000230": -2.0,
+        "173000000231": -4.0,
+        "173000000232": 19.5,
+        "173000000233": -8.5,
+        "173000000234": -22.0,
+        "173000000235": -5.5,
+        "173000000236": -5.5,
+        "173000000237": -6.5,
+        "173000000238": 8.0,
+        "173000000239": -3.0,
+        "173000000240": 2.5,
+        "173000000241": -11.0,
+        "173000000242": -22.5,
+        "173000000243": -15.0,
+        "173000000244": 16.5,
+        "173000000245": -10.0,
+        "173000000246": 10.5,
+        "173000000247": 5.5,
+        "173000000248": -21.0,
+        "173000000249": -11.5,
+        "173000000250": 4.5,
+        "173000000251": 4.0,
+        "173000000252": 15.5,
+        "173000000253": -11.0,
+        "173000000254": -9.5,
+        "173000000255": -8.0,
+        "173000000256": -14.5,
+        "173000000257": 13.5,
+        "173000000258": -14.0,
+        "173000000259": 17.0,
+        "173000000260": 3.5,
+        "173000000261": 17.5,
+        "173000000262": -1.5,
+        "173000000263": -19.5,
+        "173000000264": 7.0,
+        "173000000265": 17.5,
+        "173000000266": 2.5,
+        "173000000267": 3.0,
+        "173000000268": 20.0,
+        "173000000269": -12.0,
+        "173000000270": -8.0,
+        "173000000271": 9.5,
+        "173000000272": 20.0,
+        "173000000273": 4.0,
+        "173000000274": 4.0,
+        "173000000275": -21.5,
+        "173000000276": -0.5,
+        "173000000277": -16.5,
+        "173000000278": -27.0,
+        "173000000279": -16.0,
+        "173000000280": 9.0,
+        "173000000281": -2.5,
+        "173000000282": 11.5,
+        "173000000283": 4.0,
+        "173000000284": 16.0,
+        "173000000285": 4.5,
+        "173000000286": 6.0,
+        "173000000287": 5.5,
+        "173000000288": 3.5,
+        "173000000289": 4.5,
+        "173000000290": -17.0,
+        "173000000291": 7.5,
+        "173000000292": -8.5,
+        "173000000293": 8.5,
+        "173000000294": 5.5,
+        "173000000295": -3.0,
+        "173000000296": -15.5,
+        "173000000297": 0.0,
+        "173000000298": -2.0,
+        "173000000299": 7.5,
+        "173000000300": 3.0,
+        "173000000301": -13.0,
+        "173000000302": 12.0,
+        "173000000303": -24.5,
+        "173000000304": -7.0,
+        "173000000305": -11.5,
+        "173000000306": -5.5,
+        "173000000307": 18.5,
+        "173000000308": 3.5,
+        "173000000309": 2.0,
+        "173000000310": 1.0,
+        "173000000311": -5.5,
+        "173000000312": 17.5,
+        "173000000313": -3.5,
+        "173000000314": -6.0,
+        "173000000315": 14.0,
+        "173000000316": -14.5,
+        "173000000317": 8.5,
+        "173000000318": 11.5,
+        "173000000319": 4.0,
+        "173000000320": -9.5,
+        "173000000321": -6.5,
+        "173000000322": -22.5,
+        "173000000323": -11.5,
+        "173000000324": -6.0,
+        "173000000325": -15.5,
+        "173000000326": -11.5,
+        "173000000327": 11.0,
+        "173000000328": 0.0,
+        "173000000329": -2.5,
+        "173000000330": -6.0,
+        "173000000331": -13.5,
+        "173000000332": 16.0,
+        "173000000333": 24.5,
+        "173000000334": -2.0,
+        "173000000335": -13.0,
+        "173000000336": -16.5,
+        "173000000337": 0.0,
+        "173000000338": 20.5,
+        "173000000339": -11.0,
+        "173000000340": -6.0,
+        "173000000341": -1.5,
+        "173000000342": 4.0,
+        "173000000343": -1.5,
+        "173000000344": 1.5,
+        "173000000345": -5.0,
+        "173000000346": -1.5,
+        "173000000347": -17.5,
+        "173000000348": 16.0,
+        "173000000349": 9.0,
+        "173000000350": 18.0,
+        "173000000351": 1.0,
+        "173000000352": -17.5,
+        "173000000353": -11.0,
+        "173000000354": 5.5,
+        "173000000355": -5.0,
+        "173000000356": 6.5,
+        "173000000357": 5.0,
+        "173000000358": 1.0,
+        "173000000359": -6.0,
+        "173000000360": -3.0,
+        "173000000361": -7.5,
+        "173000000362": 1.5,
+        "173000000363": 6.0,
+        "173000000364": 1.0,
+        "173000000365": 11.0,
+        "173000000366": -10.0,
+        "173000000367": -10.0,
+        "173000000368": -2.0,
+        "173000000369": -12.0,
+        "173000000370": 11.5,
+        "173000000371": -2.5,
+        "173000000372": -15.0,
+        "173000000373": -11.0,
+        "173000000374": -4.0,
+        "173000000375": -17.0,
+        "173000000376": 6.0,
+        "173000000377": -3.5,
+        "173000000378": -0.5,
+        "173000000379": 22.5,
+        "173000000380": 34.5,
+        "173000000381": -3.5,
+        "173000000382": 3.5,
+        "173000000383": -17.5,
+        "173000000384": -15.5,
+        "173000000385": 1.0,
+        "173000000386": 2.0,
+        "173000000387": -13.5,
+        "173000000388": -5.0,
+        "173000000389": 22.5,
+        "173000000390": -7.0,
+        "173000000391": 7.5,
+        "173000000392": -1.5,
+        "173000000393": 8.5,
+        "173000000394": 13.0,
+        "173000000395": -36.5,
+        "173000000396": 8.0,
+        "173000000397": -15.0,
+        "173000000398": 13.5,
+        "173000000399": 11.0,
+        "173000000400": 6.0,
+        "173000000401": -22.5,
+        "173000000402": 6.0,
+        "173000000403": 3.5,
+        "173000000404": 7.5,
+        "173000000405": 9.0,
+        "173000000406": 10.0,
+        "173000000407": -13.5,
+        "173000000408": 14.0,
+        "173000000409": 12.5,
+        "173000000410": -8.0,
+        "173000000411": 2.0,
+        "173000000412": -13.5,
+        "173000000413": -6.5,
+        "173000000414": 9.0,
+        "173000000415": -11.0,
+        "173000000416": 3.0,
+        "173000000417": 8.5,
+        "173000000418": -12.0,
+        "173000000419": -12.0,
+        "173000000420": -18.0,
+        "173000000421": 8.5,
+        "173000000422": 0.0,
+        "173000000423": -5.5,
+        "173000000424": 8.0,
+        "173000000425": -4.0,
+        "173000000426": 2.0,
+        "173000000427": -9.5,
+        "173000000428": -26.5,
+        "173000000429": -7.0,
+        "173000000430": 4.0,
+        "173000000431": 3.0,
+        "173000000432": 19.0,
+        "173000000433": 1.0,
+        "173000000434": 17.5,
+        "173000000435": 13.0,
+        "173000000436": -12.0,
+        "173000000437": 7.0,
+        "173000000438": -3.0,
+        "173000000439": 27.5,
+        "173000000440": 9.5,
+        "173000000441": -11.0,
+        "173000000442": -7.5,
+        "173000000443": -3.5,
+        "173000000444": 0.0,
+        "173000000445": -11.0,
+        "173000000446": 2.0,
+        "173000000447": 19.5,
+        "173000000448": -10.5,
+        "173000000449": 4.0,
+        "173000000450": -0.5,
+        "173000000451": 9.0,
+        "173000000452": 5.5,
+        "173000000453": 14.0,
+        "173000000454": -5.0,
+        "173000000455": 11.5,
+        "173000000456": 2.0,
+        "173000000457": -7.5,
+        "173000000458": -2.5,
+        "173000000459": 13.5,
+        "173000000460": 11.5,
+        "173000000461": -1.5,
+        "173000000462": 1.5,
+        "173000000463": -34.0,
+        "173000000464": -8.5,
+        "173000000465": 4.5,
+        "173000000466": 17.0,
+        "173000000467": -7.5,
+        "173000000468": 13.0,
+        "173000000469": 7.5,
+        "173000000470": -15.0,
+        "173000000471": -2.5,
+        "173000000472": 22.5,
+        "173000000473": 3.0,
+        "173000000474": -17.5,
+        "173000000475": 21.5,
+        "173000000476": -0.5,
+        "173000000477": -2.5,
+        "173000000478": 4.5,
+        "173000000479": -2.5,
+        "173000000480": 6.0,
+        "173000000481": 12.5,
+        "173000000482": -0.5,
+        "173000000483": 26.0,
+        "173000000484": 7.0,
+        "173000000485": -6.5,
+        "173000000486": 11.5,
+        "173000000487": -20.0,
+        "173000000488": 3.5,
+        "173000000489": -15.5,
+        "173000000490": -10.0,
+        "173000000491": 1.5,
+        "173000000492": 15.5,
+        "173000000493": 6.5,
+        "173000000494": -24.0,
+        "173000000495": 20.0,
+        "173000000496": -7.0,
+        "173000000497": 3.0,
+        "173000000498": -19.0,
+        "173000000499": 3.5,
+        "173000000500": -1.5,
+        "173000000501": -4.0,
+        "173000000502": -4.5,
+        "173000000503": 10.0,
+        "173000000504": -23.5,
+        "173000000505": -0.5,
+        "173000000506": 3.0,
+        "173000000507": -20.5,
+        "173000000508": 2.0,
+        "173000000509": 2.5,
+        "173000000510": -13.5,
+        "173000000511": -10.5,
+        "173000000512": -4.5,
+        "173000000513": -9.0,
+        "173000000514": 4.0,
+        "173000000515": 22.5,
+        "173000000516": 29.5,
+        "173000000517": 25.5,
+        "173000000518": 11.5,
+        "173000000519": -2.0,
+        "173000000520": -1.0,
+        "173000000521": 6.0,
+        "173000000522": 1.0,
+        "173000000523": -3.5,
+        "173000000524": 5.0,
+        "173000000525": 12.5,
+        "173000000526": -12.5,
+        "173000000527": -9.5,
+        "173000000528": -13.5,
+        "173000000529": 0.0,
+        "173000000530": -4.5,
+        "173000000531": 5.0,
+        "173000000532": 1.5,
+        "173000000533": 7.0,
+        "173000000534": -2.5,
+        "173000000535": 8.0,
+        "173000000536": 3.0,
+        "173000000537": -13.0,
+        "173000000538": -8.5,
+        "173000000539": -11.0,
+        "173000000540": 1.0,
+        "173000000541": 0.5,
+        "173000000542": 8.5,
+        "173000000543": 1.5,
+        "173000000544": 11.5,
+        "173000000545": 4.5,
+        "173000000546": 5.0,
+        "173000000547": -8.5,
+        "173000000548": -1.5,
+        "173000000549": 10.0,
+        "173000000550": 4.5,
+        "173000000551": 30.0,
+        "173000000552": -6.5,
+        "173000000553": -18.0,
+        "173000000554": 10.5,
+        "173000000555": -19.0,
+        "173000000556": -27.5,
+        "173000000557": -10.0,
+        "173000000558": 8.5,
+        "173000000559": -8.0,
+        "173000000560": 8.5,
+        "173000000561": -6.5,
+        "173000000562": -4.0,
+        "173000000563": 10.0,
+        "173000000564": 7.5,
+        "173000000565": 7.0,
+        "173000000566": 13.0,
+        "173000000567": 8.0,
+        "173000000568": 3.5,
+        "173000000569": 15.0,
+        "173000000570": 11.0,
+        "173000000571": 12.5,
+        "173000000572": -11.0,
+        "173000000573": 13.0,
+        "173000000574": -7.5,
+        "173000000575": -20.5,
+        "173000000576": 21.0,
+        "173000000577": -8.0,
+        "173000000578": -10.0,
+        "173000000579": 3.0,
+        "173000000580": 14.5,
+        "173000000581": 18.0,
+        "173000000582": -3.5,
+        "173000000583": 10.5,
+        "173000000584": 0.0,
+        "173000000585": 2.5,
+        "173000000586": 20.5,
+        "173000000587": 11.5,
+        "173000000588": -17.0,
+        "173000000589": 1.0,
+        "173000000590": -17.0,
+        "173000000591": 6.5,
+        "173000000592": -0.5,
+        "173000000593": 10.0,
+        "173000000594": -21.5,
+        "173000000595": -8.0,
+        "173000000596": -14.0,
+        "173000000597": -15.5,
+        "173000000598": 7.5,
+        "173000000599": 9.0,
+        "173000000600": 2.0,
+        "173000000601": 5.5,
+        "173000000602": -10.5,
+        "173000000603": 11.0,
+        "173000000604": 1.0,
+        "173000000605": 6.5,
+        "173000000606": 1.5,
+        "173000000607": -20.0,
+        "173000000608": -7.5,
+        "173000000609": 20.5,
+        "173000000610": -9.0,
+        "173000000611": 4.5,
+        "173000000612": -25.0,
+        "173000000613": 4.5,
+        "173000000614": 6.0,
+        "173000000615": -18.5,
+        "173000000616": 5.5,
+        "173000000617": 10.5,
+        "173000000618": -30.5,
+        "173000000619": -7.0,
+        "173000000620": -11.5,
+        "173000000621": -14.5,
+        "173000000622": 4.5,
+        "173000000623": -2.0,
+        "173000000624": -3.5,
+        "173000000625": 10.5,
+        "173000000626": 1.5,
+        "173000000627": 7.5,
+        "173000000628": -6.5,
+        "173000000629": -10.0,
+        "173000000630": 3.5,
+        "173000000631": 4.0,
+        "173000000632": 18.5,
+        "173000000633": -17.5,
+        "173000000634": 0.0,
+        "173000000635": -27.5,
+        "173000000636": -37.0,
+        "173000000637": 2.0,
+        "173000000638": -16.5,
+        "173000000639": 0.0,
+        "173000000640": -10.0,
+        "173000000641": -7.5,
+        "173000000642": 1.5,
+        "173000000643": 1.0,
+        "173000000644": -29.5,
+        "173000000645": 3.0,
+        "173000000646": -1.0,
+        "173000000647": -6.5,
+        "173000000648": 5.5,
+        "173000000649": 3.0,
+        "173000000650": 19.0,
+        "173000000651": 12.0,
+        "173000000652": 3.5,
+        "173000000653": 20.0,
+        "173000000654": 3.5,
+        "173000000655": 9.0,
+        "173000000656": 7.5,
+        "173000000657": -2.0,
+        "173000000658": 22.0,
+        "173000000659": 4.0,
+        "173000000660": 3.0,
+        "173000000661": -3.0,
+        "173000000662": 22.5,
+        "173000000663": 3.0,
+        "173000000664": 7.0,
+        "173000000665": 13.0,
+        "173000000666": -1.0,
+        "173000000667": 8.5,
+        "173000000668": -7.0,
+        "173000000669": -3.0,
+        "173000000670": -11.5,
+        "173000000671": -23.5,
+        "173000000672": -6.0,
+        "173000000673": 9.5,
+        "173000000674": 0.5,
+        "173000000675": -8.5,
+        "173000000676": -21.0,
+        "173000000677": 12.0,
+        "173000000678": 3.0,
+        "173000000679": -8.5,
+        "173000000680": 13.5,
+        "173000000681": 4.0,
+        "173000000682": -11.0,
+        "173000000683": 38.5,
+        "173000000684": -22.5,
+        "173000000685": -1.0,
+        "173000000686": 2.0,
+        "173000000687": 13.5,
+        "173000000688": -14.5,
+        "173000000689": 14.0,
+        "173000000690": -9.0,
+        "173000000691": -16.0,
+        "173000000692": -2.5,
+        "173000000693": -9.0,
+        "173000000694": 15.0,
+        "173000000695": -11.0,
+        "173000000696": -9.0,
+        "173000000697": 13.5,
+        "173000000698": 7.5,
+        "173000000699": 0.5,
+        "173000000700": 15.0,
+        "173000000701": -7.0,
+        "173000000702": -1.5,
+        "173000000703": 3.5,
+        "173000000704": 14.5,
+        "173000000705": -7.5,
+        "173000000706": 7.5,
+        "173000000707": 12.0,
+        "173000000708": -3.5,
+        "173000000709": 6.5,
+        "173000000710": 11.0,
+        "173000000711": -3.0,
+        "173000000712": 6.0,
+        "173000000713": 7.5,
+        "173000000714": 2.5,
+        "173000000715": -18.0,
+        "173000000716": 4.5,
+        "173000000717": -9.0,
+        "173000000718": -12.5,
+        "173000000719": 13.0,
+        "173000000720": -2.0,
+        "173000000721": 3.5,
+        "173000000722": -7.5,
+        "173000000723": -10.5,
+        "173000000724": -2.0,
+        "173000000725": 0.5,
+        "173000000726": -6.5,
+        "173000000727": 31.0,
+        "173000000728": 27.0,
+        "173000000729": 14.5,
+        "173000000730": -1.0,
+        "173000000731": -3.0,
+        "173000000732": -3.0,
+        "173000000733": -12.0,
+        "173000000734": 14.0,
+        "173000000735": -8.5,
+        "173000000736": 5.5,
+        "173000000737": 6.5,
+        "173000000738": -4.0,
+        "173000000739": 0.5,
+        "173000000740": 10.0,
+        "173000000741": 13.5,
+        "173000000742": -1.0,
+        "173000000743": -16.0,
+        "173000000744": 15.5,
+        "173000000745": 20.5,
+        "173000000746": 11.0,
+        "173000000747": 12.5,
+        "173000000748": -28.0,
+        "173000000749": 1.5,
+        "173000000750": -5.5,
+        "173000000751": 10.5,
+        "173000000752": -3.0,
+        "173000000753": 2.5,
+        "173000000754": 42.5,
+        "173000000755": -12.5,
+        "173000000756": 10.5,
+        "173000000757": -16.5,
+        "173000000758": -14.5,
+        "173000000759": 12.0,
+        "173000000760": -8.0,
+        "173000000761": 12.0,
+        "173000000762": 23.0,
+        "173000000763": 10.0,
+        "173000000764": -7.5,
+        "173000000765": 23.5,
+        "173000000766": -19.0,
+        "173000000767": 10.5,
+        "173000000768": 5.0,
+        "173000000769": -1.0,
+        "173000000770": 7.5,
+        "173000000771": 9.5,
+        "173000000772": 13.0,
+        "173000000773": 3.5,
+        "173000000774": -8.5,
+        "173000000775": -5.0,
+        "173000000776": -39.0,
+        "173000000777": 3.0,
+        "173000000778": 24.5,
+        "173000000779": -8.0,
+        "173000000780": 21.5,
+        "173000000781": -12.0,
+        "173000000782": -5.0,
+        "173000000783": -26.0,
+        "173000000784": -3.0,
+        "173000000785": -15.0,
+        "173000000786": 25.0,
+        "173000000787": 15.5,
+        "173000000788": -0.5,
+        "173000000789": -2.0,
+        "173000000790": 7.5,
+        "173000000791": 2.5,
+        "173000000792": -7.5,
+        "173000000793": -21.5,
+        "173000000794": 9.0,
+        "173000000795": 0.0,
+        "173000000796": 18.0,
+        "173000000797": 7.5,
+        "173000000798": 6.5,
+        "173000000799": 14.0
+      }
+    },
+    "CELL_SIMS": {
+      "cell": "CELL_SIMS",
+      "role": "SCREEN",
+      "allocation": {
+        "k_dets": 16,
+        "sims_per_det": 2752,
+        "total_sims": 44032,
+        "shape": "double DEPTH at the deployed width"
+      },
+      "opponent": {
+        "k_dets": 16,
+        "sims_per_det": 1376,
+        "total_sims": 22016
+      },
+      "per_chunk_gates": [
+        {
+          "chunk": "CELL_SIMS__c1",
+          "gates": [
+            {
+              "gate": "G-BUDGET",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "k_dets": 16,
+                  "sims_per_det": 2752,
+                  "total_sims": 44032,
+                  "expected": [
+                    16,
+                    2752,
+                    44032
+                  ]
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016,
+                  "expected": [
+                    16,
+                    1376,
+                    22016
+                  ]
+                },
+                "summary_witness": {
+                  "candidate": {
+                    "candidate_k_dets": 16,
+                    "candidate_sims": 2752,
+                    "candidate_total_sims": 44032
+                  },
+                  "opponent": {
+                    "opp_k_dets": 16,
+                    "opp_sims": 1376,
+                    "opp_total_sims": 22016
+                  }
+                },
+                "asymmetric_budgets": true
+              },
+              "address": "summary:asymmetric_budgets",
+              "why": "CELL_SIMS: candidate k16 x 2752 = 44032, opponent k16 x 1376 = 22016, manifest and summary agreeing"
+            },
+            {
+              "gate": "G-BUDGET-RATIO",
+              "ok": true,
+              "detail": {
+                "candidate": [
+                  16,
+                  2752,
+                  44032
+                ],
+                "opponent": [
+                  16,
+                  1376,
+                  22016
+                ],
+                "cell": "CELL_SIMS",
+                "shape": "double DEPTH at the deployed width"
+              },
+              "address": "manifest:config.opponent.k_dets",
+              "why": "CELL_SIMS: candidate total is exactly 2x the opponent's, allocated as 'double DEPTH at the deployed width'"
+            },
+            {
+              "gate": "G-TIEARB-SIDES",
+              "ok": true,
+              "detail": {
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ]
+              },
+              "address": "manifest cand_tiearb / opp_tiearb (see tiearb_gates.py)",
+              "why": "BOTH seats ARMED at the deployed B=64 spec \u2014 the budget is the only variable"
+            },
+            {
+              "gate": "G-TIEARB-FIRED",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "games": 400,
+                  "phi": 17.5575,
+                  "fired_plies": 7023,
+                  "pickchanges": 4015,
+                  "G_FIRE_fired": false
+                },
+                "opponent": {
+                  "games": 400,
+                  "phi": 17.57,
+                  "fired_plies": 7028,
+                  "pickchanges": 4005,
+                  "G_FIRE_fired": false
+                }
+              },
+              "address": "summary.json tiearb_* / opp_tiearb_* (tiearb_sides_summary)",
+              "why": "BOTH seats' arbiters fired on a nonzero count of tied plies \u2014 the both-armed positive control"
+            },
+            {
+              "gate": "G-EXACT",
+              "ok": true,
+              "detail": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "address": "manifest:config.endgame.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-RULES",
+              "ok": true,
+              "detail": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+              "why": "ok"
+            },
+            {
+              "gate": "G-BACKEND",
+              "ok": true,
+              "detail": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest:config.backend.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-WHEEL",
+              "ok": true,
+              "detail": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+5f5dd9fa22f8+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a61d0d303e7f1639",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest \u2014 carc_rs_version is a constant, not a discriminator",
+              "why": "ok"
+            },
+            {
+              "gate": "G-LEAF",
+              "ok": true,
+              "detail": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d"
+              },
+              "address": "manifest:config.cand_leaf_hash",
+              "why": "both sides carry the frozen leaf"
+            },
+            {
+              "gate": "G-HOST",
+              "ok": true,
+              "detail": {
+                "host": "Doctor",
+                "frozen_role": "local",
+                "frozen_W": 30
+              },
+              "address": "manifest:host",
+              "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+            },
+            {
+              "gate": "RECON",
+              "ok": true,
+              "detail": {
+                "paired_mean_margin": {
+                  "witness": -1.495,
+                  "summary": -1.495,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": -1.745206112591585,
+                  "summary": -1.745206112591585,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 200,
+                  "summary": 200,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.465,
+                  "summary": 0.465,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": -24.360331652509768,
+                  "summary": -24.360331652509768,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "address": "summary.json vs the raw records",
+              "why": "the fsum witness agrees on all five statistics"
+            },
+            {
+              "gate": "G-REV",
+              "ok": true,
+              "detail": {
+                "code_rev": "5f5dd9fa",
+                "PINNED_SRC_REV": "5f5dd9fa22f858a9b9b4a27018080229d264b33e"
+              },
+              "address": "manifest:code_rev",
+              "why": "code_rev '5f5dd9fa' names PINNED_SRC_REV '5f5dd9fa22f858a9b9b4a27018080229d264b33e'"
+            },
+            {
+              "gate": "G-BLIND",
+              "ok": true,
+              "detail": {
+                "BLIND_COMMIT": "56d5e3c5ca17a846fc710eb6217f52c8290c8a63"
+              },
+              "address": "manifest:BLIND_COMMIT",
+              "why": "a single 40-hex BLIND_COMMIT is stamped into the manifest \u2014 a read that was not blind is not a read"
+            }
+          ],
+          "failed_gates": [],
+          "ok": true
+        },
+        {
+          "chunk": "CELL_SIMS__c2",
+          "gates": [
+            {
+              "gate": "G-BUDGET",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "k_dets": 16,
+                  "sims_per_det": 2752,
+                  "total_sims": 44032,
+                  "expected": [
+                    16,
+                    2752,
+                    44032
+                  ]
+                },
+                "opponent": {
+                  "k_dets": 16,
+                  "sims_per_det": 1376,
+                  "total_sims": 22016,
+                  "expected": [
+                    16,
+                    1376,
+                    22016
+                  ]
+                },
+                "summary_witness": {
+                  "candidate": {
+                    "candidate_k_dets": 16,
+                    "candidate_sims": 2752,
+                    "candidate_total_sims": 44032
+                  },
+                  "opponent": {
+                    "opp_k_dets": 16,
+                    "opp_sims": 1376,
+                    "opp_total_sims": 22016
+                  }
+                },
+                "asymmetric_budgets": true
+              },
+              "address": "summary:asymmetric_budgets",
+              "why": "CELL_SIMS: candidate k16 x 2752 = 44032, opponent k16 x 1376 = 22016, manifest and summary agreeing"
+            },
+            {
+              "gate": "G-BUDGET-RATIO",
+              "ok": true,
+              "detail": {
+                "candidate": [
+                  16,
+                  2752,
+                  44032
+                ],
+                "opponent": [
+                  16,
+                  1376,
+                  22016
+                ],
+                "cell": "CELL_SIMS",
+                "shape": "double DEPTH at the deployed width"
+              },
+              "address": "manifest:config.opponent.k_dets",
+              "why": "CELL_SIMS: candidate total is exactly 2x the opponent's, allocated as 'double DEPTH at the deployed width'"
+            },
+            {
+              "gate": "G-TIEARB-SIDES",
+              "ok": true,
+              "detail": {
+                "findings": [
+                  "ok candidate: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ cand_tiearb",
+                  "ok opponent: ARMED {enabled=True, B=64, J=4, mode='argmax', salt='tiearb2-deploy-v1', eps=0.0, phase_gate='all'} @ opp_tiearb"
+                ]
+              },
+              "address": "manifest cand_tiearb / opp_tiearb (see tiearb_gates.py)",
+              "why": "BOTH seats ARMED at the deployed B=64 spec \u2014 the budget is the only variable"
+            },
+            {
+              "gate": "G-TIEARB-FIRED",
+              "ok": true,
+              "detail": {
+                "candidate": {
+                  "games": 400,
+                  "phi": 17.4325,
+                  "fired_plies": 6973,
+                  "pickchanges": 4024,
+                  "G_FIRE_fired": false
+                },
+                "opponent": {
+                  "games": 400,
+                  "phi": 17.2975,
+                  "fired_plies": 6919,
+                  "pickchanges": 3950,
+                  "G_FIRE_fired": false
+                }
+              },
+              "address": "summary.json tiearb_* / opp_tiearb_* (tiearb_sides_summary)",
+              "why": "BOTH seats' arbiters fired on a nonzero count of tied plies \u2014 the both-armed positive control"
+            },
+            {
+              "gate": "G-EXACT",
+              "ok": true,
+              "detail": {
+                "exact_k": {
+                  "value": 2,
+                  "address": "manifest:config.endgame.exact_k"
+                },
+                "mode": {
+                  "value": "marginalized",
+                  "address": "manifest:config.endgame.mode"
+                }
+              },
+              "address": "manifest:config.endgame.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-RULES",
+              "ok": true,
+              "detail": {
+                "rules_profile.name": {
+                  "value": "fixed_v1",
+                  "address": "manifest:rules_profile.name"
+                },
+                "r9_env_ok": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_ok"
+                },
+                "r9_env_observed": {
+                  "value": true,
+                  "address": "manifest:rules_profile.r9_env_observed"
+                }
+              },
+              "address": "manifest:rules_profile.* (\u26a0\ufe0f R9 is env-latched at IMPORT)",
+              "why": "ok"
+            },
+            {
+              "gate": "G-BACKEND",
+              "ok": true,
+              "detail": {
+                "name": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.name"
+                },
+                "requested": {
+                  "value": "rust",
+                  "address": "manifest:config.backend.requested"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest:config.backend.*",
+              "why": "ok"
+            },
+            {
+              "gate": "G-WHEEL",
+              "ok": true,
+              "detail": {
+                "carc_rs_build": {
+                  "value": "carc_rs-0.1.0+5f5dd9fa22f8+rustcunpinned",
+                  "address": "manifest:carc_rs_build"
+                },
+                "carc_rs_binary_sha": {
+                  "value": "a61d0d303e7f1639",
+                  "address": "manifest:carc_rs_binary_sha"
+                },
+                "mixed_builds": {
+                  "value": false,
+                  "address": "manifest:mixed_builds"
+                }
+              },
+              "address": "manifest \u2014 carc_rs_version is a constant, not a discriminator",
+              "why": "ok"
+            },
+            {
+              "gate": "G-LEAF",
+              "ok": true,
+              "detail": {
+                "cand_leaf_hash": "a36d2e15a3b3d71d",
+                "opp_leaf_hash": "a36d2e15a3b3d71d",
+                "expected": "a36d2e15a3b3d71d"
+              },
+              "address": "manifest:config.cand_leaf_hash",
+              "why": "both sides carry the frozen leaf"
+            },
+            {
+              "gate": "G-HOST",
+              "ok": true,
+              "detail": {
+                "host": "Doctor",
+                "frozen_role": "local",
+                "frozen_W": 30
+              },
+              "address": "manifest:host",
+              "why": "host 'Doctor' matches box role 'local' (via 'doctor')"
+            },
+            {
+              "gate": "RECON",
+              "ok": true,
+              "detail": {
+                "paired_mean_margin": {
+                  "witness": 0.5375,
+                  "summary": 0.5375,
+                  "agree": true,
+                  "address": "summary:paired_mean_margin"
+                },
+                "paired_z": {
+                  "witness": 0.587798603204946,
+                  "summary": 0.587798603204946,
+                  "agree": true,
+                  "address": "summary:paired_z"
+                },
+                "n_paired": {
+                  "witness": 200,
+                  "summary": 200,
+                  "agree": true,
+                  "address": "summary:n_paired"
+                },
+                "winrate": {
+                  "witness": 0.50375,
+                  "summary": 0.50375,
+                  "agree": true,
+                  "address": "summary:winrate"
+                },
+                "elo": {
+                  "witness": 2.6058157511977584,
+                  "summary": 2.6058157511977584,
+                  "agree": true,
+                  "address": "summary:elo"
+                }
+              },
+              "address": "summary.json vs the raw records",
+              "why": "the fsum witness agrees on all five statistics"
+            },
+            {
+              "gate": "G-REV",
+              "ok": true,
+              "detail": {
+                "code_rev": "5f5dd9fa",
+                "PINNED_SRC_REV": "5f5dd9fa22f858a9b9b4a27018080229d264b33e"
+              },
+              "address": "manifest:code_rev",
+              "why": "code_rev '5f5dd9fa' names PINNED_SRC_REV '5f5dd9fa22f858a9b9b4a27018080229d264b33e'"
+            },
+            {
+              "gate": "G-BLIND",
+              "ok": true,
+              "detail": {
+                "BLIND_COMMIT": "56d5e3c5ca17a846fc710eb6217f52c8290c8a63"
+              },
+              "address": "manifest:BLIND_COMMIT",
+              "why": "a single 40-hex BLIND_COMMIT is stamped into the manifest \u2014 a read that was not blind is not a read"
+            }
+          ],
+          "failed_gates": [],
+          "ok": true
+        }
+      ],
+      "pool_gates": [
+        {
+          "gate": "G-CHUNKS",
+          "ok": true,
+          "detail": {
+            "planned": 2,
+            "found": 2,
+            "names": [
+              "CELL_SIMS__c1",
+              "CELL_SIMS__c2"
+            ],
+            "done": [
+              true,
+              true
+            ]
+          },
+          "address": "the chunk dirs themselves",
+          "why": "all 2 chunks present, documented and DONE"
+        },
+        {
+          "gate": "G-SHARD-IDENT",
+          "ok": true,
+          "detail": {
+            "wheel sha": {
+              "\"a61d0d303e7f1639\"": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "cand leaf": {
+              "\"a36d2e15a3b3d71d\"": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "opp leaf": {
+              "\"a36d2e15a3b3d71d\"": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "cand total_sims": {
+              "44032": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "cand k_dets": {
+              "16": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "opp total_sims": {
+              "22016": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "opp k_dets": {
+              "16": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "rules profile": {
+              "\"fixed_v1\"": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "code_rev": {
+              "\"5f5dd9fa\"": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            },
+            "BLIND_COMMIT": {
+              "\"56d5e3c5ca17a846fc710eb6217f52c8290c8a63\"": [
+                "CELL_SIMS__c1",
+                "CELL_SIMS__c2"
+              ]
+            }
+          },
+          "address": "every chunk's manifest.json",
+          "why": "every chunk resolved the same two agents, the same wheel and the same pinned rev"
+        },
+        {
+          "gate": "G-NODUP",
+          "ok": true,
+          "detail": {
+            "chunk_seed_ranges": {
+              "CELL_SIMS__c1": [
+                173000000000,
+                173000000199
+              ],
+              "CELL_SIMS__c2": [
+                173000000200,
+                173000000399
+              ]
+            },
+            "duplicated": {}
+          },
+          "address": "raw seed*_a*.json across the chunk pool",
+          "why": "chunk ranges disjoint, every (deck,seat) exactly once"
+        },
+        {
+          "gate": "G-N",
+          "ok": true,
+          "detail": {
+            "pooled_games": 800,
+            "frozen_games": 800,
+            "pooled_n_failed": 0,
+            "failure_rate": 0.0,
+            "n_common": 400,
+            "n_common_floor": 320.0,
+            "frozen_decks": 400,
+            "notes": []
+          },
+          "address": "the pooled records + each chunk's summary.json",
+          "why": "pooled n, n_failed and n_common at the frozen plan"
+        },
+        {
+          "gate": "G-BAND",
+          "ok": true,
+          "detail": {
+            "claimed_band": 173000000000,
+            "chunks": {
+              "CELL_SIMS__c1": {
+                "band_seed_start": 173000000000,
+                "expected": 173000000000,
+                "address": "manifest:config.band_seed_start"
+              },
+              "CELL_SIMS__c2": {
+                "band_seed_start": 173000000200,
+                "expected": 173000000200,
+                "address": "manifest:config.band_seed_start"
+              }
+            },
+            "deck_window": [
+              173000000000,
+              173000000399
+            ]
+          },
+          "address": "manifest:config.band_seed_start per chunk",
+          "why": "every chunk starts at its planned offset inside the claimed band"
+        },
+        {
+          "gate": "G-DECKS",
+          "ok": true,
+          "detail": {
+            "n_seeds": 400,
+            "n_common": 400,
+            "frozen_decks": 400,
+            "half_played_decks": [],
+            "out_of_range": []
+          },
+          "address": "raw seed*_a*.json across the chunk pool",
+          "why": "every seed inside the window, both seatings present, n_common == 400"
+        },
+        {
+          "gate": "G-SAT",
+          "ok": true,
+          "detail": {
+            "winrate": 0.484375,
+            "band": [
+              0.35,
+              0.65
+            ],
+            "W": 380,
+            "D": 15,
+            "L": 405
+          },
+          "address": "recomputed from the pooled raw records",
+          "why": "inside the rail"
+        }
+      ],
+      "gates_ok": true,
+      "chunk_gates_ok": true,
+      "pool_gates_ok": true,
+      "failed_gates": [],
+      "stats": {
+        "branch_z": 2.0,
+        "bar_M": 0.8,
+        "margin": {
+          "M": -0.47875,
+          "se_realized": 0.6277773846719183,
+          "z": -0.7626110970056666,
+          "n_paired": 400,
+          "LB95": -1.7343047693438367,
+          "UB95": 0.7768047693438367,
+          "adopt_condition": false,
+          "regression_condition": false,
+          "null_bounded_condition": true
+        },
+        "elo_coread": {
+          "elo": -10.86089841744591,
+          "footing": "deck-paired",
+          "se_realized": 8.69013390396116,
+          "se_planning_wr05": 8.685889638065037,
+          "LB95": -28.24116622536823,
+          "UB95": 6.51936939047641,
+          "winrate": 0.484375,
+          "W": 380,
+          "D": 15,
+          "L": 405,
+          "note": "\u26d4 REPORTED, NEVER A BRANCH INPUT. The deck-paired margin is the single PRIMARY statistic (PREREG \u00a74.1): at these n the margin leg is ~1.5x better powered than elo, so adding elo as a co-primary would cost a multiplicity correction and buy nothing. Elo is here because it is the deployment-relevant currency and because a sign disagreement with the margin is a hand-review trigger."
+        }
+      },
+      "coherence": {
+        "margin_sign": -1,
+        "elo_sign": -1,
+        "agree": true,
+        "note": "a margin/elo SIGN DISAGREEMENT is a hand-review trigger before any branch is acted on \u2014 it is not a gate and does not change the branch label."
+      },
+      "type_m": {
+        "mde80_planning": 1.9621394617820975,
+        "realized_below_own_mde": false,
+        "note": "\u26a0\ufe0f if `realized_below_own_mde` is true the MAGNITUDE is biased UPWARD (winner's curse); the SIGN is the reliable part. This is the same rider the 11008->22016 row carries and it must be propagated, not laundered."
+      },
+      "se_anomaly_margin": {
+        "realized": 0.6277773846719183,
+        "modelled": 0.6905,
+        "ratio": 0.909163482508209,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "se_anomaly_elo": {
+        "realized": 8.69013390396116,
+        "modelled": 8.685889638065037,
+        "ratio": 1.0004886391691559,
+        "band": [
+          0.7,
+          1.43
+        ],
+        "flagged": false,
+        "direction": "inside the band",
+        "note": "ELO-DOMAIN DISPERSION ANOMALY \u2014 reported, never a branch input"
+      },
+      "power_at_realized_se": {
+        "A-upper: no decay (r4>=1, the rung repeats)": {
+          "p_adopt": 0.4833203850735247,
+          "p_regression": 3.7761799638325044e-05,
+          "p_null_bounded": 0.0036013222555718594,
+          "p_unresolved": 0.5130405308712651,
+          "adopt_threshold_pts_per_deck": 1.2555547693438367,
+          "null_bounded_threshold_pts_per_deck": -0.45555476934383665,
+          "regression_threshold_pts_per_deck": -1.2555547693438367,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "A-central: decay RATE family (r x D_prev)": {
+          "p_adopt": 0.24881303101945962,
+          "p_regression": 0.0004472414920775325,
+          "p_null_bounded": 0.019860542446170193,
+          "p_unresolved": 0.7308791850422927,
+          "adopt_threshold_pts_per_deck": 1.2555547693438367,
+          "null_bounded_threshold_pts_per_deck": -0.45555476934383665,
+          "regression_threshold_pts_per_deck": -1.2555547693438367,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "A-lower: rate family, Type-M discounted": {
+          "p_adopt": 0.11453345024934647,
+          "p_regression": 0.00257710913216902,
+          "p_null_bounded": 0.061315134372976865,
+          "p_unresolved": 0.8215743062455076,
+          "adopt_threshold_pts_per_deck": 1.2555547693438367,
+          "null_bounded_threshold_pts_per_deck": -0.45555476934383665,
+          "regression_threshold_pts_per_deck": -1.2555547693438367,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "B: measured-PRICE family (g_next, the CURRENT bound)": {
+          "p_adopt": 0.043875690339244655,
+          "p_regression": 0.010934955975775318,
+          "p_null_bounded": 0.14333688838380554,
+          "p_unresolved": 0.8018524653011745,
+          "adopt_threshold_pts_per_deck": 1.2555547693438367,
+          "null_bounded_threshold_pts_per_deck": -0.45555476934383665,
+          "regression_threshold_pts_per_deck": -1.2555547693438367,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "exact null": {
+          "p_adopt": 0.02275013194817921,
+          "p_regression": 0.02275013194817921,
+          "p_null_bounded": 0.2112725876463024,
+          "p_unresolved": 0.7432271484573392,
+          "adopt_threshold_pts_per_deck": 1.2555547693438367,
+          "null_bounded_threshold_pts_per_deck": -0.45555476934383665,
+          "regression_threshold_pts_per_deck": -1.2555547693438367,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "mild regression (-1.0)": {
+          "p_adopt": 0.00016349565311735148,
+          "p_regression": 0.34197511233940403,
+          "p_null_bounded": 0.4651246743795262,
+          "p_unresolved": 0.19273671762795241,
+          "adopt_threshold_pts_per_deck": 1.2555547693438367,
+          "null_bounded_threshold_pts_per_deck": -0.45555476934383665,
+          "regression_threshold_pts_per_deck": -1.2555547693438367,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        },
+        "CL-054-scale width regression (-3.0)": {
+          "p_adopt": 6.0604854468238045e-12,
+          "p_regression": 0.9972716928071611,
+          "p_null_bounded": 0.002703035623343286,
+          "p_unresolved": 2.5271563435125266e-05,
+          "adopt_threshold_pts_per_deck": 1.2555547693438367,
+          "null_bounded_threshold_pts_per_deck": -0.45555476934383665,
+          "regression_threshold_pts_per_deck": -1.2555547693438367,
+          "binding_adopt_condition": "the 2-sigma condition binds"
+        }
+      },
+      "branch": "B-NULL-BOUNDED",
+      "riders": [
+        "\u26d4 SELF-ANCHORED: every statistic here is THIS candidate/opponent pair on THIS band, not absolute strength. No prior or later round is pooled.",
+        "\u26d4 THIS ROUND MAKES NO SOURCE CHANGE AND CHANGES NO GOVERNANCE FILE ON ANY BRANCH. `B-ADOPT` licenses exactly two things: (1) PROPOSING a `governance/PRODUCTION.yaml` `champion.fair_deploy` budget flip to 44032 at the adopting allocation, for a separate OWNER RULING, and (2) funding an out-of-family external Carcasum corroboration step. Neither is automatic (`feedback_evloss_grader`'s F4 lesson: judge-free game outcomes outrank any single-family number, and a promotion of this size should carry an independent-engine cross-check the way the arbiter fold did).",
+        "\u26d4 MOBILE / PHONE BUDGET IS OUT OF SCOPE ON EVERY BRANCH. `deploy_profiles.mobile` stays k16x1376=22016. A desktop flip would BREAK desktop-mobile budget parity and open a new E4 archive epoch; that is a consequence to PRICE in the flip proposal, never a change this round propagates.",
+        "\u26d4 CL-070: the RoD-v2 anchor CANNOT price budgets above 2752. It is not used here (this is deployed-vs-deployed direct play) and must not be reached for when re-reading this round.",
+        "\u26a0\ufe0f TYPE-M TRAVELS. The `+1.2293` prior from the 11008->22016 rung sits BELOW that cell's own 80%-power MDE (+/-1.55), so its magnitude is biased UPWARD. Any effect measured here that lands near its own MDE inherits the same caveat and must be reported with it, not propagated as calibrated.",
+        "\u26a0\ufe0f THE TWO CELLS SHARE ONE BAND AND THE SCREEN'S DECKS ARE A SUBSET OF THE PRIMARY'S. They are NOT independent replications: a pathological deck draw moves both the same way. This is deliberate (it makes the \u00a74.5 width contrast a within-band deck-matched read, the robust class), and it is the reason no cross-cell pooling of any kind is permitted.",
+        "\u2b50 A DISCHARGING READ, not a failure. It says the doubling does not buy the decision-relevant `+0.80 pts/deck`, i.e. the budget ladder has decayed below its own fitted model (`r = 0.675 +- 0.057`) at the first rung the wheel made affordable. The action is to STOP BUYING BUDGET RUNGS and record the bound \u2014 not to fund more n.",
+        "Report the realized upper bound `M + 2*se` explicitly; it is the number the next reader needs."
+      ],
+      "_per_deck_margins": {
+        "173000000000": 8.0,
+        "173000000001": -5.0,
+        "173000000002": -1.0,
+        "173000000003": -3.0,
+        "173000000004": 13.0,
+        "173000000005": -2.0,
+        "173000000006": -2.5,
+        "173000000007": -10.0,
+        "173000000008": 6.5,
+        "173000000009": 0.0,
+        "173000000010": 8.0,
+        "173000000011": -4.5,
+        "173000000012": 10.5,
+        "173000000013": -25.5,
+        "173000000014": 6.5,
+        "173000000015": 4.0,
+        "173000000016": 1.5,
+        "173000000017": 13.0,
+        "173000000018": -15.5,
+        "173000000019": 5.5,
+        "173000000020": -15.0,
+        "173000000021": -7.5,
+        "173000000022": 12.5,
+        "173000000023": -21.5,
+        "173000000024": 2.5,
+        "173000000025": -8.5,
+        "173000000026": 10.0,
+        "173000000027": -6.5,
+        "173000000028": -14.0,
+        "173000000029": -5.5,
+        "173000000030": 2.0,
+        "173000000031": -15.5,
+        "173000000032": -9.0,
+        "173000000033": -13.5,
+        "173000000034": -15.0,
+        "173000000035": 18.0,
+        "173000000036": 1.0,
+        "173000000037": 8.0,
+        "173000000038": -6.5,
+        "173000000039": 14.5,
+        "173000000040": 11.5,
+        "173000000041": 22.5,
+        "173000000042": 9.5,
+        "173000000043": 2.0,
+        "173000000044": -22.0,
+        "173000000045": 4.0,
+        "173000000046": 9.0,
+        "173000000047": -10.5,
+        "173000000048": -6.0,
+        "173000000049": -1.5,
+        "173000000050": 1.0,
+        "173000000051": 9.0,
+        "173000000052": 4.0,
+        "173000000053": -18.5,
+        "173000000054": -5.0,
+        "173000000055": -1.5,
+        "173000000056": -26.5,
+        "173000000057": -14.0,
+        "173000000058": 5.0,
+        "173000000059": -14.0,
+        "173000000060": -24.0,
+        "173000000061": 26.0,
+        "173000000062": -5.5,
+        "173000000063": 5.5,
+        "173000000064": 17.0,
+        "173000000065": -9.0,
+        "173000000066": -20.5,
+        "173000000067": 30.5,
+        "173000000068": 19.5,
+        "173000000069": -21.5,
+        "173000000070": -17.0,
+        "173000000071": 12.5,
+        "173000000072": 7.5,
+        "173000000073": 19.0,
+        "173000000074": 0.5,
+        "173000000075": 1.0,
+        "173000000076": -25.5,
+        "173000000077": -12.0,
+        "173000000078": -3.0,
+        "173000000079": 10.0,
+        "173000000080": 14.0,
+        "173000000081": -11.5,
+        "173000000082": -14.5,
+        "173000000083": -14.5,
+        "173000000084": -8.5,
+        "173000000085": -9.0,
+        "173000000086": 4.0,
+        "173000000087": 3.5,
+        "173000000088": 3.0,
+        "173000000089": -2.0,
+        "173000000090": -4.5,
+        "173000000091": 18.5,
+        "173000000092": -12.5,
+        "173000000093": 8.0,
+        "173000000094": -6.0,
+        "173000000095": -8.0,
+        "173000000096": -4.5,
+        "173000000097": -15.5,
+        "173000000098": 2.0,
+        "173000000099": -15.0,
+        "173000000100": -1.5,
+        "173000000101": 2.0,
+        "173000000102": -5.5,
+        "173000000103": 2.5,
+        "173000000104": -5.5,
+        "173000000105": -16.0,
+        "173000000106": 4.5,
+        "173000000107": -3.5,
+        "173000000108": -23.0,
+        "173000000109": 3.5,
+        "173000000110": 0.0,
+        "173000000111": 12.0,
+        "173000000112": -21.0,
+        "173000000113": -7.0,
+        "173000000114": 12.5,
+        "173000000115": -13.0,
+        "173000000116": -1.5,
+        "173000000117": -16.5,
+        "173000000118": -1.5,
+        "173000000119": 22.0,
+        "173000000120": -5.0,
+        "173000000121": -18.5,
+        "173000000122": -6.5,
+        "173000000123": 8.5,
+        "173000000124": -4.0,
+        "173000000125": -6.0,
+        "173000000126": 5.0,
+        "173000000127": 14.0,
+        "173000000128": 2.5,
+        "173000000129": 5.5,
+        "173000000130": -14.0,
+        "173000000131": 18.0,
+        "173000000132": -2.0,
+        "173000000133": -6.5,
+        "173000000134": 14.5,
+        "173000000135": 11.5,
+        "173000000136": 5.5,
+        "173000000137": -6.0,
+        "173000000138": 7.5,
+        "173000000139": -8.0,
+        "173000000140": 2.5,
+        "173000000141": -7.0,
+        "173000000142": 12.5,
+        "173000000143": 2.0,
+        "173000000144": -17.0,
+        "173000000145": -23.0,
+        "173000000146": -0.5,
+        "173000000147": 28.0,
+        "173000000148": -8.5,
+        "173000000149": 5.0,
+        "173000000150": -19.0,
+        "173000000151": 9.5,
+        "173000000152": 3.5,
+        "173000000153": -4.0,
+        "173000000154": 8.5,
+        "173000000155": 0.0,
+        "173000000156": 14.0,
+        "173000000157": -4.0,
+        "173000000158": -7.5,
+        "173000000159": -25.0,
+        "173000000160": -10.5,
+        "173000000161": 23.0,
+        "173000000162": -7.5,
+        "173000000163": -0.5,
+        "173000000164": 2.5,
+        "173000000165": 7.5,
+        "173000000166": -6.0,
+        "173000000167": -6.5,
+        "173000000168": 3.0,
+        "173000000169": -14.0,
+        "173000000170": 10.5,
+        "173000000171": -2.5,
+        "173000000172": 8.0,
+        "173000000173": -32.5,
+        "173000000174": -7.0,
+        "173000000175": -2.0,
+        "173000000176": -14.0,
+        "173000000177": -11.0,
+        "173000000178": 8.5,
+        "173000000179": -18.0,
+        "173000000180": 0.0,
+        "173000000181": -10.0,
+        "173000000182": 3.5,
+        "173000000183": 14.0,
+        "173000000184": 2.5,
+        "173000000185": -18.0,
+        "173000000186": -27.5,
+        "173000000187": 4.0,
+        "173000000188": -1.5,
+        "173000000189": 19.0,
+        "173000000190": 9.5,
+        "173000000191": -23.0,
+        "173000000192": 23.0,
+        "173000000193": -17.0,
+        "173000000194": 7.5,
+        "173000000195": 6.5,
+        "173000000196": 0.0,
+        "173000000197": -2.0,
+        "173000000198": 9.5,
+        "173000000199": 6.5,
+        "173000000200": 9.5,
+        "173000000201": -29.0,
+        "173000000202": -5.5,
+        "173000000203": 22.0,
+        "173000000204": -16.0,
+        "173000000205": -26.5,
+        "173000000206": -16.5,
+        "173000000207": 13.0,
+        "173000000208": -1.5,
+        "173000000209": -6.5,
+        "173000000210": 5.0,
+        "173000000211": 8.5,
+        "173000000212": 19.0,
+        "173000000213": 2.5,
+        "173000000214": 16.0,
+        "173000000215": -10.0,
+        "173000000216": -1.0,
+        "173000000217": -22.0,
+        "173000000218": 16.0,
+        "173000000219": 21.5,
+        "173000000220": 21.5,
+        "173000000221": 7.0,
+        "173000000222": 18.0,
+        "173000000223": -15.0,
+        "173000000224": 12.5,
+        "173000000225": 25.5,
+        "173000000226": 6.0,
+        "173000000227": -1.0,
+        "173000000228": -4.0,
+        "173000000229": -1.0,
+        "173000000230": 4.5,
+        "173000000231": -9.0,
+        "173000000232": 12.0,
+        "173000000233": 19.5,
+        "173000000234": -7.5,
+        "173000000235": 2.5,
+        "173000000236": 5.5,
+        "173000000237": 12.5,
+        "173000000238": -10.5,
+        "173000000239": -5.5,
+        "173000000240": -11.5,
+        "173000000241": -6.5,
+        "173000000242": -37.0,
+        "173000000243": 35.5,
+        "173000000244": -4.0,
+        "173000000245": 1.0,
+        "173000000246": -1.5,
+        "173000000247": 7.5,
+        "173000000248": -13.0,
+        "173000000249": -2.5,
+        "173000000250": -8.0,
+        "173000000251": 1.0,
+        "173000000252": 8.5,
+        "173000000253": -3.0,
+        "173000000254": 14.0,
+        "173000000255": 17.0,
+        "173000000256": 3.5,
+        "173000000257": -4.0,
+        "173000000258": 6.5,
+        "173000000259": 26.0,
+        "173000000260": 4.5,
+        "173000000261": -1.5,
+        "173000000262": 5.0,
+        "173000000263": -1.0,
+        "173000000264": 27.5,
+        "173000000265": -7.5,
+        "173000000266": -22.0,
+        "173000000267": -6.0,
+        "173000000268": 20.5,
+        "173000000269": -25.0,
+        "173000000270": -6.0,
+        "173000000271": -5.0,
+        "173000000272": -1.5,
+        "173000000273": -12.5,
+        "173000000274": 7.0,
+        "173000000275": -2.0,
+        "173000000276": -7.5,
+        "173000000277": -1.5,
+        "173000000278": -6.0,
+        "173000000279": 7.5,
+        "173000000280": -9.5,
+        "173000000281": -5.0,
+        "173000000282": 2.5,
+        "173000000283": -13.0,
+        "173000000284": -7.5,
+        "173000000285": 30.5,
+        "173000000286": 13.0,
+        "173000000287": -6.0,
+        "173000000288": 5.0,
+        "173000000289": 23.0,
+        "173000000290": -5.0,
+        "173000000291": -6.5,
+        "173000000292": -9.0,
+        "173000000293": -6.0,
+        "173000000294": -2.0,
+        "173000000295": -3.0,
+        "173000000296": -8.0,
+        "173000000297": 2.5,
+        "173000000298": -4.0,
+        "173000000299": -8.5,
+        "173000000300": 14.5,
+        "173000000301": 4.0,
+        "173000000302": 20.0,
+        "173000000303": 1.5,
+        "173000000304": -1.5,
+        "173000000305": -18.0,
+        "173000000306": 1.0,
+        "173000000307": -9.0,
+        "173000000308": -29.5,
+        "173000000309": -5.5,
+        "173000000310": 8.0,
+        "173000000311": 8.5,
+        "173000000312": -4.5,
+        "173000000313": 15.0,
+        "173000000314": 0.5,
+        "173000000315": 18.0,
+        "173000000316": 9.5,
+        "173000000317": 18.5,
+        "173000000318": 10.5,
+        "173000000319": -8.0,
+        "173000000320": -8.5,
+        "173000000321": -8.5,
+        "173000000322": -6.0,
+        "173000000323": -3.0,
+        "173000000324": 0.5,
+        "173000000325": 27.5,
+        "173000000326": -17.5,
+        "173000000327": -14.5,
+        "173000000328": 5.0,
+        "173000000329": 15.5,
+        "173000000330": 3.0,
+        "173000000331": -30.0,
+        "173000000332": -0.5,
+        "173000000333": -3.0,
+        "173000000334": -1.0,
+        "173000000335": -5.5,
+        "173000000336": -28.5,
+        "173000000337": -11.0,
+        "173000000338": -3.5,
+        "173000000339": 27.5,
+        "173000000340": 0.5,
+        "173000000341": -1.5,
+        "173000000342": -0.5,
+        "173000000343": 0.0,
+        "173000000344": -15.0,
+        "173000000345": 11.0,
+        "173000000346": 11.0,
+        "173000000347": -1.0,
+        "173000000348": 13.0,
+        "173000000349": 15.0,
+        "173000000350": -11.5,
+        "173000000351": 0.0,
+        "173000000352": 1.0,
+        "173000000353": -12.0,
+        "173000000354": 6.5,
+        "173000000355": 14.0,
+        "173000000356": -2.5,
+        "173000000357": 2.0,
+        "173000000358": 0.0,
+        "173000000359": -9.0,
+        "173000000360": -3.0,
+        "173000000361": -10.0,
+        "173000000362": 1.5,
+        "173000000363": -1.0,
+        "173000000364": -6.0,
+        "173000000365": 18.0,
+        "173000000366": -22.0,
+        "173000000367": 13.5,
+        "173000000368": -25.0,
+        "173000000369": 24.0,
+        "173000000370": -16.0,
+        "173000000371": 7.0,
+        "173000000372": -8.0,
+        "173000000373": 8.0,
+        "173000000374": -3.0,
+        "173000000375": -15.5,
+        "173000000376": -11.0,
+        "173000000377": 2.0,
+        "173000000378": 16.5,
+        "173000000379": 2.5,
+        "173000000380": -13.5,
+        "173000000381": -17.0,
+        "173000000382": 2.5,
+        "173000000383": 7.5,
+        "173000000384": -5.5,
+        "173000000385": 7.5,
+        "173000000386": 18.5,
+        "173000000387": 6.0,
+        "173000000388": -7.0,
+        "173000000389": 41.0,
+        "173000000390": 2.5,
+        "173000000391": -3.5,
+        "173000000392": -2.0,
+        "173000000393": 7.5,
+        "173000000394": 6.0,
+        "173000000395": 14.0,
+        "173000000396": -3.5,
+        "173000000397": 3.5,
+        "173000000398": 1.0,
+        "173000000399": -15.0
+      }
+    }
+  },
+  "width_contrast": {
+    "statistic": "W = D(CELL_K32, k32x1376) - D(CELL_SIMS, k16x2752), pts/deck, over the decks BOTH cells played",
+    "W": 0.455,
+    "se_realized": 0.8612923422084207,
+    "z": 0.5282759148111599,
+    "n_common_decks": 400,
+    "expected_n_common_decks": 400,
+    "LB95": -1.2675846844168412,
+    "UB95": 2.1775846844168414,
+    "direction": "WIDTH (k32x1376) reads higher",
+    "both_cells_gates_ok": true,
+    "riders": [
+      "\u26d4 SECONDARY AND NON-LICENSING. No pre-registered bar; this is a third statistic on the same games and a directional read only.",
+      "\u2b50 It is nevertheless the FIRST direct fixed-budget width contrast ever run above 2752 in this program \u2014 CL-054 measured the axis at 2752 (inverted-U peaked at k4, k32 significantly worse) and CL-060 bounded it as a null at 11008. Whatever it reads, log it on those two claims and on docs/LEVER_INDEX.md.",
+      "\u26a0\ufe0f The two cells are NOT independent (shared band, screen decks a subset of the primary's). That is what makes this contrast deck-matched and tight; it is also why NEITHER cell's own branch may be read as a replication of the other's."
+    ]
+  },
+  "width_prior": "width unresolved above 2752; the only resolved width measurement (CL-054 @2752) is an inverted-U peaked at k4 with k32 significantly worse; the 22016-band allocation contrast favours width directionally at z~0.9 (unresolved); the powered 11008 width contrast is a bounded null."
+}

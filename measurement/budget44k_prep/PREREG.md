@@ -1,5 +1,7 @@
 # PREREG — the 44032 budget rung (`budget44k_prep`)
 
+> **STATUS 2026-09-02: ADJUDICATED — CELL_K32 `B-UNRESOLVED` (+0.355 ± 0.434, CI [−0.51, +1.22] vs BAR_M +0.80), CELL_SIMS `B-NULL-BOUNDED` (−0.479 ± 0.628, UB95 +0.78), width contrast +0.46 ± 0.86 unresolved. No adoption. Band 173e9 spent. VERDICT.json; results.csv `budget44k_*`; DECISIONS 2026-09-02.**
+
 > **STATUS: FROZEN, UNLAUNCHED.** 0 real games exist. No band claimed, no
 > `governance/` file touched, no `experiments/results.csv` row written, no
 > source change. `BLIND_COMMIT.json` reads `PENDING` until the freeze commit's
