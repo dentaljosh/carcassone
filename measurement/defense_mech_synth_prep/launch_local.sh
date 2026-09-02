@@ -49,8 +49,17 @@ BLIND="$($PY -c "import json;print(json.load(open('$D/BLIND_COMMIT.json'))['blin
 [ "$BLIND" != "PENDING" ] || die "BLIND_COMMIT.json still says PENDING. The freeze
 commit lands the design; a SECOND commit stamps its own 40-hex sha here."
 HEAD="$(git -C "$REPO" rev-parse HEAD)"
-[ "$HEAD" = "$BLIND" ] || die "HEAD ($HEAD) != BLIND_COMMIT ($BLIND). A pinned round
-whose source moved is a cross-cell rev split; re-pinning is NOT a fix."
+# HEAD can never EQUAL the blind commit (the stamping commit is the freeze commit's
+# child by construction — a commit cannot name its own hash). The check that means
+# what the original intended: HEAD DESCENDS from the freeze commit, and nothing in the
+# round's directory changed between them except the stamp file itself. Corrected
+# 2026-09-02 pre-launch, 0 units played (DEVIATIONS D-LAUNCH-1). Run from a DETACHED
+# worktree pinned at HEAD so later main-tree commits cannot move the pin mid-round.
+git -C "$REPO" merge-base --is-ancestor "$BLIND" "$HEAD" || die "HEAD ($HEAD) does not
+descend from BLIND_COMMIT ($BLIND) — the round is not the frozen design."
+DRIFT="$(git -C "$REPO" diff --name-only "$BLIND" "$HEAD" -- "$D" | grep -v -E '(^|/)BLIND_COMMIT\.json$' || true)"
+[ -z "$DRIFT" ] || die "the round's directory changed since the freeze commit (beyond the
+stamp): $DRIFT — a design that moved after freezing is not the frozen design."
 [ -z "$(git -C "$REPO" status --porcelain -- "$D")" ] || die "the round's own directory
 is DIRTY at launch. Commit or stash before launching."
 
