@@ -619,14 +619,26 @@ WORKER_SECS_DEFINITION = (
 #: The four seeding sites §1.3 rests on. The nesting is true IFF none of them
 #: takes `B` — the seed is a pure function of `j`.
 TIEARB_RS = "rust/carc/carc-core/src/tiearb.rs"
+#: ⚠️ `world_seed`/`playout_seed` accept EITHER the inline `&ply.to_string()`
+#: form OR the hoisted `&ply_s` local (2026-08-22 commit 45b092f6, "tiearb:
+#: thread the arbiter's B x arms playout loop (bit-identical latency lever)" —
+#: `let ply_s = ply.to_string();` computed once per call and reused across the
+#: `j` loop). The regex staled the day after `71b3286c` blind-committed this
+#: cell's copy of the pattern (2026-08-21) against the pre-hoist source; the
+#: hoist is declared bit-identical by its own commit message and takes no `B`
+#: term either way, so the property this witness asserts is unaffected —
+#: only the string shape changed. `build_arms_cap`/`select_stream` are still
+#: inline `&ply.to_string()` at HEAD and keep the single-form pattern.
+_PLY_EXPR = r'(?:&ply_s|&ply\.to_string\(\))'
 NEST_SITES = (
-    ("world_seed", r'seed_i64\(&\[salt,\s*digest,\s*&ply\.to_string\(\),\s*&js\]\)'),
+    ("world_seed", r'seed_i64\(&\[salt,\s*digest,\s*' + _PLY_EXPR +
+     r',\s*&js\]\)'),
     ("playout_seed",
-     r'seed_i64\(&\[salt,\s*digest,\s*&ply\.to_string\(\),\s*&js,\s*"playout"\]\)'),
+     r'seed_i64\(&\[salt,\s*digest,\s*' + _PLY_EXPR + r',\s*&js,\s*"playout"\]\)'),
     ("build_arms_cap",
-     r'seed_i64\(&\[salt,\s*digest,\s*&ply\.to_string\(\),\s*"cap"\]\)'),
+     r'seed_i64\(&\[salt,\s*digest,\s*' + _PLY_EXPR + r',\s*"cap"\]\)'),
     ("select_stream",
-     r'seed_i64\(&\[salt,\s*digest,\s*&ply\.to_string\(\),\s*"select"\]\)'),
+     r'seed_i64\(&\[salt,\s*digest,\s*' + _PLY_EXPR + r',\s*"select"\]\)'),
 )
 
 
