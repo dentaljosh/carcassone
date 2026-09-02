@@ -1,5 +1,7 @@
 # PREREG — the τ_p audit leg (2026-09-01)
 
+> **STATUS 2026-09-02: ADJUDICATED — CELL_TAU3 `T-UNRESOLVED` (+0.554±0.646, LB95 −0.71 / UB95 +1.82), CELL_TAU8 `T-BOUNDED` (−1.374±0.660, UB95 −0.08 < +1.0; z −2.08). All §7 gates PASS both cells. §6.1 RETIREMENT FIRES: the τ_p audit limb is retired. See TAUP_VERDICT.json, results.csv `taup_audit_leg_*`, DECISIONS 2026-09-02.**
+
 **Status: FROZEN, NOT LAUNCHED.** No band claimed, no cell played, `BLIND_COMMIT`
 `PENDING`. The one source edit (`scripts/classical_search/eval_fair_puct.py`)
 lives in a worktree; the orchestrator merges it at a quiet window.

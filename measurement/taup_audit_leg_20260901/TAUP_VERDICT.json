@@ -1,0 +1,34 @@
+{
+ "CELL_TAU3": {
+  "tau_p": 3.0,
+  "band": 171000000000,
+  "M": 0.55375,
+  "se": 0.6460919453517208,
+  "z": 0.8570761545379558,
+  "LB95": -0.7125902128893726,
+  "UB95": 1.8200902128893726,
+  "elo": 12.165214579657565,
+  "elo_sig": 12.291233614996491,
+  "winrate": 0.5175,
+  "n_paired": 400,
+  "branch": "T-UNRESOLVED",
+  "gates": "G-TAUP/G-SINGLEVAR/G-BUDGET/G-ARB PASS (leg_lib on the real manifests); G-PROD passed at launch"
+ },
+ "CELL_TAU8": {
+  "tau_p": 8.0,
+  "band": 172000000000,
+  "M": -1.37375,
+  "se": 0.6596183219638657,
+  "z": -2.082643786955413,
+  "LB95": -2.6666019110491765,
+  "UB95": -0.08089808895082329,
+  "elo": -12.165214579657631,
+  "elo_sig": 12.29123361499649,
+  "winrate": 0.4825,
+  "n_paired": 400,
+  "branch": "T-BOUNDED",
+  "gates": "G-TAUP/G-SINGLEVAR/G-BUDGET/G-ARB PASS (leg_lib on the real manifests); G-PROD passed at launch"
+ },
+ "retirement_rule": "\u00a76.1: both cells carry a gated read (T-UNRESOLVED, T-BOUNDED) \u21d2 the false-negative audit's \u03c4_p limb RETIRES; effect-size bound is funded-shape-limited (n=400 decks/cell, se\u22480.65).",
+ "deviation_note": "D-6: TAU3 ran at W24 (rev 762f2a2d), TAU8 at W22 (rev abfc2f23) \u2014 W is result-invariant; the only diff between revs is WORKERS.conf/DEVIATIONS/.gitignore."
+}
