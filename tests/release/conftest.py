@@ -10,7 +10,6 @@ whichever sibling test module won the session DEFAULT_CONFIG build race. Without
 polluted session default (e.g. a bare cap5 config) would make the factory's curve125
 verify raise on the caps — a session artifact, not a real regression.
 """
-import os
 import sys
 from pathlib import Path
 
@@ -22,18 +21,17 @@ for _p in ("src", "scripts/measurement_infra", "scripts/classical_search", "scri
     if _abs not in sys.path:
         sys.path.insert(0, _abs)
 
-# Production leaf env (the _CANON_ENV shape) as a setdefault fallback — harmless when the
-# runner already set it, and it fills blanks for the in-suite run. DEFAULT_CONFIG is
-# import-frozen so setdefault alone is not enough under pollution; the fixture below is.
-for _k, _v in {
-    "CARCASSONNE_V25_CAP": "8", "CARCASSONNE_V25_OPP_CAP": "8",
-    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
-    "CARCASSONNE_V29_MEEPLE_CURVE": "-8,-4,-1,0,2,3,4,5",
-    "CARCASSONNE_V25_MEEPLE_K": "2.0", "CARCASSONNE_V25_VALUE_BLEND": "0",
-    "CARCASSONNE_USE_FLAT_LEAF": "1", "CARCASSONNE_USE_CY_LEAF": "1",
-    "CARCASSONNE_USE_CY_REPR": "1",
-}.items():
-    os.environ.setdefault(_k, _v)
+# Production leaf env as a setdefault fallback — harmless when the runner already set it
+# (scripts/release_audit.sh does), and it fills blanks for the in-suite run.
+# DEFAULT_CONFIG is import-frozen so setdefault alone is not enough under pollution; the
+# fixture below is.
+#
+# ⚠️ CONSOLIDATED 2026-09-02: values come from `carcassonne_ai.prod_env`, the ONE
+# canonical definition. RULER (curve100 base) is the correct profile here: the factory
+# injects curve125 on the champion side, which is exactly what this suite asserts.
+from carcassonne_ai import prod_env  # noqa: E402
+
+prod_env.apply(prod_env.RULER)
 
 
 def production_base_cfg():

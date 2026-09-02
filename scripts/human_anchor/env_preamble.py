@@ -1,42 +1,57 @@
 """Production leaf environment — MUST be imported before `carcassonne_ai`.
 
-The v2.7/v2.9 leaf reads these knobs from the environment at import time (the
-CALLER shapes them; the library sets none itself). Every human-anchor script
-does `import env_preamble` as its FIRST import so the deployed agent and the
-solver use the exact production leaf shape. `setdefault` = a caller who already
-exported these (e.g. an orchestrator) wins; we only fill blanks.
+    import env_preamble  # noqa: F401   <- BEFORE any carcassonne_ai import
 
-Source of the knob values: the task's "Production leaf env preamble" +
-governance/PRODUCTION.yaml. Updated 2026-07-13: meeple curve -> C5 curve125
-(x1.25, leaf_hash 158f17ff; champion leaf adopted 2026-07-13, CL-051). FLAT_LEAF,
-cap 8, meeple_k=2 (INERT, curve replaces it) unchanged.
+⚠️ CONSOLIDATED 2026-09-02. The values NO LONGER live here. This module is a thin
+adapter over the ONE canonical definition, `carcassonne_ai.prod_env` — read that
+module's docstring for the import-ordering contract, for why the PLAY (curve125)
+and RULER (curve100) profiles must stay distinct, and for the OpenBLAS thread-pin
+defect this profile still carries. `PROD_ENV` is re-exported under its historic
+name because ~25 scripts and tests import it (`fair_common`, `prod_leaf_env`,
+`window_truncation_census`, `android_bridge`'s drift test, …).
+
+Why the adapter survives at all: `scripts/human_anchor/` is a sys.path-relative
+top-level module used as the FIRST import of every human-anchor script, and
+`scripts/rustport/prod_leaf_env` documents `env_preamble` as its value source.
+Keeping the name is cheaper than editing 25 call sites, and it now cannot drift.
+
+The profile is PLAY — curve125 IN THE ENVIRONMENT — because the human-anchor
+harness PLAYS the champion off `DEFAULT_CONFIG` (the env IS the leaf here). This
+is the operational wiring `governance/PRODUCTION.yaml` names for the curve125
+adopt (CL-051, 2026-07-13). Do NOT export the curve globally: the eval rulers
+`setdefault`, so an ambient curve125 would move the fixed ruler/anchor side.
+
+`setdefault` semantics are unchanged: a caller who already exported these (e.g.
+an orchestrator) wins; we only fill blanks.
 """
 from __future__ import annotations
 
-import os
+import sys
+from pathlib import Path
 
-PROD_ENV: dict[str, str] = {
-    "CARCASSONNE_V25_CAP": "8",
-    "CARCASSONNE_V25_OPP_CAP": "8",
-    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
-    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",  # C5 curve125 (x1.25); champion leaf 2026-07-13, CL-051. Frozen 7fc930b8 anchor stays on the OLD curve via each eval ruler's own _CANON_ENV — do NOT export this var globally (rulers setdefault -> ambient would contaminate them).
-    "CARCASSONNE_V25_MEEPLE_K": "2.0",
-    "CARCASSONNE_USE_FLAT_LEAF": "1",
-    "CARCASSONNE_USE_CY_REPR": "1",
-    "CARCASSONNE_V25_VALUE_BLEND": "0",
-    # net-on-CPU / single-thread: no GPU, no BLAS thread thrash (this is a
-    # heuristic-leaf + solver stack; there is no net forward here).
-    "CUDA_VISIBLE_DEVICES": "",
-    "OMP_NUM_THREADS": "1",
-    "MKL_NUM_THREADS": "1",
-}
+# The canonical module lives in the package; make a bare repo checkout work even
+# when `carcassonne_ai` is not pip-installed. Append, never prepend, so an
+# installed copy still wins.
+_SRC = str(Path(__file__).resolve().parents[2] / "src")
+if (Path(_SRC) / "carcassonne_ai").is_dir() and _SRC not in sys.path:
+    sys.path.append(_SRC)
+
+from carcassonne_ai import prod_env  # noqa: E402
+from carcassonne_ai.prod_env import PLAY as PROD_ENV  # noqa: E402
+
+__all__ = ["PROD_ENV", "apply", "resolved", "RESOLVED"]
 
 
+# Bound to PLAY explicitly (rather than re-exported) so this stays correct even if
+# `prod_env.apply`'s default profile is ever changed.
 def apply() -> dict[str, str]:
     """Fill any unset production knob; return the resolved subset (for manifests)."""
-    for k, v in PROD_ENV.items():
-        os.environ.setdefault(k, v)
-    return {k: os.environ.get(k, "") for k in PROD_ENV}
+    return prod_env.apply(PROD_ENV)
+
+
+def resolved() -> dict[str, str]:
+    """The PLAY knobs as they stand in os.environ right now."""
+    return prod_env.resolved(PROD_ENV)
 
 
 # Apply on import so `import env_preamble` before `import carcassonne_ai` is enough.

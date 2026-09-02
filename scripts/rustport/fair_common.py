@@ -56,6 +56,7 @@ for _p in (REPO / "src", REPO / "engine", REPO / "scripts" / "measurement_infra"
 _ENV_BEFORE = dict(os.environ)
 
 import env_preamble  # noqa: E402,F401  (applies PROD_ENV on import)
+from carcassonne_ai import prod_env  # noqa: E402  (latches nothing — see its docstring)
 
 # The subset of PROD_ENV that `carcassonne_ai` freezes AT ITS IMPORT: the leaf
 # SHAPE (virtual_score_v2.DEFAULT_CONFIG) and the two dispatch flags read at
@@ -69,12 +70,21 @@ IMPORT_FROZEN_KNOBS = (
 )
 _LATE = [k for k in IMPORT_FROZEN_KNOBS
          if _ENV_BEFORE.get(k) != env_preamble.PROD_ENV[k]]
-if "carcassonne_ai" in sys.modules and _LATE:  # pragma: no cover - import-order guard
+# ⚠️ 2026-09-02: this tests `prod_env.latched_modules()`, NOT `"carcassonne_ai" in
+# sys.modules`. The package's __init__.py is empty, so importing the package latches
+# nothing — and since `env_preamble` is now an adapter over `carcassonne_ai.prod_env`,
+# the package is ALWAYS in sys.modules by the time we get here. The old package-level
+# test would therefore have raised on every single import of this module. The invariant
+# is unchanged: fire iff a module that actually freezes one of these knobs was imported
+# before we shaped the environment.
+_LATCHED = prod_env.latched_modules()
+if _LATCHED and _LATE:  # pragma: no cover - import-order guard
     raise RuntimeError(
-        "fair_common must be imported BEFORE carcassonne_ai — the production leaf "
-        "env is frozen into virtual_score_v2.DEFAULT_CONFIG (and the flat-leaf / "
-        "cython-repr dispatch flags) at ITS import. Knobs that were not already at "
-        f"their production values when the freeze happened: {_LATE}")
+        "fair_common must be imported BEFORE the carcassonne_ai leaf — the production "
+        "leaf env is frozen into virtual_score_v2.DEFAULT_CONFIG (and the flat-leaf / "
+        "cython-repr dispatch flags) at ITS import. Already-latched modules: "
+        f"{list(_LATCHED)}. Knobs that were not already at their production values "
+        f"when the freeze happened: {_LATE}")
 
 import carc_rs  # noqa: E402
 

@@ -47,29 +47,46 @@ import time
 from pathlib import Path
 
 # --------------------------------------------------------------------------- #
-# 1. Production leaf env — MUST precede any carcassonne_ai import.             #
-#    Literal copy of scripts/human_anchor/env_preamble.PROD_ENV (2026-07-27).  #
+# 0. sys.path bootstrap — MUST precede section 1, which imports the package.   #
+#    Desktop convenience: when the repo tree is visible above this file and the #
+#    package is not installed, make src/ importable. On device this resolves to #
+#    a path that does not exist and is skipped (the bundle ships                #
+#    `carcassonne_ai` top-level). (android/app/src/main/python/               #
+#    android_bridge.py -> parents[4] is `android`, parents[5] is the repo root.)#
 # --------------------------------------------------------------------------- #
-PROD_ENV: dict[str, str] = {
-    "CARCASSONNE_V25_CAP": "8",
-    "CARCASSONNE_V25_OPP_CAP": "8",
-    "CARCASSONNE_V25_DROP_THREE_OPEN": "0",
-    "CARCASSONNE_V29_MEEPLE_CURVE": "-10,-5,-1.25,0,2.5,3.75,5,6.25",
-    "CARCASSONNE_V25_MEEPLE_K": "2.0",
-    "CARCASSONNE_USE_FLAT_LEAF": "1",
-    "CARCASSONNE_USE_CY_REPR": "1",
-    "CARCASSONNE_V25_VALUE_BLEND": "0",
-    "CUDA_VISIBLE_DEVICES": "",
-    "OMP_NUM_THREADS": "1",
-    "MKL_NUM_THREADS": "1",
-}
-for _k, _v in PROD_ENV.items():
-    os.environ.setdefault(_k, _v)
-# The knobs as they stood the instant before carcassonne_ai was first imported — i.e.
-# the leaf shape this process actually froze into ``virtual_score_v2.DEFAULT_CONFIG``.
-# (A later importer may rewrite os.environ; that no longer changes this process's leaf,
-# so RESOLVED_ENV, not os.environ, is the honest record for a manifest or a test.)
-RESOLVED_ENV: dict[str, str] = {k: os.environ.get(k, "") for k in PROD_ENV}
+_HERE = Path(__file__).resolve()
+_MAYBE_REPO = _HERE.parents[5] if len(_HERE.parents) > 5 else None
+if _MAYBE_REPO is not None and (_MAYBE_REPO / "src" / "carcassonne_ai").is_dir():
+    _src = str(_MAYBE_REPO / "src")
+    if _src not in sys.path:
+        sys.path.append(_src)   # append, never prepend: an installed copy still wins
+
+# --------------------------------------------------------------------------- #
+# 1. Production leaf env — MUST precede any carcassonne_ai LEAF import.        #
+#                                                                              #
+# ⚠️ CONSOLIDATED 2026-09-02. The values used to be a literal copy of           #
+# scripts/human_anchor/env_preamble.PROD_ENV (that file is not in the on-device #
+# bundle). They now come from `carcassonne_ai.prod_env`, the ONE canonical      #
+# definition — which IS in the bundle (sync_python.py copies src/carcassonne_ai #
+# wholesale), so the copy is gone rather than merely test-guarded.              #
+#                                                                              #
+# ⚠️ THIS IMPORT IS SAFE AND THE SAFETY IS LOAD-BEARING. `carcassonne_ai/       #
+# __init__.py` is EMPTY and `prod_env` imports only `os`, so importing it       #
+# latches NOTHING: not `virtual_score_v2.DEFAULT_CONFIG`, not `flat_leaf`'s     #
+# dispatch flags, and — critically — not `wingedsheep.base_deck`, which rewrites #
+# its tile table from CARCASSONNE_FIX_R9 at ITS import (section 1a below, which #
+# must still run before the first engine import). Do not "tidy" this into a     #
+# broader import, and do not add imports to carcassonne_ai/__init__.py.         #
+# --------------------------------------------------------------------------- #
+from carcassonne_ai import prod_env  # noqa: E402
+from carcassonne_ai.prod_env import PLAY as PROD_ENV  # noqa: E402
+
+# The knobs as they stood the instant before carcassonne_ai's leaf was first imported
+# — i.e. the leaf shape this process actually froze into
+# ``virtual_score_v2.DEFAULT_CONFIG``. (A later importer may rewrite os.environ; that
+# no longer changes this process's leaf, so RESOLVED_ENV, not os.environ, is the
+# honest record for a manifest or a test.)
+RESOLVED_ENV: dict[str, str] = prod_env.apply(PROD_ENV)
 
 # --------------------------------------------------------------------------- #
 # 1a. THE FARM DATA RULE (F9 "R9"). ⚠️ PROCESS-GLOBAL, LATCHED AT IMPORT —      #
@@ -209,16 +226,9 @@ TIEARB_LEVEL_TO_B: dict[str, int] = {
     TIEARB_LEVEL_B8: 8, TIEARB_LEVEL_B16: 16, TIEARB_LEVEL_B32: 32,
     TIEARB_LEVEL_B64: 64}
 
-# Desktop convenience: when the repo tree is visible above this file and the package is
-# not installed, make src/ importable. On device this resolves to a path that does not
-# exist and is skipped. (android/app/src/main/python/android_bridge.py -> parents[4] is
-# `android`, parents[5] is the repo root.)
-_HERE = Path(__file__).resolve()
-_MAYBE_REPO = _HERE.parents[5] if len(_HERE.parents) > 5 else None
-if _MAYBE_REPO is not None and (_MAYBE_REPO / "src" / "carcassonne_ai").is_dir():
-    _src = str(_MAYBE_REPO / "src")
-    if _src not in sys.path:
-        sys.path.append(_src)   # append, never prepend: an installed copy still wins
+# (The src/ sys.path bootstrap that used to live here moved to section 0 at the top of
+# this module: section 1 now imports `carcassonne_ai.prod_env`, so the path has to be
+# usable before it, not after.)
 
 # --------------------------------------------------------------------------- #
 # 1c. Cython fast paths — republish carc_cy.* under their carcassonne_ai names. #

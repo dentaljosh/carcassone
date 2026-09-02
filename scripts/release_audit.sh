@@ -21,11 +21,16 @@ mkdir -p "$OUT"
 # globally: they change get_valid_moves behavior, and the property suite plays random games
 # (and sets those flags per-test via monkeypatch where it needs them). replay_audit.py sets
 # them itself (os.environ.setdefault) so ONLY the replay step runs strict. nice -n 19: shared box.
-export CARCASSONNE_V25_CAP=8 CARCASSONNE_V25_OPP_CAP=8 CARCASSONNE_V25_DROP_THREE_OPEN=0
-export CARCASSONNE_V29_MEEPLE_CURVE="-8,-4,-1,0,2,3,4,5" CARCASSONNE_V25_MEEPLE_K=2.0
-export CARCASSONNE_V25_VALUE_BLEND=0
-export CARCASSONNE_USE_FLAT_LEAF=1 CARCASSONNE_USE_CY_LEAF=1 CARCASSONNE_USE_CY_REPR=1
-export CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+#
+# ⚠️ CONSOLIDATED 2026-09-02: the knob VALUES are no longer typed here. They come from
+# `carcassonne_ai.prod_env`, the ONE canonical definition, via its --export CLI (which
+# prints POSIX `export K='V'` lines and nothing else, so it is safe to eval). Profile
+# `ruler` = curve100 in the env; champion_factory injects curve125 on the champion side.
+_PROD_ENV="$(PYTHONPATH="$REPO/src${PYTHONPATH:+:$PYTHONPATH}" "$PY" -m carcassonne_ai.prod_env --export --profile ruler)" || {
+    echo "FATAL: could not resolve the production leaf env from carcassonne_ai.prod_env" >&2
+    exit 2
+}
+eval "$_PROD_ENV"
 export CARCASSONNE_CLIP_TRACE_DIR="$OUT/collisions"   # built-in collision detector output (replay step)
 mkdir -p "$CARCASSONNE_CLIP_TRACE_DIR"
 
