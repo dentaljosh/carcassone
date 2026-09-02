@@ -291,8 +291,10 @@ champion:
           problem, not a different agent.
       mobile:                           # ANDROID / CHAQUOPY. ⚠️ UNPINNED 2026-08-01 — the phone plays at or
                                         # above the CHAMPION OF RECORD. The old carve-out is CLOSED. Read the note.
-                                        # ⭐ 2026-08-25: the phone is now ABOVE the desktop champion of record
-                                        # (k16×1376 = 22016 vs k8×1376 = 11008). See mobile_budget_authorized_by.
+                                        # ⭐ 2026-08-25: the phone went to k16×1376 = 22016 (then ABOVE the k8 desktop).
+                                        # ⭐ 2026-09-02 OWNER RULING "22k each": phone budget == desktop champion of
+                                        # record (fair_deploy is k16×1376 = 22016 since the 08-30 promotion) — MATCHED,
+                                        # not above; tests/android/test_bridge.py asserts equality. See mobile_budget_authorized_by.
         k_dets: 16                      # ⭐ 2026-08-25: 8 → 16 (mobile-only budget doubling; desktop UNTOUCHED).
         sims_per_det: 1376              # unchanged — the doubling is pure WIDTH (k), the CL-060 allocation shape.
         total_sims: 22016               # ⭐ 2026-08-25: 11008 → 22016.
@@ -301,6 +303,9 @@ champion:
           MOBILE-ONLY. `champion.fair_deploy` and `deploy_profiles.desktop` are UNTOUCHED by this change —
           the champion of record remains k8×1376 = 11008, and this profile is now the first deploy profile
           in the program's history to run ABOVE it rather than below.
+          ⚠️ SUPERSEDED 2026-08-30/2026-09-02: the desktop promotion raised fair_deploy to k16×1376 = 22016,
+          and the owner ruled 2026-09-02 verbatim "22k each" — the phone now runs the SAME budget as the
+          champion of record (matched, not above). The 08-25 authorization text above is kept verbatim as history.
           EVIDENCE — results.csv `h2h22016_k16x1376_vs_champ_k8x1376_n700decks_b148e9_AMENDED` (2026-08-25,
           band 148e9, 700 decks × 2 seats = n=1400, raw measurement/h2h_22016_20260824): k16×1376 = 22016 vs
           the champion k8×1376 = 11008, both sides fair PIMC, arbiter OFF on both sides
