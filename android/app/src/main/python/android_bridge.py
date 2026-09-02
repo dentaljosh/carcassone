@@ -560,6 +560,38 @@ def remote_opponent_label(budget_ms: int) -> str:
     return f"{REMOTE_OPPONENT_PREFIX}_{int(budget_ms)}ms"
 
 
+def resolve_remote_opponent_kind(health: dict | None, budget_ms: int | None) -> str:
+    """The archive's ``opponent`` stamp for a remote game — FROM THE SERVER.
+
+    ⛔ WHY THIS EXISTS (owner ruling 2026-09-02, "fix the labels"). The kind used
+    to be ``remote_opponent_label(budget_ms)`` — built from OUR copy of the launch
+    config — so every archive said ``carcasum_remote_5000ms``. That is a lie
+    whenever the daemon is launched in fixed-playout mode (``server.py
+    --playouts``), where ``budget_ms`` is *None* on the server's side and its own
+    ``OPPONENT_LABEL`` reads ``carcasum_remote_p103500``. The archive is a
+    permanent record graded months later, so it must stamp what actually played.
+
+    ⚠️ THE SAFETY PROPERTY, AND WHY THIS IS NOT JUST ``health["opponent_label"]``.
+    This value is written into the archive's ``opponent`` field, and that field is
+    the ONE gate keeping a foreign opponent out of the owner-vs-champion E4 anchor
+    (``scripts/e4_archives.py``: eligible ⟺ ``opponent == "champion"``). A server
+    that reported ``"champion"`` — mistyped, misconfigured, or simply a different
+    program on that port — would silently pool its games into the anchor. So the
+    server's label is accepted ONLY if it is already a ``carcasum_remote…``
+    spelling; anything else falls back to the budget-derived form, which is
+    conservative in the only direction that matters (still excluded, just less
+    precisely named).
+
+    Every value this can return therefore starts with ``REMOTE_OPPONENT_PREFIX``,
+    which is what ``is_remote_opponent`` and every downstream corpus tagger match
+    on. See ``tests/android/test_bridge_m3_ui.py``.
+    """
+    label = str((health or {}).get("opponent_label") or "").strip()
+    if label.startswith(REMOTE_OPPONENT_PREFIX):
+        return label
+    return remote_opponent_label(budget_ms or REMOTE_DEFAULT_BUDGET_MS)
+
+
 def humanise_playouts(n: int) -> str:
     """`103500` -> `"103.5k"`, `2000` -> `"2k"`, `900` -> `"900"`."""
     n = int(n)
@@ -1636,12 +1668,39 @@ class _Session:
                     "the remote opponent needs `remote_url` in new_game's config "
                     "(the tailnet address of the laptop running "
                     "scripts/carcasum_remote/server.py)")
+            # What the CALLER asked for: the bare "carcasum_remote" on a new game,
+            # or the specific label a save recorded. Kept so the resume path below
+            # can tell "the record already names an opponent" from "nothing does".
+            requested_kind = self.opponent_kind
+            # Provisional, and replaced the moment the daemon answers. Nothing
+            # between here and there reads it, but leaving it unset would make an
+            # exception mid-handshake produce a session with no opponent kind.
             self.opponent_kind = remote_opponent_label(self.remote_budget_ms)
             remote = RemoteOpponent(url=self.remote_url, session=self,
                                     budget_ms=self.remote_budget_ms,
                                     timeout_s=self.remote_timeout_s)
             # Fail at game start, not three plies in, if the daemon is not there.
             remote.check_health()
+            # ⛔ THE ARCHIVE'S OPPONENT STAMP, from the server's own /health label
+            # (owner ruling 2026-09-02, "fix the labels"). See
+            # `resolve_remote_opponent_kind` for why the server is not simply
+            # trusted verbatim: this field is the gate that keeps foreign games out
+            # of the E4 champion anchor.
+            self.opponent_kind = resolve_remote_opponent_kind(
+                remote.health, self.remote_budget_ms)
+            # A RESUME whose save names a DIFFERENT remote label than the daemon now
+            # reports — the server was relaunched in another mode mid-game. The live
+            # session must say what is actually playing now, so the derived label
+            # wins; but the two halves of that game were played against different
+            # opponents and the record has to say so in words. Same contract as the
+            # backend/budget `resume_note` above, and the same one-level-deep rule.
+            if (requested_kind != REMOTE_OPPONENT_PREFIX
+                    and requested_kind != self.opponent_kind):
+                self.resume_note = (
+                    f"this game was saved against {requested_kind!r} but the server "
+                    f"at {self.remote_url} now reports {self.opponent_kind!r}. The "
+                    f"halves were played against different opponent settings; grade "
+                    f"them separately.")
             self.remote = remote
             self.agent = remote
             self.pick = lambda board: int(remote.choose_action(board))

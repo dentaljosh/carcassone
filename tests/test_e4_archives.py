@@ -17,6 +17,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
 
@@ -25,12 +27,24 @@ import e4_archives as EA  # noqa: E402
 E4_DIR = REPO / "measurement" / "e4_games"
 
 
-def test_the_ledger_is_entirely_champion_games_today():
+def test_every_ledger_archive_is_stamped_and_the_anchor_is_the_champion_subset():
     """The empirical premise of `absent excludes`.
 
     If this ever fails because a genuine champion archive has no `opponent` key,
     do NOT relax the gate — backfill the stamp. The gate is the cheap half; the
     expensive half is a silently pooled game nobody notices for a month.
+
+    ⚠️ RE-POINTED 2026-09-02 (was `test_the_ledger_is_entirely_champion_games_today`,
+    asserting `kinds == ["champion"]`). That clause was an empirical statement about
+    the ledger's COMPOSITION, not about the gate, and it expired the day the first
+    remote Carcasum game was archived — it has been failing on 9 such games. Worse,
+    it was written to fail again on every future one, and the "fix the labels"
+    ruling (2026-09-02) makes the set of non-champion spellings open-ended.
+
+    What is actually load-bearing survives verbatim: every archive carries a stamp,
+    and the anchor set is EXACTLY the champion-stamped subset — nothing unstamped
+    and nothing foreign slips in. That is spelling-agnostic, so it keeps holding as
+    new opponent labels appear.
     """
     blobs = []
     for p in sorted(E4_DIR.glob("*.json")):
@@ -40,9 +54,17 @@ def test_the_ledger_is_entirely_champion_games_today():
     assert blobs, "no E4 archives found — the ledger is the fixture here"
     missing = [b["_path"] for b in blobs if EA.opponent_of(b) is None]
     assert not missing, f"archives with no `opponent` stamp: {missing}"
-    kinds = sorted({EA.opponent_of(b) for b in blobs})
-    assert kinds == ["champion"], kinds
-    assert all(EA.is_anchor_eligible(b) for b in blobs)
+
+    eligible = [b for b in blobs if EA.is_anchor_eligible(b)]
+    assert eligible, "the ledger must still hold champion games"
+    # The anchor set is exactly the champion-stamped subset — in both directions.
+    assert all(EA.opponent_of(b) == "champion" for b in eligible)
+    for b in blobs:
+        if EA.opponent_of(b) != "champion":
+            assert not EA.is_anchor_eligible(b), b["_path"]
+            # Every non-champion archive in the ledger today is a remote game, and
+            # each says which one it was — the property the label ruling protects.
+            assert EA.opponent_of(b).startswith(EA.REMOTE_CARCASUM_PREFIX), b["_path"]
 
 
 def test_a_remote_carcasum_game_is_excluded_and_says_why():
@@ -50,6 +72,31 @@ def test_a_remote_carcasum_game_is_excluded_and_says_why():
     assert not EA.is_anchor_eligible(blob)
     why = EA.rejection_reason(blob)
     assert "carcasum_remote_5000ms" in why
+    assert "champion anchor" in why
+
+
+@pytest.mark.parametrize("label", [
+    "carcasum_remote_5000ms",        # every archive written before 2026-09-02
+    "carcasum_remote_p103500",       # the server's own label, fixed-playout mode
+    "carcasum_remote_2000ms",        # the server's own label, some other budget
+    "carcasum_remote",               # the bare kind, belt-and-braces
+])
+def test_every_remote_label_spelling_is_excluded_and_says_why(label):
+    """OWNER RULING 2026-09-02, "fix the labels": the archive's `opponent` stamp is
+    now DERIVED from the server's own `/health` label instead of being the
+    hardcoded `carcasum_remote_5000ms`, so the set of strings that can appear in
+    this field is open-ended.
+
+    That is safe here only because the gate is an ALLOW-LIST — eligible ⟺
+    `opponent == "champion"` — so a label nobody has seen before is excluded by
+    default rather than needing to be enumerated. This test is the standing proof
+    that the new spellings do not slip through, and that the rejection message
+    still names the actual opponent so a reader can see WHICH Carcasum played.
+    """
+    blob = {"opponent": label, "scores": [90, 70]}
+    assert not EA.is_anchor_eligible(blob)
+    why = EA.rejection_reason(blob)
+    assert label in why
     assert "champion anchor" in why
 
 

@@ -54,6 +54,7 @@ import json
 import multiprocessing as mp
 import os
 import random
+import re
 import socket
 import subprocess
 import sys
@@ -118,6 +119,11 @@ def die(gate: str, msg: str):
 # --------------------------------------------------------------------------- #
 # corpus tagging + eligibility                                                  #
 # --------------------------------------------------------------------------- #
+#: The ONE fixed-playout pin that has a declared stratum (E-5 epoch B). Any other
+#: pin is a new epoch and `corpus_tag` refuses it rather than pooling it in here.
+CARCASUM_EPOCH_B_PLAYOUTS = 103500
+
+
 def corpus_tag(blob: dict) -> str:
     """champion_game | carcasum_game | carcasum_p103500 — the DECLARED stratifier.
 
@@ -126,6 +132,26 @@ def corpus_tag(blob: dict) -> str:
     E-5 epoch B (fixed playouts, strength tenancy-invariant); `carcasum_game` is
     epoch A (the 5000 ms wall).  An UNKNOWN opponent refuses — a corpus nothing
     conditions on is a corpus silently pooled.
+
+    ## Both label spellings classify, and stay in their own epoch
+
+    Archives written before 2026-09-02 stamp the phone's *configured* label,
+    always `carcasum_remote_5000ms`, whatever the server was really doing.  Since
+    the owner's "fix the labels" ruling the stamp is the server's own
+    `opponent_label` — `carcasum_remote_p103500` in fixed-playout mode,
+    `carcasum_remote_<ms>ms` in budget mode.  Both are matched by the same prefix,
+    and the epoch is decided by the PLAYOUT PIN rather than by the label, so:
+
+    * an old, mislabelled `carcasum_remote_5000ms` archive that really ran fixed
+      playouts still lands in epoch B, because `remote.opponent.playouts` in the
+      manifest block is the authority and was always written honestly;
+    * a genuine 5000 ms game lands in epoch A under either spelling.
+
+    ⚠️ A THIRD playout pin REFUSES rather than being folded into `carcasum_p103500`
+    (added 2026-09-02 with the derived label, which makes such a label reachable
+    for the first time).  The tag names a specific pin, and silently tagging a
+    `p50000` game as `p103500` would pool two strengths into one declared stratum —
+    exactly the failure this function's last line exists to prevent.
     """
     opp = blob.get("opponent")
     if opp is None:
@@ -138,9 +164,22 @@ def corpus_tag(blob: dict) -> str:
         pl = None
         if isinstance(remote, dict):
             pl = (remote.get("opponent") or {}).get("playouts")
-        if pl is None and "p103500" in opp:
-            pl = 103500
-        return "carcasum_p103500" if pl is not None else "carcasum_game"
+        if pl is None:
+            # No manifest block (or a pre-`remote`-block archive): fall back to the
+            # label's own pin, which the server writes as `..._p<N>`.
+            m = re.search(r"_p(\d+)$", opp)
+            if m:
+                pl = int(m.group(1))
+        if pl is None:
+            return "carcasum_game"
+        if int(pl) != CARCASUM_EPOCH_B_PLAYOUTS:
+            die("G-CORPUS",
+                f"archive played at {int(pl)} playouts/turn, but the only declared "
+                f"fixed-playout stratum is {CARCASUM_EPOCH_B_PLAYOUTS} "
+                f"('carcasum_p{CARCASUM_EPOCH_B_PLAYOUTS}'). This is a NEW epoch — "
+                f"give it its own corpus tag and prereg stratum before censusing it, "
+                f"rather than pooling two strengths into one declared stratum.")
+        return "carcasum_p103500"
     die("G-CORPUS", f"unknown opponent {opp!r} — add a corpus tag before censusing it")
 
 

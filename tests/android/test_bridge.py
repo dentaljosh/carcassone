@@ -211,34 +211,41 @@ def test_production_yaml_resolved():
 
 
 def test_mobile_profile_is_the_champion_of_record_on_the_rust_backend():
-    """THE UNPIN GUARD (2026-08-01), RE-POINTED 2026-08-25 AT THE k16x1376 FOLD.
+    """THE UNPIN GUARD (2026-08-01), RE-POINTED 2026-09-02 AT PARITY WITH DESKTOP.
 
-    HISTORY IN THREE STEPS. The mobile profile was PINNED at k4x688 from 2026-07-29
+    HISTORY IN FOUR STEPS. The mobile profile was PINNED at k4x688 from 2026-07-29
     because 11008 sims needed 8 spawn processes and Chaquopy has none. The rustport
     native core (OS threads inside ONE call, 1.551 s/move on the Pixel — G7 leg 3) met
     the profile's own written unpin condition, so on 2026-08-01 the phone rose to the
     CHAMPION OF RECORD (k8x1376 = 11008). On 2026-08-25 the owner authorized a
     MOBILE-ONLY doubling to k16x1376 = 22016 ("let's upgrade to 22k and push the apk",
-    evidence h2h22016 H-POSITIVE) — so the phone is now the first deploy profile in the
-    program to run ABOVE the champion of record.
+    evidence h2h22016 H-POSITIVE), which for five days made the phone the first deploy
+    profile to run ABOVE the champion of record. On 2026-08-30 the DESKTOP champion was
+    promoted to that same k16x1376, which closed the gap from the other side.
 
-    ⚠️ WHY THIS TEST CHANGED SHAPE. It used to assert mobile == the champion of record.
-    That equality was never the safety property — it was the state of the world on
-    2026-08-01, and the owner has since moved it deliberately. What this test guards is
-    the property that actually keeps the phone safe, and it is UNCHANGED: whatever the
-    budget is, it comes from the YAML and is INSEPARABLE from `backend: rust`. 11008
-    sims on the Python engine is ~25 s/move here; 22016 is ~50."""
+    ⭐ OWNER RULING 2026-09-02, verbatim "22k each": the phone runs the SAME budget as
+    desktop — MATCHED, not doubled. So this asserts EQUALITY with `fair_deploy` again,
+    and the 2x form is retired. It was not merely restated: between the 08-30 promote
+    and this ruling the assertion was live and FAILING, because it demanded
+    k32x1376=44032 that nothing had ever authorized. Equality is now the claim the
+    owner has actually made, so it is the claim under test.
+
+    ⚠️ WHAT THIS TEST IS REALLY FOR, and it has never changed through any of the four
+    steps: whatever the budget is, it comes from the YAML and is INSEPARABLE from
+    `backend: rust`. 22016 sims on the Python engine is ~50 s/move here. The exact
+    number is the owner's to move; the coupling is not."""
     from carcassonne_ai import champion_factory as cf
 
     spec = cf.load_production_spec()
     mob = B.mobile_budget(spec)
     assert mob["profile"] == "mobile" and mob["from_yaml"] is True
     full_total = spec.k_dets * spec.sims_per_det
-    # THE FOLD OF RECORD: pure WIDTH doubling. Same per-world depth as the champion,
-    # twice the determinizations — the CL-060 allocation shape at 2x the budget.
+    # ⭐ MATCHED, NOT DOUBLED (owner ruling 2026-09-02, "22k each"). Same k_dets, same
+    # per-world depth, same total as `champion.fair_deploy` — one budget, two deploys.
     assert (mob["k_dets"], mob["sims_per_det"], mob["total_sims"]) == (
-        2 * spec.k_dets, spec.sims_per_det, 2 * full_total), \
-        "the phone runs the owner-authorized k16x1376 = 22016 mobile fold"
+        spec.k_dets, spec.sims_per_det, full_total), \
+        ("the phone runs the SAME budget as desktop (owner ruling 2026-09-02, "
+         "'22k each') — k_dets/sims_per_det/total must equal champion.fair_deploy")
     assert mob["backend"] == B.BACKEND_RUST
     assert mob["rust_threads"] and mob["rust_threads"] >= 1
     # parallel_workers stays null forever: Chaquopy has no multiprocessing. The
@@ -249,9 +256,13 @@ def test_mobile_profile_is_the_champion_of_record_on_the_rust_backend():
     assert (d["k_dets"], d["sims_per_det"], d["total_sims"]) == (
         mob["k_dets"], mob["sims_per_det"], mob["total_sims"])
     assert d["champion_of_record_total_sims"] == full_total
-    # The headline and the champion of record are now DIFFERENT numbers, and
-    # production_budget() must keep reporting both so the UI can never conflate them.
-    assert d["total_sims"] != d["champion_of_record_total_sims"]
+    # ⚠️ BOTH FIELDS STAY, even though the ruling makes them EQUAL today (they were
+    # asserted DIFFERENT while the 2x fold was live). They are answers to two
+    # different questions — "what is this phone searching" and "what is the champion
+    # of record" — and the five days they disagreed are exactly why the UI must read
+    # the one it means rather than infer it from the other. Collapsing them to one
+    # field would make the next divergence silent.
+    assert d["total_sims"] == d["champion_of_record_total_sims"]
 
     # THE COUPLING: asking for the Python engine must drop the BUDGET too, never leave
     # the phone holding a 25 s/move champion budget on the slow path.

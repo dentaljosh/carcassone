@@ -247,6 +247,99 @@ def test_playout_counts_read_as_numbers_a_person_would_say(n, want):
     assert B.humanise_playouts(n) == want
 
 
+# --------------------------------------------------------------------------- #
+# 3b. the ARCHIVE's opponent stamp, derived from the server (ruling 2026-09-02)  #
+# --------------------------------------------------------------------------- #
+def test_the_archive_label_comes_from_the_server_in_playout_mode():
+    """OWNER RULING 2026-09-02, "fix the labels". The stamp used to be built from
+    OUR copy of the launch config and always read `carcasum_remote_5000ms`, which
+    is false whenever the daemon runs `--playouts` (budget_ms is None on its side).
+    The archive is graded months later, so it must say what actually played."""
+    health = {"opponent_label": "carcasum_remote_p103500",
+              "opponent": {"kind": "mcts", "playouts": 103500, "budget_ms": None}}
+    assert B.resolve_remote_opponent_kind(health, 5000) == "carcasum_remote_p103500"
+
+
+def test_the_archive_label_is_still_the_budget_form_in_budget_mode():
+    health = {"opponent_label": "carcasum_remote_5000ms",
+              "opponent": {"kind": "mcts", "budget_ms": 5000}}
+    assert B.resolve_remote_opponent_kind(health, 5000) == "carcasum_remote_5000ms"
+    # And an unusual-but-honest budget is carried through, not rounded to 5000.
+    assert B.resolve_remote_opponent_kind(
+        {"opponent_label": "carcasum_remote_2000ms"}, 2000) == "carcasum_remote_2000ms"
+
+
+@pytest.mark.parametrize("label", [
+    "champion",                 # ⛔ the one that would poison the E4 anchor
+    "tier1",
+    "",
+    None,
+    "something_else_entirely",
+    "not_carcasum_remote",      # contains the prefix, but not as a prefix
+])
+def test_a_server_that_does_not_name_itself_carcasum_is_never_believed(label):
+    """⛔ THE SAFETY PROPERTY. This value goes into the archive's `opponent` field,
+    and that field is the ONE gate keeping foreign games out of the owner-vs-champion
+    E4 anchor (`scripts/e4_archives.py`: eligible iff `opponent == "champion"`).
+
+    A server reporting `"champion"` — mistyped, misconfigured, or simply a different
+    program on that port — would silently pool its games into the anchor and move the
+    single number the whole owner session is chained through. So the server's label
+    is accepted ONLY as a `carcasum_remote…` spelling; anything else falls back to
+    the budget-derived form, which is conservative in the direction that matters.
+    """
+    kind = B.resolve_remote_opponent_kind({"opponent_label": label}, 5000)
+    assert kind == "carcasum_remote_5000ms"
+    assert kind != "champion"
+
+
+def test_every_derivable_label_is_still_recognised_as_remote():
+    """Whatever the server says, `is_remote_opponent` must match it — that predicate
+    is what `_save_payload` uses to decide a game carries a `remote_url`, and what
+    `restore_game` uses to route a save back to the remote branch."""
+    for health in (
+        {"opponent_label": "carcasum_remote_p103500"},
+        {"opponent_label": "carcasum_remote_5000ms"},
+        {"opponent_label": "champion"},          # refused, falls back — still remote
+        None,
+    ):
+        kind = B.resolve_remote_opponent_kind(health, 5000)
+        assert kind.startswith(B.REMOTE_OPPONENT_PREFIX)
+        assert B.is_remote_opponent(kind)
+
+
+def test_the_derived_label_is_excluded_by_the_real_e4_gate():
+    """END TO END, across the module boundary that actually matters.
+
+    The two halves of this ruling are written in different files — the bridge
+    derives the label, `scripts/e4_archives.py` decides what the anchor counts —
+    and each is individually correct for reasons the other cannot see. This drives
+    the REAL gate with the REAL derived labels, so a future change to either side
+    that breaks the pair fails here rather than in a month's arithmetic.
+    """
+    import importlib.util
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location(
+        "_e4_archives_for_bridge_test", repo / "scripts" / "e4_archives.py")
+    ea = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ea)
+
+    for health in (
+        {"opponent_label": "carcasum_remote_p103500"},
+        {"opponent_label": "carcasum_remote_5000ms"},
+        {"opponent_label": "champion"},          # the poisoning attempt
+        {},
+        None,
+    ):
+        kind = B.resolve_remote_opponent_kind(health, 5000)
+        blob = {"opponent": kind, "scores": [90, 70]}
+        assert not ea.is_anchor_eligible(blob), (
+            f"a remote game stamped {kind!r} reached the champion anchor")
+        assert kind in ea.rejection_reason(blob)
+
+
 def test_the_short_opponent_name_stays_short_enough_for_the_hud_chip():
     """`MoveText.shortOpponent` cuts at the parenthesis and the HUD chip takes 14
     characters, so the identity has to survive both."""
